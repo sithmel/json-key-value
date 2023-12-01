@@ -1,0 +1,39 @@
+{
+  "name": "json-sieve",
+  "version": "0.0.0",
+  "description": "",
+  "main": "src/index.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "zUnit",
+    "types": "tsc",
+    "format": "prettier --ignore-unknown --write ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sithmel/esi-service-worker.git"
+  },
+  "keywords": [
+    "json",
+    "stream"
+  ],
+  "author": "Maurizio Lupo <maurizio.lupo@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sithmel/json-tool/issues"
+  },
+  "homepage": "https://github.com/sithmel/json-tool#readme",
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "@types/web": "^0.0.119",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2",
+    "zunit": "^4.0.2"
+  },
+  "prettier": {
+    "semi": false
+  },
+  "dependencies": {
+    "lodash.isplainobject": "^4.0.6"
+  }
+}
