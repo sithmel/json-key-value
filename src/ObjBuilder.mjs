@@ -1,28 +1,27 @@
+function initObject(pathSegment) {
+  return Number.isInteger(pathSegment) && pathSegment >= 0 ? [] : {}
+}
 export default class ObjBuilder {
-  constructor(obj = {}) {
-    this.object = obj
-
-    this.currentObject = this.object
-    this.currentPath = []
-    this.objStack = [this.object]
+  constructor() {
+    this.object = undefined
   }
-  addAttribute(pathSegment, value) {
-    this.currentObject[pathSegment] = value
-  }
-  _openObject(pathSegment, value) {
-    this.currentPath.push(pathSegment)
-    this.currentObject[pathSegment] = value
-    this.objStack.push(this.currentObject)
-    this.currentObject = this.currentObject[pathSegment]
-  }
-  openObject(pathSegment) {
-    this._openObject(pathSegment, {})
-  }
-  openArray(pathSegment) {
-    this._openObject(pathSegment, [])
-  }
-  close() {
-    this.currentPath.pop()
-    this.currentObject = this.objStack.pop()
+  add(path, value) {
+    if (path.length === 0) {
+      this.object = value
+      return
+    }
+    if (this.object === undefined) {
+      this.object = initObject(path[0])
+    }
+    let currentObject = this.object
+    for (let i = 0; i < path.length - 1; i++) {
+      const currentPathSegment = path[i]
+      const nextPathSegment = path[i + 1]
+      if (currentObject[currentPathSegment] === undefined) {
+        currentObject[currentPathSegment] = initObject(nextPathSegment)
+      }
+      currentObject = currentObject[currentPathSegment]
+    }
+    currentObject[path[path.length - 1]] = value
   }
 }
