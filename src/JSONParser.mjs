@@ -1,31 +1,39 @@
 // https://github.com/dscape/clarinet/blob/master/clarinet.js
 
-let S = 0
+let stateCounter = 0
 const STATE = {
-  BEGIN: S++,
-  VALUE: S++, // general stuff
-  OPEN_OBJECT: S++, // {
-  CLOSE_OBJECT: S++, // }
-  OPEN_ARRAY: S++, // [
-  CLOSE_ARRAY: S++, // ]
-  TEXT_ESCAPE: S++, // \ stuff
-  STRING: S++, // ""
-  BACKSLASH: S++,
-  END: S++, // No more stack
-  OPEN_KEY: S++, // , "a"
-  CLOSE_KEY: S++, // :
-  TRUE: S++, // r
-  TRUE2: S++, // u
-  TRUE3: S++, // e
-  FALSE: S++, // a
-  FALSE2: S++, // l
-  FALSE3: S++, // s
-  FALSE4: S++, // e
-  NULL: S++, // u
-  NULL2: S++, // l
-  NULL3: S++, // l
-  NUMBER_DECIMAL_POINT: S++, // .
-  NUMBER_DIGIT: S++, // [0-9]
+  VALUE: stateCounter++, // general stuff
+  OPEN_OBJECT: stateCounter++, // {
+  CLOSE_OBJECT: stateCounter++, // }
+  OPEN_ARRAY: stateCounter++, // [
+  CLOSE_ARRAY: stateCounter++, // ]
+  STRING: stateCounter++, // ""
+  OPEN_KEY: stateCounter++, // , "a"
+  CLOSE_KEY: stateCounter++, // :
+  TRUE: stateCounter++, // r
+  TRUE2: stateCounter++, // u
+  TRUE3: stateCounter++, // e
+  FALSE: stateCounter++, // a
+  FALSE2: stateCounter++, // l
+  FALSE3: stateCounter++, // s
+  FALSE4: stateCounter++, // e
+  NULL: stateCounter++, // u
+  NULL2: stateCounter++, // l
+  NULL3: stateCounter++, // l
+  NUMBER: stateCounter++, // [0-9]
+}
+
+const STATE_STRING = {
+  NEW_CHAR: stateCounter++,
+  SLASH_CHAR: stateCounter++,
+  UNICODE_CHAR: stateCounter++,
+}
+
+const STATE_NUMBER = {
+  INTEGER: stateCounter++,
+  DECIMAL: stateCounter++,
+  EXPONENT_SIGN: stateCounter++,
+  EXPONENT_NUMBER: stateCounter++,
 }
 
 function isWhitespace(c) {
@@ -34,173 +42,208 @@ function isWhitespace(c) {
 
 export default class JSONParser {
   constructor() {
-    this.state = STATE.BEGIN
-    this.stack = []
-    this.numberNode = ""
-    this.textNode = ""
-    // this.remainingStr = ""
+    this.state = STATE.VALUE
+    this.stateStack = []
     this.currentPath = []
+    this.resetStringBuffer()
+  }
+
+  resetStringBuffer() {
+    this.stateString = STATE_STRING.NEW_CHAR
+    this.unicodeBuffer = ""
+    this.stringBuffer = "" // this stores strings temporarily (keys and values)
+  }
+
+  resetNumberBuffer() {
+    this.stateNumber = STATE_NUMBER.INTEGER
+    this.exponentBuffer = ""
+    this.decimalBuffer = ""
+    this.integerBuffer = ""
   }
 
   *parse(str) {
     for (const char of str) {
+      if (
+        this.state === STATE.VALUE ||
+        this.state === STATE.OPEN_ARRAY ||
+        this.state === STATE.CLOSE_ARRAY ||
+        this.state === STATE.OPEN_OBJECT ||
+        this.state === STATE.CLOSE_OBJECT ||
+        this.state === STATE.OPEN_KEY ||
+        this.state === STATE.CLOSE_KEY
+      ) {
+        if (isWhitespace(char)) continue
+      }
+
       switch (this.state) {
-        case STATE.BEGIN: // TODO: This should accept regular value (STATE.VALUE)
-          if (char === "{") {
-            yield [this.currentPath, {}]
-            this.state = STATE.OPEN_OBJECT
-          } else if (char === "[") {
-            yield [this.currentPath, []]
-            this.state = STATE.OPEN_ARRAY
-          } else if (!isWhitespace(char))
-            throw new Error("Non-whitespace before {[.")
+        case STATE.OPEN_KEY:
+          if (char === '"') {
+            this.stateStack.push(STATE.CLOSE_KEY)
+            this.resetStringBuffer()
+            this.state = STATE.STRING
+          } else {
+            throw new Error('Malformed object key should start with "')
+          }
           continue
 
-        case STATE.OPEN_KEY:
         case STATE.OPEN_OBJECT:
-          if (isWhitespace(char)) continue
-          if (this.state === STATE.OPEN_KEY) this.stack.push(STATE.CLOSE_KEY)
-          else {
-            if (char === "}") {
-              this.currentPath.pop()
-              this.state = this.stack.pop() || STATE.VALUE
-              continue
-            } else this.stack.push(STATE.CLOSE_OBJECT)
+          yield [this.currentPath, {}]
+          if (char === "}") {
+            this.currentPath.pop()
+            this.state = this.stateStack.pop() || STATE.VALUE
+            continue
           }
-          if (char === '"') this.state = STATE.STRING
-          else throw new Error('Malformed object key should start with "')
+          if (char === '"') {
+            this.stateStack.push(STATE.CLOSE_OBJECT)
+            this.state = STATE.STRING
+            this.resetStringBuffer()
+          } else {
+            throw new Error('Malformed object key should start with "')
+          }
           continue
 
         case STATE.CLOSE_KEY:
-        case STATE.CLOSE_OBJECT:
-          if (isWhitespace(char)) continue
-          // var event = this.state === STATE.CLOSE_KEY ? "key" : "object"
           if (char === ":") {
-            if (this.state === STATE.CLOSE_OBJECT) {
-              this.stack.push(STATE.CLOSE_OBJECT)
-              // closeValue(parser, "onopenobject")
-            } else {
-              // closeValue(parser, "onkey")
-            }
+            this.currentPath.push(this.stringBuffer)
+            this.stringBuffer = ""
             this.state = STATE.VALUE
           } else if (char === "}") {
-            // emitNode(parser, "oncloseobject")
-            this.state = this.stack.pop() || STATE.VALUE
+            this.currentPath.pop()
+            this.state = this.stateStack.pop() || STATE.VALUE
           } else if (char === ",") {
-            if (this.state === STATE.CLOSE_OBJECT)
-              this.stack.push(STATE.CLOSE_OBJECT)
-            // closeValue(parser)
+            yield [this.currentPath, this.stringBuffer]
+            this.stringBuffer = ""
+            this.currentPath.pop()
             this.state = STATE.OPEN_KEY
-          } else throw new Error("Bad object")
+          } else {
+            throw new Error("Bad object")
+          }
+          continue
+
+        case STATE.CLOSE_OBJECT:
+          if (char === ":") {
+            this.stateStack.push(STATE.CLOSE_OBJECT)
+            this.state = STATE.VALUE
+          } else if (char === "}") {
+            this.currentPath.pop()
+            this.state = this.stateStack.pop() || STATE.VALUE
+          } else if (char === ",") {
+            this.stateStack.push(STATE.CLOSE_OBJECT)
+            yield [this.currentPath, this.stringBuffer]
+            this.stringBuffer = ""
+            this.currentPath.pop()
+            this.state = STATE.OPEN_KEY
+          } else {
+            throw new Error("Bad object")
+          }
           continue
 
         case STATE.OPEN_ARRAY: // after an array there always a value
-        case STATE.VALUE:
-          if (isWhitespace(char)) continue
-          if (this.state === STATE.OPEN_ARRAY) {
-            emit(parser, "onopenarray")
+          yield [this.currentPath, []]
+          this.currentPath.push(0)
+          if (char === "]") {
+            this.currentPath.pop()
+            this.state = this.stateStack.pop() || STATE.VALUE
+            continue
+          } else {
             this.state = STATE.VALUE
-            if (char === "]") {
-              emit(parser, "onclosearray")
-              this.state = this.stack.pop() || STATE.VALUE
-              continue
-            } else {
-              this.stack.push(STATE.CLOSE_ARRAY)
-            }
+            this.stateStack.push(STATE.CLOSE_ARRAY)
           }
-          if (char === '"') this.state = STATE.STRING
-          else if (char === "{") this.state = STATE.OPEN_OBJECT
-          else if (char === "[") this.state = STATE.OPEN_ARRAY
-          else if (char === "t") this.state = STATE.TRUE
-          else if (char === "f") this.state = STATE.FALSE
-          else if (char === "n") this.state = STATE.NULL
-          else if (char === "-") {
+        // after an array there always a value
+        case STATE.VALUE:
+          if (char === '"') {
+            this.state = STATE.STRING
+            this.resetStringBuffer()
+          } else if (char === "{") {
+            this.state = STATE.OPEN_OBJECT
+          } else if (char === "[") {
+            this.state = STATE.OPEN_ARRAY
+          } else if (char === "t") {
+            this.state = STATE.TRUE
+          } else if (char === "f") {
+            this.state = STATE.FALSE
+          } else if (char === "n") {
+            this.state = STATE.NULL
+          } else if (char === "-" || ("0" <= char && char <= "9")) {
             // keep and continue
-            this.numberNode += "-"
-          } else if ("0" <= char && char <= "9") {
-            this.numberNode += char
-            this.state = STATE.NUMBER_DIGIT
-          } else throw new Error("Bad value")
+            this.resetNumberBuffer()
+            this.state = STATE.NUMBER
+            this.integerBuffer += char
+          } else {
+            throw new Error("Bad value")
+          }
           continue
 
         case STATE.CLOSE_ARRAY:
           if (char === ",") {
-            this.stack.push(STATE.CLOSE_ARRAY)
+            this.currentPath.push(this.currentPath.pop() + 1) // next item in the array
+            this.stateStack.push(STATE.CLOSE_ARRAY)
             // closeValue(parser, "onvalue")
             this.state = STATE.VALUE
           } else if (char === "]") {
+            this.currentPath.pop() // array is over
             // emitNode(parser, "onclosearray")
-            this.state = this.stack.pop() || STATE.VALUE
-          } else if (isWhitespace(char)) continue
-          else throw new Error("Bad array")
+            this.state = this.stateStack.pop() || STATE.VALUE
+          } else {
+            throw new Error("Bad array")
+          }
           continue
 
         case STATE.STRING:
-          if (this.textNode === undefined) {
-            this.textNode = ""
-          }
-
-          var starti = i - 1,
-            slashed = parser.slashed
-
-          while (true) {
-            if (char === '"' && !slashed) {
-              this.state = this.stack.pop() || STATE.VALUE
-              this.textNode += chunk.substring(starti, i - 1)
-              parser.position += i - 1 - starti
-              break
-            }
-            if (char === "\\" && !slashed) {
-              slashed = true
-              this.textNode += chunk.substring(starti, i - 1)
-              parser.position += i - 1 - starti
-              c = chunk.charCodeAt(i++)
-              parser.position++
-              if (!c) break
-            }
-            if (slashed) {
-              slashed = false
-              if (c === "n") {
-                this.textNode += "\n"
-              } else if (char === "r") {
-                this.textNode += "\r"
-              } else if (char === "t") {
-                this.textNode += "\t"
-              } else if (char === "f") {
-                this.textNode += "\f"
-              } else if (char === "b") {
-                this.textNode += "\b"
-              } else if (char === "u") {
-                // \uxxxx. meh!
-                unicodeI = 1
-                parser.unicodeS = ""
-              } else {
-                this.textNode += char
+          switch (this.stateString) {
+            case STATE_STRING.UNICODE_CHAR:
+              this.unicodeBuffer += char
+              const lowerChar = char.toLowercase()
+              if (
+                !("0" <= lowerChar && lowerChar <= "9") &&
+                !("a" <= lowerChar && lowerChar <= "f")
+              ) {
+                throw new Error(`Bad unicode character ${this.unicodeBuffer}`)
               }
-              char = chunk.charCodeAt(i++)
-              parser.position++
-              starti = i - 1
-              if (!char) break
-              else continue
-            }
-
-            stringTokenPattern.lastIndex = i
-            var reResult = stringTokenPattern.exec(chunk)
-            if (reResult === null) {
-              i = chunk.length + 1
-              this.textNode += chunk.substring(starti, i - 1)
-              parser.position += i - 1 - starti
-              break
-            }
-            i = reResult.index + 1
-            c = chunk.charCodeAt(reResult.index)
-            if (!c) {
-              this.textNode += chunk.substring(starti, i - 1)
-              parser.position += i - 1 - starti
-              break
-            }
+              if (this.unicodeBuffer.length === 4) {
+                this.unicodeCharacter = false
+                this.stringBuffer += String.fromCharCode(
+                  parseInt(this.unicodeBuffer, 16),
+                )
+                this.unicodeBuffer = ""
+              }
+              continue
+            case STATE_STRING.SLASH_CHAR:
+              this.stateString = STATE_STRING.NEW_CHAR
+              if (char === "n") {
+                this.stringBuffer += "\n"
+              } else if (char === "r") {
+                this.stringBuffer += "\r"
+              } else if (char === "t") {
+                this.stringBuffer += "\t"
+              } else if (char === "f") {
+                this.stringBuffer += "\f"
+              } else if (char === "b") {
+                this.stringBuffer += "\b"
+              } else if (char === "u") {
+                this.stateString = STATE_STRING.UNICODE_CHAR
+              } else {
+                throw new Error(`Invalid slash code ${char}`)
+              }
+              continue
+            case STATE_STRING.NEW_CHAR:
+              if (char === '"') {
+                this.state = this.stateStack.pop() || STATE.VALUE
+              } else if (char === "\\") {
+                this.stateString = STATE_STRING.SLASH_CHAR
+              } else {
+                if (
+                  char === "\n" ||
+                  char === "\r" ||
+                  char === "\t" ||
+                  char === "\f" ||
+                  char === "\b"
+                ) {
+                  throw new Error(`Invalid slash code ${char}`)
+                }
+                this.stringBuffer += char
+              }
           }
-          parser.slashed = slashed
           continue
 
         case STATE.TRUE:
@@ -215,8 +258,8 @@ export default class JSONParser {
 
         case STATE.TRUE3:
           if (char === "e") {
-            emit(parser, "onvalue", true)
-            this.state = this.stack.pop() || STATE.VALUE
+            yield [this.currentPath, true]
+            this.state = this.stateStack.pop() || STATE.VALUE
           } else throw new Error("Invalid true started with tru" + c)
           continue
 
@@ -237,8 +280,8 @@ export default class JSONParser {
 
         case STATE.FALSE4:
           if (char === "e") {
-            emit(parser, "onvalue", false)
-            this.state = this.stack.pop() || STATE.VALUE
+            yield [this.currentPath, false]
+            this.state = this.stateStack.pop() || STATE.VALUE
           } else throw new Error("Invalid false started with fals" + c)
           continue
 
@@ -254,42 +297,79 @@ export default class JSONParser {
 
         case STATE.NULL3:
           if (char === "l") {
-            emit(parser, "onvalue", null)
-            this.state = this.stack.pop() || STATE.VALUE
+            yield [this.currentPath, null]
+            this.state = this.stateStack.pop() || STATE.VALUE
           } else throw new Error("Invalid null started with nul" + c)
           continue
 
-        case STATE.NUMBER_DECIMAL_POINT:
-          if (char === ".") {
-            this.numberNode += "."
-            this.state = STATE.NUMBER_DIGIT
-          } else throw new Error("Leading zero not followed by .")
-          continue
-
-        case STATE.NUMBER_DIGIT:
-          if ("0" <= char && char <= "9") this.numberNode += char
-          else if (char === ".") {
-            if (this.numberNode.indexOf(".") !== -1)
-              throw new Error("Invalid number has two dots")
-            this.numberNode += "."
-          } else if (char === "e" || char === "E") {
-            if (
-              this.numberNode.indexOf("e") !== -1 ||
-              this.numberNode.indexOf("E") !== -1
-            )
-              throw new Error("Invalid number has two exponential")
-            this.numberNode += "e"
-          } else if (char === "+" || char === "-") {
-            if (!(p === "e" || p === "E"))
-              throw new Error("Invalid symbol in number")
-            this.numberNode += char
-          } else {
-            closeNumber(parser) //parseFloat(parser.numberNode)
-            i-- // go back one
-            lockIncrements = true // do not apply increments for a single cycle
-            this.state = this.stack.pop() || STATE.VALUE
+        case STATE.NUMBER:
+          switch (this.stateNumber) {
+            case STATE_NUMBER.INTEGER:
+              if ("0" <= char && char <= "9") {
+                this.integerBuffer += char
+                // check trailing 0
+              } else if (char === ".") {
+                // check integerBuffer === -
+                this.decimalBuffer = "."
+                this.stateNumber = STATE_NUMBER.DECIMAL
+              } else if (char === "e" || char === "E") {
+                // check integerBuffer === -
+                this.exponentBufferBuffer = "e"
+                this.stateNumber = STATE_NUMBER.EXPONENT_SIGN
+              }
+              throw new Error("")
+              continue
+            case STATE_NUMBER.DECIMAL:
+              if ("0" <= char && char <= "9") {
+                this.decimalBuffer += char
+              } else if (char === "e" || char === "E") {
+                // check decimalbuffer empty
+                this.exponentBufferBuffer = "e"
+                this.stateNumber = STATE_NUMBER.EXPONENT_SIGN
+              }
+              throw new Error("")
+              continue
+            case STATE_NUMBER.EXPONENT_SIGN:
+              if ("0" <= char && char <= "9") {
+                this.exponentBufferBuffer += char
+                this.stateNumber = STATE_NUMBER.EXPONENT_NUMBER
+              } else if (char === "+" || char === "-") {
+                this.exponentBufferBuffer += char
+                this.stateNumber = STATE_NUMBER.EXPONENT_NUMBER
+              }
+              throw new Error("")
+              continue
+            case STATE_NUMBER.EXPONENT_NUMBER:
+              if ("0" <= char && char <= "9") {
+                this.exponentBufferBuffer += char
+              }
+              throw new Error("")
+              continue
           }
-          continue
+        // if ("0" <= char && char <= "9") {
+        //   this.stringBuffer += char
+        // } else if (char === ".") {
+        //   if (this.stringBuffer.indexOf(".") !== -1)
+        //     throw new Error("Invalid number has two dots")
+        //   this.stringBuffer += "."
+        // } else if (char === "e" || char === "E") {
+        //   if (
+        //     this.stringBuffer.indexOf("e") !== -1 ||
+        //     this.stringBuffer.indexOf("E") !== -1
+        //   )
+        //     throw new Error("Invalid number has two exponential")
+        //   this.stringBuffer += "e"
+        // } else if (char === "+" || char === "-") {
+        //   if (!(p === "e" || p === "E"))
+        //     throw new Error("Invalid symbol in number")
+        //   this.stringBuffer += char
+        // } else {
+        //   yield [this.currentPath, parseFloat(this.stringBuffer)]
+        //   i-- // go back one
+        //   lockIncrements = true // do not apply increments for a single cycle
+        //   this.state = this.stateStack.pop() || STATE.VALUE
+        // }
+        // continue
 
         default:
           throw new Error("Unknown state: " + this.state)
