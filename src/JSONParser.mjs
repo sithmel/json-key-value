@@ -1,4 +1,16 @@
-// https://github.com/dscape/clarinet/blob/master/clarinet.js
+class ParsingError extends Error {
+  constructor(message, charNumber) {
+    super(message + " character number: " + charNumber)
+
+    // Maintains proper stack trace for where our error was thrown (only available on V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ParsingError)
+    }
+
+    this.name = "ParsingError"
+    this.charNumber = charNumber
+  }
+}
 
 const STATE = {
   VALUE: "VALUE", // general stuff
@@ -52,14 +64,18 @@ export default class JSONParser {
     return lastElement
   }
 
+  isFinished() {
+    return this.state === STATE.END
+  }
+
   *parse(str) {
     for (let index = 0; index < str.length; index++) {
       this.char = str[index]
-      console.log(this.state, this.char)
+      // console.log(this.state, this.stateStack, this.char)
       switch (this.state) {
         case STATE.END: // last possible state
           if (isWhitespace(this.char)) continue
-          throw new Error("Malformed JSON")
+          throw new ParsingError("Malformed JSON", index)
 
         case STATE.OPEN_KEY: // after the "," in an object
           if (isWhitespace(this.char)) continue
@@ -68,7 +84,10 @@ export default class JSONParser {
             this.state = STATE.STRING
             this.stringBuffer = ""
           } else {
-            throw new Error('Malformed object key should start with "')
+            throw new ParsingError(
+              'Malformed object key should start with "',
+              index,
+            )
           }
           continue
 
@@ -83,7 +102,10 @@ export default class JSONParser {
             this.state = STATE.STRING
             this.stringBuffer = ""
           } else {
-            throw new Error('Malformed object key should start with "')
+            throw new ParsingError(
+              'Malformed object key should start with "',
+              index,
+            )
           }
           continue
 
@@ -94,7 +116,7 @@ export default class JSONParser {
             this.stateStack.push(STATE.CLOSE_OBJECT)
             this.state = STATE.VALUE
           } else {
-            throw new Error("Bad object")
+            throw new ParsingError("Bad object", index)
           }
           continue
 
@@ -104,11 +126,10 @@ export default class JSONParser {
             this.popPathSegment()
             this.state = this.stateStack.pop()
           } else if (this.char === ",") {
-            this.stateStack.push(STATE.CLOSE_KEY)
             this.popPathSegment()
             this.state = STATE.OPEN_KEY
           } else {
-            throw new Error("Bad object")
+            throw new ParsingError("Bad object", index)
           }
           continue
 
@@ -151,7 +172,7 @@ export default class JSONParser {
             this.state = STATE.NUMBER
             this.stringBuffer = this.char
           } else {
-            throw new Error("Bad value")
+            throw new ParsingError("Bad value", index)
           }
           continue
 
@@ -165,7 +186,7 @@ export default class JSONParser {
             this.popPathSegment() // array is over
             this.state = this.stateStack.pop()
           } else {
-            throw new Error("Bad array")
+            throw new ParsingError("Bad array", index)
           }
           continue
 
@@ -185,7 +206,7 @@ export default class JSONParser {
               this.char === "\f" ||
               this.char === "\b"
             ) {
-              throw new Error("Invalid this.character")
+              throw new ParsingError("Invalid character", index)
             }
             this.stringBuffer += this.char
           }
@@ -193,7 +214,11 @@ export default class JSONParser {
 
         case STATE.STRING_SLASH_CHAR: // a string after the "\"
           this.state = STATE.STRING
-          if (this.char === "n") {
+          if (this.char === "\\") {
+            this.stringBuffer += "\\"
+          } else if (this.char === '"') {
+            this.stringBuffer += '"'
+          } else if (this.char === "n") {
             this.stringBuffer += "\n"
           } else if (this.char === "r") {
             this.stringBuffer += "\r"
@@ -207,7 +232,7 @@ export default class JSONParser {
             this.unicodeBuffer = ""
             this.state = STATE.STRING_UNICODE_CHAR
           } else {
-            throw new Error(`Invalid slash code ${this.char}`)
+            throw new ParsingError(`Invalid slash code ${this.char}`, index)
           }
           continue
 
@@ -218,7 +243,10 @@ export default class JSONParser {
             !("0" <= lowerChar && lowerChar <= "9") &&
             !("a" <= lowerChar && lowerChar <= "f")
           ) {
-            throw new Error(`Bad unicode this.character ${this.unicodeBuffer}`)
+            throw new ParsingError(
+              `Bad unicode character ${this.unicodeBuffer}`,
+              index,
+            )
           }
           if (this.unicodeBuffer.length === 4) {
             this.stringBuffer += String.fromCharCode(
@@ -231,58 +259,92 @@ export default class JSONParser {
 
         case STATE.TRUE:
           if (this.char === "r") this.state = STATE.TRUE2
-          else throw new Error("Invalid true started with t" + c)
+          else
+            throw new ParsingError("Invalid true started with t" + char, index)
           continue
 
         case STATE.TRUE2:
           if (this.char === "u") this.state = STATE.TRUE3
-          else throw new Error("Invalid true started with tr" + c)
+          else
+            throw new ParsingError("Invalid true started with tr" + char, index)
           continue
 
         case STATE.TRUE3:
           if (this.char === "e") {
             yield [this.currentPath, true]
             this.state = this.stateStack.pop()
-          } else throw new Error("Invalid true started with tru" + c)
+          } else
+            throw new ParsingError(
+              "Invalid true started with tru" + this.char,
+              index,
+            )
           continue
 
         case STATE.FALSE:
           if (this.char === "a") this.state = STATE.FALSE2
-          else throw new Error("Invalid false started with f" + c)
+          else
+            throw new ParsingError(
+              "Invalid false started with f" + this.char,
+              index,
+            )
           continue
 
         case STATE.FALSE2:
           if (this.char === "l") this.state = STATE.FALSE3
-          else throw new Error("Invalid false started with fa" + c)
+          else
+            throw new ParsingError(
+              "Invalid false started with fa" + this.char,
+              index,
+            )
           continue
 
         case STATE.FALSE3:
           if (this.char === "s") this.state = STATE.FALSE4
-          else throw new Error("Invalid false started with fal" + c)
+          else
+            throw new ParsingError(
+              "Invalid false started with fal" + this.char,
+              index,
+            )
           continue
 
         case STATE.FALSE4:
           if (this.char === "e") {
             yield [this.currentPath, false]
             this.state = this.stateStack.pop()
-          } else throw new Error("Invalid false started with fals" + c)
+          } else
+            throw new ParsingError(
+              "Invalid false started with fals" + this.char,
+              index,
+            )
           continue
 
         case STATE.NULL:
           if (this.char === "u") this.state = STATE.NULL2
-          else throw new Error("Invalid null started with n" + c)
+          else
+            throw new ParsingError(
+              "Invalid null started with n" + this.char,
+              index,
+            )
           continue
 
         case STATE.NULL2:
           if (this.char === "l") this.state = STATE.NULL3
-          else throw new Error("Invalid null started with nu" + c)
+          else
+            throw new ParsingError(
+              "Invalid null started with nu" + this.char,
+              index,
+            )
           continue
 
         case STATE.NULL3:
           if (this.char === "l") {
             yield [this.currentPath, null]
             this.state = this.stateStack.pop()
-          } else throw new Error("Invalid null started with nul" + c)
+          } else
+            throw new ParsingError(
+              "Invalid null started with nul" + this.char,
+              index,
+            )
           continue
 
         case STATE.NUMBER: // a number
@@ -294,17 +356,20 @@ export default class JSONParser {
               (this.stringBuffer.length === 3 &&
                 this.stringBuffer.slice(0, 2) === "-0")
             ) {
-              throw new Error("Leading zeros are not allowed in numbers")
+              throw new ParsingError(
+                "Leading zeros are not allowed in numbers",
+                index,
+              )
             }
           } else if (this.char === ".") {
             if (this.stringBuffer === "-") {
-              throw new Error("Missing whole number")
+              throw new ParsingError("Missing whole number", index)
             }
             this.stringBuffer += "."
             this.state = STATE.NUMBER_DECIMAL
           } else if (this.char === "e" || this.char === "E") {
             if (this.stringBuffer === "-") {
-              throw new Error("Missing whole number")
+              throw new ParsingError("Missing whole number", index)
             }
             this.stringBuffer += "e"
             this.state = STATE.NUMBER_EXPONENT_SIGN
@@ -315,14 +380,15 @@ export default class JSONParser {
             this.char === "}"
           ) {
             if (this.stringBuffer === "-") {
-              throw new Error("Missing whole number")
+              throw new ParsingError("Missing whole number", index)
             }
             yield [this.currentPath, parseFloat(this.stringBuffer)]
             this.state = this.stateStack.pop()
             index--
           } else {
-            throw new Error(
+            throw new ParsingError(
               `Not a valid this.character inside a number ${this.char}`,
+              index,
             )
           }
           continue
@@ -332,8 +398,9 @@ export default class JSONParser {
             this.stringBuffer += this.char
           } else if (this.char === "e" || this.char === "E") {
             if (this.stringBuffer[this.stringBuffer.length - 1] === ".") {
-              throw new Error(
+              throw new ParsingError(
                 `Not a valid this.character inside a number ${this.char}`,
+                index,
               )
             }
             this.stringBuffer += "e"
@@ -345,16 +412,18 @@ export default class JSONParser {
             this.char === "}"
           ) {
             if (this.stringBuffer[this.stringBuffer.length - 1] === ".") {
-              throw new Error(
+              throw new ParsingError(
                 `Not a valid this.character inside a number ${this.char}`,
+                index,
               )
             }
             yield [this.currentPath, parseFloat(this.stringBuffer)]
             this.state = this.stateStack.pop()
             index--
           } else {
-            throw new Error(
+            throw new ParsingError(
               `Not a valid this.character inside a number ${this.char}`,
+              index,
             )
           }
           continue
@@ -376,8 +445,9 @@ export default class JSONParser {
             this.state = this.stateStack.pop()
             index--
           } else {
-            throw new Error(
+            throw new ParsingError(
               `Not a valid this.character inside a number ${this.char}`,
+              index,
             )
           }
           continue
@@ -393,8 +463,9 @@ export default class JSONParser {
           ) {
             const lastChar = this.stringBuffer[this.stringBuffer.length - 1]
             if (lastChar === "+" || lastChar === "-") {
-              throw new Error(
+              throw new ParsingError(
                 `Not a valid this.character inside a number ${this.char}`,
+                index,
               )
             }
 
@@ -402,14 +473,15 @@ export default class JSONParser {
             this.state = this.stateStack.pop()
             index--
           } else {
-            throw new Error(
+            throw new ParsingError(
               `Not a valid this.character inside a number ${this.char}`,
+              index,
             )
           }
           continue
 
         default:
-          throw new Error("Unknown state: " + this.state)
+          throw new ParsingError("Unknown state: " + this.state, index)
       }
     }
   }
