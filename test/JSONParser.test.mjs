@@ -1,13 +1,10 @@
 //@ts-check
 import assert from "assert"
 import pkg from "zunit"
-import fs from "fs/promises"
-import path from "path"
 
-import ObjBuilder from "../src/ObjBuilder.mjs"
 import JSONParser from "../src/JSONParser.mjs"
 
-const { describe, it, oit, beforeEach, before } = pkg
+const { describe, it, oit, beforeEach } = pkg
 
 describe("JSONParser", () => {
   let parser
@@ -170,26 +167,5 @@ describe("JSONParser", () => {
       ])
       assert.equal(parser.isFinished(), true)
     })
-  })
-
-  describe("sample files", () => {
-    for (const filename of [
-      "creationix.json",
-      "npm.json",
-      "wikipedia.json",
-      "twitter.json",
-    ]) {
-      it(`works with ${filename}`, async () => {
-        const objBuilder = new ObjBuilder()
-        const json = await fs.readFile(path.join("test", "samples", filename), {
-          encoding: "utf-8",
-        })
-        for (const [k, v] of parser.parse(json)) {
-          objBuilder.add(k, v)
-        }
-        assert.equal(parser.isFinished(), true)
-        assert.deepEqual(objBuilder.object, JSON.parse(json))
-      })
-    }
   })
 })

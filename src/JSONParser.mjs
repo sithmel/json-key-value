@@ -1,6 +1,12 @@
+//@ts-check
+
 class ParsingError extends Error {
+  /**
+   * @param {string} message
+   * @param {number} charNumber
+   */
   constructor(message, charNumber) {
-    super(message + " character number: " + charNumber)
+    super(message)
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
     if (Error.captureStackTrace) {
@@ -12,6 +18,11 @@ class ParsingError extends Error {
   }
 }
 
+/**
+ * Enum for parser state
+ * @readonly
+ * @enum {string}
+ */
 const STATE = {
   VALUE: "VALUE", // general stuff
   OPEN_OBJECT: "OPEN_OBJECT", // {
@@ -40,6 +51,11 @@ const STATE = {
   END: "END", // last state
 }
 
+/**
+ * Check if there is a white space
+ * @param {string} c
+ * @returns {boolean}
+ */
 function isWhitespace(c) {
   return c === "\r" || c === "\n" || c === " " || c === "\t"
 }
@@ -47,27 +63,66 @@ function isWhitespace(c) {
 export default class JSONParser {
   constructor() {
     this.state = STATE.VALUE
+    /** @type {Array<STATE>} */
     this.stateStack = [STATE.END]
     this.char = ""
-    this.currentPath = []
+    /** @type {import("../types/baseTypes").JSONPathType} */
+    this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
     this.stringBuffer = "" // this stores strings temporarily (keys and values)
     this.unicodeBuffer = "" // this stores unicode codes (\uxxx)
   }
 
+  /**
+   * add another segment to the path
+   * @param {string|number} segment
+   */
   pushPathSegment(segment) {
     this.currentPath = [...this.currentPath, segment]
   }
 
+  /**
+   * remove a segment from the path
+   * @returns {string|number}
+   */
   popPathSegment() {
     const lastElement = this.currentPath[this.currentPath.length - 1]
     this.currentPath = this.currentPath.slice(0, -1)
     return lastElement
   }
 
+  /**
+   * add another segment to the path
+   * @param {STATE} state
+   */
+  pushState(state) {
+    this.stateStack.push(state)
+  }
+
+  /**
+   * pops the parser state
+   * @returns {string}
+   */
+  popState() {
+    const state = this.stateStack.pop()
+    if (state == null) {
+      throw new Error("Invalid state")
+    }
+    return state
+  }
+
+  /**
+   * Check if there is a white space
+   * @returns {boolean}
+   */
   isFinished() {
     return this.state === STATE.END
   }
 
+  /**
+   * parse a json or json fragment
+   * @param {string} str
+   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   */
   *parse(str) {
     for (let index = 0; index < str.length; index++) {
       this.char = str[index]
@@ -80,7 +135,7 @@ export default class JSONParser {
         case STATE.OPEN_KEY: // after the "," in an object
           if (isWhitespace(this.char)) continue
           if (this.char === '"') {
-            this.stateStack.push(STATE.CLOSE_KEY)
+            this.pushState(STATE.CLOSE_KEY)
             this.state = STATE.STRING
             this.stringBuffer = ""
           } else {
@@ -94,11 +149,11 @@ export default class JSONParser {
         case STATE.OPEN_OBJECT: // after the "{" in an object
           if (isWhitespace(this.char)) continue
           if (this.char === "}") {
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             continue
           }
           if (this.char === '"') {
-            this.stateStack.push(STATE.CLOSE_KEY)
+            this.pushState(STATE.CLOSE_KEY)
             this.state = STATE.STRING
             this.stringBuffer = ""
           } else {
@@ -113,7 +168,7 @@ export default class JSONParser {
           if (isWhitespace(this.char)) continue
           if (this.char === ":") {
             this.pushPathSegment(this.stringBuffer)
-            this.stateStack.push(STATE.CLOSE_OBJECT)
+            this.pushState(STATE.CLOSE_OBJECT)
             this.state = STATE.VALUE
           } else {
             throw new ParsingError("Bad object", index)
@@ -124,7 +179,7 @@ export default class JSONParser {
           if (isWhitespace(this.char)) continue
           if (this.char === "}") {
             this.popPathSegment()
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
           } else if (this.char === ",") {
             this.popPathSegment()
             this.state = STATE.OPEN_KEY
@@ -138,11 +193,11 @@ export default class JSONParser {
           this.pushPathSegment(0)
           if (this.char === "]") {
             this.popPathSegment()
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             continue
           } else {
             this.state = STATE.VALUE
-            this.stateStack.push(STATE.CLOSE_ARRAY)
+            this.pushState(STATE.CLOSE_ARRAY)
             index-- // after an array there always a value straight away
           }
           continue
@@ -179,12 +234,16 @@ export default class JSONParser {
         case STATE.CLOSE_ARRAY: // array ready to end, or restart after the comma
           if (isWhitespace(this.char)) continue
           if (this.char === ",") {
-            this.pushPathSegment(this.popPathSegment() + 1) // next item in the array
-            this.stateStack.push(STATE.CLOSE_ARRAY)
+            const formerIndex = this.popPathSegment()
+            if (typeof formerIndex !== "number") {
+              throw new ParsingError("Array index should be a number", index)
+            }
+            this.pushPathSegment(formerIndex + 1) // next item in the array
+            this.pushState(STATE.CLOSE_ARRAY)
             this.state = STATE.VALUE
           } else if (this.char === "]") {
             this.popPathSegment() // array is over
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
           } else {
             throw new ParsingError("Bad array", index)
           }
@@ -192,7 +251,7 @@ export default class JSONParser {
 
         case STATE.STRING: // a string (either value or key)
           if (this.char === '"') {
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             if (this.state !== STATE.CLOSE_KEY) {
               yield [this.currentPath, this.stringBuffer]
             }
@@ -260,19 +319,25 @@ export default class JSONParser {
         case STATE.TRUE:
           if (this.char === "r") this.state = STATE.TRUE2
           else
-            throw new ParsingError("Invalid true started with t" + char, index)
+            throw new ParsingError(
+              "Invalid true started with t" + this.char,
+              index,
+            )
           continue
 
         case STATE.TRUE2:
           if (this.char === "u") this.state = STATE.TRUE3
           else
-            throw new ParsingError("Invalid true started with tr" + char, index)
+            throw new ParsingError(
+              "Invalid true started with tr" + this.char,
+              index,
+            )
           continue
 
         case STATE.TRUE3:
           if (this.char === "e") {
             yield [this.currentPath, true]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
           } else
             throw new ParsingError(
               "Invalid true started with tru" + this.char,
@@ -310,7 +375,7 @@ export default class JSONParser {
         case STATE.FALSE4:
           if (this.char === "e") {
             yield [this.currentPath, false]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
           } else
             throw new ParsingError(
               "Invalid false started with fals" + this.char,
@@ -339,7 +404,7 @@ export default class JSONParser {
         case STATE.NULL3:
           if (this.char === "l") {
             yield [this.currentPath, null]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
           } else
             throw new ParsingError(
               "Invalid null started with nul" + this.char,
@@ -383,7 +448,7 @@ export default class JSONParser {
               throw new ParsingError("Missing whole number", index)
             }
             yield [this.currentPath, parseFloat(this.stringBuffer)]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             index--
           } else {
             throw new ParsingError(
@@ -418,7 +483,7 @@ export default class JSONParser {
               )
             }
             yield [this.currentPath, parseFloat(this.stringBuffer)]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             index--
           } else {
             throw new ParsingError(
@@ -442,7 +507,7 @@ export default class JSONParser {
             this.char === "}"
           ) {
             yield [this.currentPath, parseFloat(this.stringBuffer)]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             index--
           } else {
             throw new ParsingError(
@@ -470,7 +535,7 @@ export default class JSONParser {
             }
 
             yield [this.currentPath, parseFloat(this.stringBuffer)]
-            this.state = this.stateStack.pop()
+            this.state = this.popState()
             index--
           } else {
             throw new ParsingError(

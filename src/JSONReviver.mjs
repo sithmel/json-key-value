@@ -1,12 +1,22 @@
-// lifted from json2
-// https://github.com/douglascrockford/JSON-js
+//@ts-check
 
+/**
+ * Implement JSON reviver feature as for specs of JSON.parse
+ * @param {string} obj
+ * @param {(arg0: import("../types/baseTypes").JSONSegmentPathType, arg1: import("../types/baseTypes").JSONValueType) => {}} reviver
+ * @returns {Object}
+ */
 export default function JSONReviver(obj, reviver) {
+  /**
+   * recursively walk the resulting structure
+   * @param {Array<any>|Object} holder
+   * @param {string|number} key
+   * @returns {Object}
+   */
   function walk(holder, key) {
-    // The walk method is used to recursively walk the resulting structure so
-    // that modifications can be made.
-
+    // @ts-ignore
     const value = holder[key]
+    // this is false for null and true for obj and arrays
     if (value && typeof value === "object") {
       for (let k in value) {
         if (Object.prototype.hasOwnProperty.call(value, k)) {
