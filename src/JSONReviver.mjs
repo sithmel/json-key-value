@@ -1,4 +1,5 @@
 //@ts-check
+import { isArrayOrObject } from "../src/utils.mjs"
 
 /**
  * Implement JSON reviver feature as for specs of JSON.parse
@@ -17,7 +18,7 @@ export default function JSONReviver(obj, reviver) {
     // @ts-ignore
     const value = holder[key]
     // this is false for null and true for obj and arrays
-    if (value && typeof value === "object") {
+    if (isArrayOrObject(value)) {
       for (let k in value) {
         if (Object.prototype.hasOwnProperty.call(value, k)) {
           let v = walk(value, k)

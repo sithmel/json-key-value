@@ -18,9 +18,9 @@ export default class ObjParser {
         pathSegmentsAndValues = Object.entries(obj)
       }
       for (const [pathSegment, value] of pathSegmentsAndValues) {
-        currentPath.push(pathSegment)
+        currentPath = [...currentPath, pathSegment]
         yield* this.parse(value, currentPath)
-        currentPath.pop()
+        currentPath = currentPath.slice(0, -1)
       }
     } else {
       yield [currentPath, obj]

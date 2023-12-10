@@ -2,7 +2,13 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { isArrayOrObject, reversed } from "../src/utils.mjs"
+import {
+  isArrayOrObject,
+  getCommonPathIndex,
+  valueToString,
+  fromEndToIndex,
+  fromIndexToEnd,
+} from "../src/utils.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 describe("utils", () => {
@@ -21,8 +27,66 @@ describe("utils", () => {
     it("works with objects", () =>
       assert.equal(isArrayOrObject(new Date()), true))
   })
-  describe("reversed", () => {
-    it("works", () =>
-      assert.deepEqual(Array.from(reversed([1, 2, 3])), [3, 2, 1]))
+  describe("getCommonPathIndex", () => {
+    it("works with empty paths", () =>
+      assert.equal(getCommonPathIndex([], []), 0))
+    it("works with same paths", () =>
+      assert.equal(getCommonPathIndex(["a", "b", "c"], ["a", "b", "c"]), 3))
+    it("works with common paths (1)", () =>
+      assert.equal(getCommonPathIndex(["a", "b"], ["a", "b", "c"]), 2))
+    it("works with common paths (2)", () =>
+      assert.equal(getCommonPathIndex([], ["a", "b", "c"]), 0))
+    it("works with common paths (3)", () =>
+      assert.equal(getCommonPathIndex(["a", "b", "c"], ["a", "b"]), 2))
+    it("works with different paths (1)", () =>
+      assert.equal(getCommonPathIndex(["a", "b", "c"], ["x", "y"]), 0))
+    it("works with different paths (2)", () =>
+      assert.equal(getCommonPathIndex(["a", "b"], ["x", "y", "z"]), 0))
+    it("works with different paths (3)", () =>
+      assert.equal(getCommonPathIndex(["x", "a", "b"], ["x", "y", "z"]), 1))
+  })
+  describe("valueToString", () => {
+    it("works with obj", () => assert.equal(valueToString({}), "{"))
+    it("works with array", () => assert.equal(valueToString([]), "["))
+    it("works with null", () => assert.equal(valueToString(null), "null"))
+    it("works with string", () =>
+      assert.equal(valueToString("hello"), '"hello"'))
+    it("works with boolean", () => assert.equal(valueToString(false), "false"))
+    it("works with number", () => assert.equal(valueToString(1.24), "1.24"))
+  })
+  describe("fromEndToIndex", () => {
+    it("index 0", () =>
+      assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 0)), [
+        ["c", false],
+        ["b", false],
+        ["a", true],
+      ]))
+    it("index 1", () =>
+      assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 1)), [
+        ["c", false],
+        ["b", true],
+      ]))
+    it("index 2", () =>
+      assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 2)), [
+        ["c", true],
+      ]))
+    it("index 3", () =>
+      assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 3)), []))
+  })
+
+  describe("fromIndexToEnd", () => {
+    it("index 0", () =>
+      assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 0)), [
+        ["a", true],
+        ["b", false],
+        ["c", false],
+      ]))
+    it("index 1", () =>
+      assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 1)), [
+        ["b", true],
+        ["c", false],
+      ]))
+    it("index 3", () =>
+      assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 3)), []))
   })
 })
