@@ -21,7 +21,7 @@ const CONTEXT = {
 
 export default class JSONBuilder {
   /**
-   * Implement JSON reviver feature as for specs of JSON.parse
+   * JSONBuilder
    * @param {(arg0: string) => {}} onData
    */
   constructor(onData) {
@@ -32,7 +32,7 @@ export default class JSONBuilder {
     this.context = CONTEXT.NULL
   }
   /**
-   * Implement JSON reviver feature as for specs of JSON.parse
+   * add a sequence
    * @param {import("../types/baseTypes").JSONPathType} path
    * @param {import("../types/baseTypes").JSONValueType} value
    * @returns {void}
@@ -66,47 +66,43 @@ export default class JSONBuilder {
       }
     }
     // close all opened path in reverse order
-    for (const [pathSegment, isLast] of fromEndToIndex(
+    for (const [index, pathSegment] of fromEndToIndex(
       previousPath,
       commonPathIndex,
     )) {
-      if (isLast) {
+      if (index === commonPathIndex) {
         this.onData(",")
       } else {
         this.onData(pathSegmentTerminator(pathSegment))
       }
     }
     // open the new paths
-    for (const [pathSegment, isFirst] of fromIndexToEnd(
-      path,
-      commonPathIndex,
-    )) {
+    for (const [index, pathSegment] of fromIndexToEnd(path, commonPathIndex)) {
       if (typeof pathSegment === "number") {
-        this.onData(`${isFirst ? "" : "["}`)
-        if (
-          previousPath.length === path.length &&
-          commonPathIndex === path.length - 1
-        ) {
-          const lastIndex = previousPath[commonPathIndex]
-          // [a, b, 0] [a, b, 1]
-          if (typeof lastIndex === "string") {
-            throw new Error(
-              `Mixing up array index and object keys is not allowed: before ${lastIndex} then ${pathSegment} in [${path}]`,
-            )
-          }
-          if (lastIndex >= pathSegment) {
-            throw new Error(
-              `Index are in the wrong order: before ${lastIndex} then ${pathSegment} in [${path}]`,
-            )
-          }
-          this.onData(
-            Array(pathSegment - (lastIndex + 1))
-              .fill("null")
-              .join(","),
+        this.onData(`${index === commonPathIndex ? "" : "["}`)
+
+        const previousIndex =
+          index === commonPathIndex ? previousPath[commonPathIndex] ?? -1 : -1
+        if (typeof previousIndex === "string") {
+          throw new Error(
+            `Mixing up array index and object keys is not allowed: before ${previousIndex} then ${pathSegment} in [${path}]`,
           )
         }
+        if (previousIndex >= pathSegment) {
+          throw new Error(
+            `Index are in the wrong order: before ${previousIndex} then ${pathSegment} in [${path}]`,
+          )
+        }
+        const numberOfNulls = pathSegment - (previousIndex + 1)
+        if (numberOfNulls > 0) {
+          this.onData(Array(numberOfNulls).fill("null").join(",") + ",")
+        }
       } else {
-        this.onData(`${isFirst ? "" : "{"}${valueToString(pathSegment)}:`)
+        this.onData(
+          `${index === commonPathIndex ? "" : "{"}${valueToString(
+            pathSegment,
+          )}:`,
+        )
       }
     }
     const v = valueToString(value)
@@ -126,7 +122,7 @@ export default class JSONBuilder {
       this.onData("]")
     }
     // all opened path in reverse order
-    for (const [pathSegment, _isLast] of fromEndToIndex(this.currentPath, 0)) {
+    for (const [_index, pathSegment] of fromEndToIndex(this.currentPath, 0)) {
       this.onData(pathSegmentTerminator(pathSegment))
     }
   }

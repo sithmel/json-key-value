@@ -110,7 +110,7 @@ describe("JSONBuilder", () => {
           [[0, 1], 1],
           [[1, 0], 2],
         ],
-        [[1], [2]],
+        [[null, 1], [2]],
       )
     })
     it("works with mix array and obj", () => {
@@ -123,17 +123,17 @@ describe("JSONBuilder", () => {
       )
     })
 
-    // it("reconstruct missing array pieces", () => {
-    //   testSequence([[[2], 1]], [null, null, 1])
-    // })
-    // oit("reconstruct missing array pieces", () => {
-    //   testSequence(
-    //     [
-    //       [[0], "a"],
-    //       [[3], 1],
-    //     ],
-    //     ["a", null, null, 1],
-    //   )
-    // })
+    it("reconstruct missing array pieces", () => {
+      testSequence([[[2], 1]], [null, null, 1])
+    })
+    it("reconstruct missing array pieces", () => {
+      testSequence(
+        [
+          [[0], "a"],
+          [[3], 1],
+        ],
+        ["a", null, null, 1],
+      )
+    })
   })
 })

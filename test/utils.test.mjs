@@ -57,18 +57,18 @@ describe("utils", () => {
   describe("fromEndToIndex", () => {
     it("index 0", () =>
       assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 0)), [
-        ["c", false],
-        ["b", false],
-        ["a", true],
+        [2, "c"],
+        [1, "b"],
+        [0, "a"],
       ]))
     it("index 1", () =>
       assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 1)), [
-        ["c", false],
-        ["b", true],
+        [2, "c"],
+        [1, "b"],
       ]))
     it("index 2", () =>
       assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 2)), [
-        ["c", true],
+        [2, "c"],
       ]))
     it("index 3", () =>
       assert.deepEqual(Array.from(fromEndToIndex(["a", "b", "c"], 3)), []))
@@ -77,14 +77,14 @@ describe("utils", () => {
   describe("fromIndexToEnd", () => {
     it("index 0", () =>
       assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 0)), [
-        ["a", true],
-        ["b", false],
-        ["c", false],
+        [0, "a"],
+        [1, "b"],
+        [2, "c"],
       ]))
     it("index 1", () =>
       assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 1)), [
-        ["b", true],
-        ["c", false],
+        [1, "b"],
+        [2, "c"],
       ]))
     it("index 3", () =>
       assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 3)), []))

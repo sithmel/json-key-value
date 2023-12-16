@@ -46,11 +46,11 @@ export function valueToString(value) {
  * @template T
  * @param {Array<T>} array
  * @param {number} index
- * @returns {Iterable<[T, boolean]>}
+ * @returns {Iterable<[number, T]>}
  */
 export function* fromEndToIndex(array, index) {
   for (let i = array.length - 1; i >= index; i--) {
-    yield [array[i], i === index]
+    yield [i, array[i]]
   }
 }
 
@@ -59,11 +59,11 @@ export function* fromEndToIndex(array, index) {
  * @template T
  * @param {Array<T>} array
  * @param {number} index
- * @returns {Iterable<[T, boolean]>}
+ * @returns {Iterable<[number, T]>}
  */
 export function* fromIndexToEnd(array, index) {
   for (let i = index; i < array.length; i++) {
-    yield [array[i], i === index]
+    yield [i, array[i]]
   }
 }
 
