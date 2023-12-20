@@ -6,12 +6,18 @@ The main idea behind this library is that a JSON can be converted in a sequence 
 The sequence should respect the order used by the JSON or be at least "Depth first" to be able to return the JSON as a stream.
 This allows to:
 
-- filter and transform big JSON as a stream, without having to load it in memory
+- filter and transform a big JSON as a stream, without having to load it in memory
 - store JSON file in key value store to access data quickly
 
 ## About the ordering
 
-Streaming JSON requires the "path, value" pairs to be emitted in depth first order otherwise the resulting JSON will be malformed. Note the structure will be respected, not necessarily the order the key presents (ES standard introduced the concept of key ordering, but it is not respected here).
+Streaming JSON requires the "path, value" pairs to be emitted in depth first order otherwise the resulting JSON will be malformed. This is the order in which data are stored in JSON.
+In case key value pairs are stored in a database, it is important that they are retrieved in this order.
+
+## PathConverter
+
+The package includes PathConverter which is an utility classes that converts paths in strings (and vice versa).
+This is designed to emit strings that can be stored in a database and retrieved in lexicographic order (which is "depth first"). This allows to reconstruct the JSON correctly. It is important to note the structure will be respected, not necessarily the order the key presents in the original JSON (ES standard introduced the concept of key ordering, but it is not respected here).
 
 ## filter syntax
 
