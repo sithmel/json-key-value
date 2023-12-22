@@ -9,8 +9,8 @@ export type JSONPathMatchSegmentType = {
 }
 export type JSONPathMatchSliceType = {
   type: "slice"
-  sliceFrom: JSONSegmentPathType
-  sliceTo: JSONSegmentPathType
+  sliceFrom: number
+  sliceTo: number
 }
 
 export type JSONPathMatchType = Array<
