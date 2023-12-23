@@ -16,7 +16,7 @@ export class Matcher {
    * True values in levelExhausted needs to be adjacent starting with the first.
    * If a segment doesn't match and the corresponding boolean in levelExhausted is true
    * then we consider the match to be exhausted (no further matches are possible)
-   * @param {import("../types/baseTypes").JSONPathMatchType} match
+   * @param {import("../types/baseTypes").MatchPathType} match
    */
   constructor(match) {
     this.match = match
@@ -82,7 +82,7 @@ export class Matcher {
 /**
  * include/exclude a sequence
  * @param {boolean} includeOnMatch
- * @param {Array<import("../types/baseTypes").JSONPathMatchType>} matchersData
+ * @param {Array<import("../types/baseTypes").MatchPathType>} matchersData
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
@@ -120,7 +120,7 @@ function* filterByPath(includeOnMatch, matchersData, iterable) {
 
 /**
  * include a sequence
- * @param {Array<import("../types/baseTypes").JSONPathMatchType>} matchers
+ * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
@@ -130,7 +130,7 @@ export function includeByPath(matchers, iterable) {
 
 /**
  * exclude a sequence
- * @param {Array<import("../types/baseTypes").JSONPathMatchType>} matchers
+ * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */

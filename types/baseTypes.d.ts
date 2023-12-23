@@ -3,16 +3,16 @@ export type JSONPathType = Array<JSONSegmentPathType>
 export type JSONValueType = string | number | boolean | null | [] | {}
 export type JSONPathValueType = [JSONPathType, JSONValueType]
 
-export type JSONPathMatchSegmentType = {
+export type MatchKeyOrIndexType = {
   type: "match"
   match: JSONSegmentPathType
 }
-export type JSONPathMatchSliceType = {
+export type MatchSliceType = {
   type: "slice"
   sliceFrom: number
   sliceTo: number
 }
 
-export type JSONPathMatchType = Array<
-  JSONPathMatchSegmentType | JSONPathMatchSliceType
->
+export type MatchSegmentType = MatchKeyOrIndexType | MatchSliceType
+
+export type MatchPathType = Array<MatchSegmentType>

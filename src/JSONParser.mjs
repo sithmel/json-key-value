@@ -1,23 +1,6 @@
 //@ts-check
 
-class ParsingError extends Error {
-  /**
-   * @param {string} message
-   * @param {number} charNumber
-   */
-  constructor(message, charNumber) {
-    super(message)
-
-    // Maintains proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ParsingError)
-    }
-
-    this.name = "ParsingError"
-    this.charNumber = charNumber
-  }
-}
-
+import { ParsingError, isWhitespace } from "./utils.mjs"
 /**
  * Enum for parser state
  * @readonly
@@ -49,15 +32,6 @@ const STATE = {
   STRING_SLASH_CHAR: "STRING_SLASH_CHAR", // "\"
   STRING_UNICODE_CHAR: "STRING_UNICODE_CHAR", // "\u"
   END: "END", // last state
-}
-
-/**
- * Check if there is a white space
- * @param {string} c
- * @returns {boolean}
- */
-function isWhitespace(c) {
-  return c === "\r" || c === "\n" || c === " " || c === "\t"
 }
 
 export default class JSONParser {
@@ -126,7 +100,6 @@ export default class JSONParser {
   *parse(str) {
     for (let index = 0; index < str.length; index++) {
       this.char = str[index]
-      // console.log(this.state, this.stateStack, this.char)
       switch (this.state) {
         case STATE.END: // last possible state
           if (isWhitespace(this.char)) continue
