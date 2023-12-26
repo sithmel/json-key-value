@@ -22,7 +22,7 @@ const CONTEXT = {
 export default class JSONBuilder {
   /**
    * JSONBuilder
-   * @param {(arg0: string) => {}} onData
+   * @param {(arg0: string) => Promise<void>} onData
    */
   constructor(onData) {
     /** @type {import("../types/baseTypes").JSONPathType} */
@@ -30,6 +30,15 @@ export default class JSONBuilder {
     this.onData = onData
     /** @type CONTEXT */
     this.context = CONTEXT.NULL
+    this.lastWritePromise = Promise.resolve()
+  }
+
+  /**
+   * @param {string} str
+   */
+  async _output(str) {
+    await this.lastWritePromise
+    this.lastWritePromise = this.onData(str)
   }
   /**
    * add a sequence
@@ -53,16 +62,16 @@ export default class JSONBuilder {
       path.length > 0
     ) {
       if (typeof path[0] === "number") {
-        this.onData("[")
+        this._output("[")
       } else {
-        this.onData("{")
+        this._output("{")
       }
     }
     if (previousPath.length >= path.length) {
       if (this.context === CONTEXT.OBJECT) {
-        this.onData("}")
+        this._output("}")
       } else if (this.context === CONTEXT.ARRAY) {
-        this.onData("]")
+        this._output("]")
       }
     }
     // close all opened path in reverse order
@@ -71,15 +80,15 @@ export default class JSONBuilder {
       commonPathIndex,
     )) {
       if (index === commonPathIndex) {
-        this.onData(",")
+        this._output(",")
       } else {
-        this.onData(pathSegmentTerminator(pathSegment))
+        this._output(pathSegmentTerminator(pathSegment))
       }
     }
     // open the new paths
     for (const [index, pathSegment] of fromIndexToEnd(path, commonPathIndex)) {
       if (typeof pathSegment === "number") {
-        this.onData(`${index === commonPathIndex ? "" : "["}`)
+        this._output(`${index === commonPathIndex ? "" : "["}`)
 
         const previousIndex =
           index === commonPathIndex ? previousPath[commonPathIndex] ?? -1 : -1
@@ -95,10 +104,10 @@ export default class JSONBuilder {
         }
         const numberOfNulls = pathSegment - (previousIndex + 1)
         if (numberOfNulls > 0) {
-          this.onData(Array(numberOfNulls).fill("null").join(",") + ",")
+          this._output(Array(numberOfNulls).fill("null").join(",") + ",")
         }
       } else {
-        this.onData(
+        this._output(
           `${index === commonPathIndex ? "" : "{"}${valueToString(
             pathSegment,
           )}:`,
@@ -108,22 +117,23 @@ export default class JSONBuilder {
     const v = valueToString(value)
     this.context =
       v === "{" ? CONTEXT.OBJECT : v === "[" ? CONTEXT.ARRAY : CONTEXT.NULL
-    this.onData(v)
+    this._output(v)
   }
 
   /**
    * The input stream is completed
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  end() {
+  async end() {
     if (this.context === CONTEXT.OBJECT) {
-      this.onData("}")
+      this._output("}")
     } else if (this.context === CONTEXT.ARRAY) {
-      this.onData("]")
+      this._output("]")
     }
     // all opened path in reverse order
     for (const [_index, pathSegment] of fromEndToIndex(this.currentPath, 0)) {
-      this.onData(pathSegmentTerminator(pathSegment))
+      this._output(pathSegmentTerminator(pathSegment))
     }
+    await this.lastWritePromise
   }
 }

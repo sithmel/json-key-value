@@ -2,22 +2,21 @@
 
 ## The idea
 
-The main idea behind this library is that a JSON can be converted in a sequence of "path, value" pairs and can be reconstructed from this sequence.
-The sequence should respect the order used by the JSON or be at least "Depth first" to be able to return the JSON as a stream.
+The main idea behind this library is that a JSON can be converted into a sequence of "path, value" pairs and can be reconstructed from this sequence.
+The sequence should respect the order used by the JSON or be at least "Depth First" to be able to return the JSON as a stream.
 This allows to:
 
 - filter and transform a big JSON as a stream, without having to load it in memory
-- store JSON file in key value store to access data quickly
+- store JSON files in a key value store to access data quickly
 
 ## About the ordering
 
-Streaming JSON requires the "path, value" pairs to be emitted in **depth first** order otherwise the resulting JSON will be malformed. This is the order in which data are stored in JSON.
-In case key value pairs are stored in a database, it is important that they are retrieved in this order.
+Streaming JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the order in which data are stored in JSON. It is also possible using lexicographic order of paths (which is also "depth first"). In this case, the structure will be respected, but not necessarily the order the keys presents in the original JSON (ES2015 standard introduced the concept of key ordering, but it is not respected here).
 
 ## PathConverter
 
-The package includes PathConverter which is an utility classes that converts paths in strings (and vice versa).
-This is designed to emit strings that can be stored in a database and retrieved in lexicographic order (which is "depth first"). This allows to reconstruct the JSON correctly. It is important to note the structure will be respected, not necessarily the order the key presents in the original JSON (ES standard introduced the concept of key ordering, but it is not respected here).
+PathConverter is an utility class that converts paths in strings (and vice versa).
+This is designed to emit strings that can be stored in a database and retrieved in lexicographic order.
 
 ```js
 const separator = "//"
@@ -255,7 +254,63 @@ These are all equivalent expressions:
 
 Either brackets or dots can be used as separators. Strings can be wrapped in double quotes: in this case any string can be used, and special character needs to be escaped as described in the [JSON specs](https://datatracker.ietf.org/doc/html/rfc8259). Unquoted strings can be used but only letters, numbers and underscores can be used.
 
-## documentation cookbook
+# Examples
+
+## Filter a JSON stream
+
+In this example we will show how to filter a JSON loaded with fetch without loading into memory.
+
+```js
+async function filterJSONStream(readable, writable, include) {
+  const decoder = new TextDecoder()
+  const encoder = new TextEncoder()
+  const writer = writable.getWriter()
+  const reader = readable.getReader()
+
+  const parser = new JSONParser()
+  const builder = new JSONBuilder((data) => {
+    writer.write(encoder.encode(data)),
+  })
+
+  while (true) {
+    let { done, value } = await reader.read()
+    if (done) break
+    const text = decoder.decode(value, { stream: true })
+    const iterable = parser.parse(text)
+    for (const [path, value] of filterByPath(iterable, include)) {
+      builder.add(path, value)
+    }
+  }
+  builder.end()
+}
+
+async function fetchAndStream(request) {
+  let response = await fetch(request)
+  let { readable, writable } = new TransformStream()
+  let newResponse = new Response(readable, response)
+  filterJSONStream(response.body, writable)
+  return newResponse
+}
+```
+
+## Filter a file using a node buffer
+
+```js
+async function filterFile(filename, include) {
+  const readStream = fs.createReadStream(filename, { encoding: "utf-8" })
+  const parser = new JSONParser()
+  const builder = new ObjBuilder()
+
+  for await (const chunk of readStream) {
+    const iterable = parser.parse(chunk)
+    for (const [path, value] of filterByPath(iterable, include)) {
+      builder.add(path, value)
+    }
+  }
+
+  return builder.object
+}
+```
 
 buffer
 filter file

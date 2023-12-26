@@ -23,14 +23,16 @@ describe("JSONBuilder sample files", () => {
     it(`works with ${filename}`, async () => {
       let str = ""
 
-      const builder = new JSONBuilder((data) => (str += data))
+      const builder = new JSONBuilder(async (data) => {
+        str += data
+      })
       const json = await fs.readFile(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
       for (const [k, v] of parser.parse(json)) {
         builder.add(k, v)
       }
-      builder.end()
+      await builder.end()
       const original = JSON.parse(json)
       const copy = JSON.parse(str)
       assert.deepEqual(original, copy)

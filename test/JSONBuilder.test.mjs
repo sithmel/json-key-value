@@ -7,24 +7,28 @@ import ObjParser from "../src/ObjParser.mjs"
 
 const { describe, it, oit, odescribe } = pkg
 
-function testObj(obj) {
+async function testObj(obj) {
   let str = ""
   const parser = new ObjParser()
-  const builder = new JSONBuilder((data) => (str += data))
+  const builder = new JSONBuilder(async (data) => {
+    str += data
+  })
   for (const [path, value] of parser.parse(obj)) {
     builder.add(path, value)
   }
-  builder.end()
+  await builder.end()
   assert.deepEqual(JSON.parse(str), obj, str)
 }
 
-function testSequence(sequence, obj) {
+async function testSequence(sequence, obj) {
   let str = ""
-  const builder = new JSONBuilder((data) => (str += data))
+  const builder = new JSONBuilder(async (data) => {
+    str += data
+  })
   for (const [path, value] of sequence) {
     builder.add(path, value)
   }
-  builder.end()
+  await builder.end()
   assert.deepEqual(JSON.parse(str), obj, str)
 }
 

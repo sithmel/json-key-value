@@ -1,12 +1,12 @@
 export default class JSONBuilder {
     /**
      * JSONBuilder
-     * @param {(arg0: string) => {}} onData
+     * @param {(arg0: string) => void} onData
      */
-    constructor(onData: (arg0: string) => {});
+    constructor(onData: (arg0: string) => void);
     /** @type {import("../types/baseTypes").JSONPathType} */
     currentPath: import("../types/baseTypes").JSONPathType;
-    onData: (arg0: string) => {};
+    onData: (arg0: string) => void;
     /** @type CONTEXT */
     context: CONTEXT;
     /**
