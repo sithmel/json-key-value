@@ -17,7 +17,7 @@
     "declarationMap": true,
     "strict": true,
     "esModuleInterop": true,
-    "types": ["node", "web"],
+    "types": ["node"],
     "downlevelIteration": true
   }
 }

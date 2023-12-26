@@ -1,5 +1,5 @@
 //@ts-check
-import { isArrayOrObject } from "../src/utils.mjs"
+import { isArrayOrObject } from "./utils.mjs"
 
 /**
  * Implement JSON reviver feature as for specs of JSON.parse
@@ -7,7 +7,7 @@ import { isArrayOrObject } from "../src/utils.mjs"
  * @param {(arg0: import("../types/baseTypes").JSONSegmentPathType, arg1: import("../types/baseTypes").JSONValueType) => {}} reviver
  * @returns {Object}
  */
-export default function JSONReviver(obj, reviver) {
+export default function reviver(obj, reviver) {
   /**
    * recursively walk the resulting structure
    * @param {Array<any>|Object} holder

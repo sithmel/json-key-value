@@ -2,7 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { Matcher, includeByPath, excludeByPath } from "../src/pathMatcher.mjs"
+import { Matcher, includeByPath, excludeByPath } from "../src/filterByPath.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 describe("pathMatcher", () => {
@@ -78,11 +78,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           includeByPath(
-            [],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [],
           ),
         ),
         [],
@@ -91,11 +91,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           includeByPath(
-            [[{ type: "match", match: "a" }]],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [[{ type: "match", match: "a" }]],
           ),
         ),
         [[["a"], 1]],
@@ -104,11 +104,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           includeByPath(
-            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
           ),
         ),
         [
@@ -122,11 +122,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           excludeByPath(
-            [],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [],
           ),
         ),
         [
@@ -138,11 +138,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           excludeByPath(
-            [[{ type: "match", match: "a" }]],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [[{ type: "match", match: "a" }]],
           ),
         ),
         [[["b"], 2]],
@@ -151,11 +151,11 @@ describe("pathMatcher", () => {
       assert.deepEqual(
         Array.from(
           excludeByPath(
-            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
             [
               [["a"], 1],
               [["b"], 2],
             ],
+            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
           ),
         ),
         [],

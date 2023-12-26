@@ -1,5 +1,5 @@
 //@ts-check
-
+import toPathExp from "./toPathExp.mjs"
 export class Matcher {
   /**
    * Performs matches and checks if the matcher will no longer
@@ -86,7 +86,7 @@ export class Matcher {
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
-function* filterByPath(includeOnMatch, matchersData, iterable) {
+function* includeOrExcludeByPath(includeOnMatch, matchersData, iterable) {
   const matchers = matchersData.map((m) => new Matcher(m))
   const filterExhausted = new Set()
   for (const [path, value] of iterable) {
@@ -119,21 +119,41 @@ function* filterByPath(includeOnMatch, matchersData, iterable) {
 }
 
 /**
- * include a sequence
- * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
+ * include a sequence item
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
-export function includeByPath(matchers, iterable) {
-  return filterByPath(true, matchers, iterable)
+export function includeByPath(iterable, matchers) {
+  return includeOrExcludeByPath(true, matchers, iterable)
 }
 
 /**
- * exclude a sequence
- * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
+ * exclude a sequence item
  * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
  * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
-export function excludeByPath(matchers, iterable) {
-  return filterByPath(false, matchers, iterable)
+export function excludeByPath(iterable, matchers) {
+  return includeOrExcludeByPath(false, matchers, iterable)
+}
+
+/**
+ * filter a sequence
+ * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {Array<import("../types/baseTypes").MatchPathType>|string|null} include
+ * @param {Array<import("../types/baseTypes").MatchPathType>|string|null} exclude
+ * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
+ */
+export function filterByPath(iterable, include = null, exclude = null) {
+  let iter = iterable
+  const includeMatcher = toPathExp(include)
+  const excludeMatcher = toPathExp(exclude)
+  if (include != null) {
+    iter = includeByPath(iter, includeMatcher)
+  }
+  if (exclude != null) {
+    iter = excludeByPath(iter, excludeMatcher)
+  }
+  return iter
 }

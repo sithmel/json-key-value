@@ -39,19 +39,19 @@ const STATE = {
   END_PATH_EXPRESSION: "END_PATH_EXPRESSION",
   FRAGMENT: "FRAGMENT", // "hello" hello 1 1:2
   IN_BRACKET_FRAGMENT: "IN_BRACKET_FRAGMENT", // ["hello"] [hello] [1] [1:2]
-  IN_BRACKET_FRAGMENT_END: "IN_BRACKET_FRAGMENT", // ["hello"] [hello] [1] [1:2]
+  IN_BRACKET_FRAGMENT_END: "IN_BRACKET_FRAGMENT_END", // ["hello"] [hello] [1] [1:2]
   STRING: "STRING", // "hello"
   STRING_ESCAPE: "STRING_ESCAPE", // "hello"
   NON_STRING: "NON_STRING", // hello 1 1:2
 }
 
-const NON_STRING_RE = /^[0:9a-zA-Z_:]$/
+const NON_STRING_RE = /^[0-9a-zA-Z_:]$/
 
 /**
  * @param {string} pathStr
  * @returns {Array<import("../types/baseTypes").MatchPathType>}
  */
-export default function pathExpToMatcherData(pathStr) {
+function pathExpToMatcherData(pathStr) {
   const tokens = pathStr.split("")
   const stateStack = []
   /** @type {Array<import("../types/baseTypes").MatchPathType>} */
@@ -105,6 +105,7 @@ export default function pathExpToMatcherData(pathStr) {
         if (NON_STRING_RE.test(token)) {
           state = STATE.NON_STRING
           fragmentBuffer = ""
+          index--
           continue
         }
         throw new ParsingError(
@@ -143,7 +144,6 @@ export default function pathExpToMatcherData(pathStr) {
           strToMatchSegment(fragmentBuffer, index),
         ]
         fragmentBuffer = ""
-
         state = stateStack.pop() ?? STATE.CONTINUE_PATH_EXPRESSION
         index--
         continue
@@ -186,4 +186,14 @@ export default function pathExpToMatcherData(pathStr) {
   }
   matcherPaths.push(currentMatcherPath)
   return matcherPaths
+}
+
+/**
+ * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} path
+ * @returns {Array<import("../types/baseTypes").MatchPathType>}
+ */
+export default function toPathExp(path) {
+  if (path === null) return []
+  if (typeof path === "string") return pathExpToMatcherData(path)
+  return path
 }
