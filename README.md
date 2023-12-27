@@ -5,10 +5,7 @@ json-key-value is a toolkit to work with JSON as they are converted to a sequenc
 ## The idea
 
 The main idea behind this library is that a JSON can be converted into a sequence of "path, value" pairs and can be reconstructed from this sequence.
-This allows to:
-
-- Filter and transform a big JSON as a stream, without having to load it in memory
-- to store the sequence in a key value store, in such a way that you can retrieve part of the JSON efficiently
+This allows to filter and transform a big JSON as a stream, without having to load it in memory
 
 An example of a sequence is:
 
@@ -22,12 +19,12 @@ An example of a sequence is:
 
 ## About the ordering
 
-Streaming JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the order in which data are stored in JSON.
+Streaming JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the normal order in which data are stored in JSON.
 Alternatively, it also works if the paths are sorted comparing object keys in lexicographic order and array indexes from the smallest to the biggest. In this case, the structure will be respected, but not necessarily the order the keys presents in the original JSON (ES2015 standard introduced the concept of key ordering, but it is not respected here).
 
 ## JSONParser
 
-JSONParser is a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser, designed to work with an iterable or asyncIterable of strings. Decoding from buffer is not provided, leaving that to different buffer implementation ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html))
+JSONParser is a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser, designed to work with an iterable or asyncIterable of strings. String decoding from buffer is not provided, leaving that to different buffer implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
 
 ```js
 const parser = new JSONParser()
@@ -85,7 +82,7 @@ const jsonBuilder = new JSONBuilder(async (data) => {
 })
 objBuilder.add([], {}) // build initial object
 objBuilder.add(["hello"], "world")
-await objBuilder.end() // this returns a promise so that you can be sure all pairs are emitted
+await objBuilder.end() // wait that all pairs are emitted
 str === '{"hello":"world"}'
 ```
 
@@ -115,11 +112,13 @@ await objBuilder.end()
 str === '[null,null,"hello world"]'
 ```
 
-## reviver
+## Utilities
+
+### reviver
 
 The [JSON parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) method has an optional argument "reviver" that allows to transform the js object. This can't work on a sequence, and for this reason is provided as a separate function.
 
-## PathConverter
+### pathConverter
 
 PathConverter is a utility class that converts paths in strings (and vice versa).
 It is designed to emit strings that can be stored in a database and retrieved in lexicographic order.
@@ -135,14 +134,14 @@ path === pathConverter.stringToPath(pathString)
 
 # Work with the sequence
 
-Both JSONParser.parse and ObjParser.parse returns an iterable of path/value pairs.
-These can be transformed using a for .. of loop, and then converted to an object (ObjBuilder) or a JSON stream (JSONBuilder):
+Both JSONParser.parse and ObjParser.parse returns an iterable of path/value pairs (asyncIterable in case of JSONParser.parse).
+These can be transformed using a for await loop, and then converted to an object (ObjBuilder) or a JSON stream (JSONBuilder):
 
 ```js
 function getPricesWithVAT(obj) {
   const builder = new ObjBuilder()
   const parser = new ObjParser()
-  for (const [path, value] of parser.parse(obj)) {
+  for (const await [path, value] of parser.parse(obj)) {
     if (path[0] === "prices") {
       builder.add(path.slice(1), value * 0.2)
     }
@@ -155,9 +154,7 @@ This converts:
 
 ```json
 {
-  "other data": {
-    //...
-  },
+  "other data": {},
   "prices": {
     "Subscription 1 month": 20,
     "Subscription 2 month": 35,
@@ -178,7 +175,7 @@ to:
 }
 ```
 
-I suggest [iter-tools](https://github.com/iter-tools/iter-tools) to work with iterables.
+I suggest [iter-tools](https://github.com/iter-tools/iter-tools) to work with iterables and async iterables.
 
 ## filterByPath
 
@@ -267,13 +264,13 @@ These are all equivalent expressions:
 "hello"[2],"world"[0:3]
 ```
 
-Either brackets or dots can be used as separators. Strings can be wrapped in double quotes: in this case any string can be used, and special character needs to be escaped as described in the [JSON specs](https://datatracker.ietf.org/doc/html/rfc8259). Unquoted strings can be used but only letters, numbers and underscores can be used.
+Either brackets or dots can be used as separators. Strings can be wrapped in double quotes: in this case any character can be used, but special character needs to be escaped as described in the [JSON specs](https://datatracker.ietf.org/doc/html/rfc8259). Unquoted strings can be used but only letters, numbers and underscores can be used.
 
 # Examples
 
 ## Filter a JSON stream
 
-In this example we will show how to filter a JSON loaded with fetch without loading into memory.
+In this example shows how to filter a JSON using fetch without loading it into memory.
 
 ```js
 // this transform a readable stream into an asyncIterable of chunks
@@ -318,6 +315,8 @@ async function fetchAndFilter(url, pathExpression) {
 ```
 
 ## Filter a file using a node buffer
+
+This function read part of a JSON from a file.
 
 ```js
 async function filterFile(filename, include) {
