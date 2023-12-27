@@ -1,14 +1,19 @@
 export default class JSONBuilder {
     /**
      * JSONBuilder
-     * @param {(arg0: string) => void} onData
+     * @param {(arg0: string) => Promise<void>} onData
      */
-    constructor(onData: (arg0: string) => void);
+    constructor(onData: (arg0: string) => Promise<void>);
     /** @type {import("../types/baseTypes").JSONPathType} */
     currentPath: import("../types/baseTypes").JSONPathType;
-    onData: (arg0: string) => void;
+    onData: (arg0: string) => Promise<void>;
     /** @type CONTEXT */
     context: CONTEXT;
+    lastWritePromise: Promise<void>;
+    /**
+     * @param {string} str
+     */
+    _output(str: string): Promise<void>;
     /**
      * add a sequence
      * @param {import("../types/baseTypes").JSONPathType} path
@@ -18,9 +23,9 @@ export default class JSONBuilder {
     add(path: import("../types/baseTypes").JSONPathType, value: import("../types/baseTypes").JSONValueType): void;
     /**
      * The input stream is completed
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    end(): void;
+    end(): Promise<void>;
 }
 /**
  * Enum for CONTEXT
