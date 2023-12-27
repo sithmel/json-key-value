@@ -83,13 +83,13 @@ export class Matcher {
  * include/exclude a sequence
  * @param {boolean} includeOnMatch
  * @param {Array<import("../types/baseTypes").MatchPathType>} matchersData
- * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
- * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
+ * @param {AsyncIterable<import("../types/baseTypes").JSONPathValueType>|Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @returns {AsyncIterable<import("../types/baseTypes").JSONPathValueType>}
  */
-function* includeOrExcludeByPath(includeOnMatch, matchersData, iterable) {
+async function* includeOrExcludeByPath(includeOnMatch, matchersData, iterable) {
   const matchers = matchersData.map((m) => new Matcher(m))
   const filterExhausted = new Set()
-  for (const [path, value] of iterable) {
+  for await (const [path, value] of iterable) {
     if (filterExhausted.size === matchers.length) {
       if (includeOnMatch) {
         break // nothing else to match
@@ -120,9 +120,9 @@ function* includeOrExcludeByPath(includeOnMatch, matchersData, iterable) {
 
 /**
  * include a sequence item
- * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {AsyncIterable<import("../types/baseTypes").JSONPathValueType>|Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
- * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
+ * @returns {AsyncIterable<import("../types/baseTypes").JSONPathValueType>}
  */
 export function includeByPath(iterable, matchers) {
   return includeOrExcludeByPath(true, matchers, iterable)
@@ -130,9 +130,9 @@ export function includeByPath(iterable, matchers) {
 
 /**
  * exclude a sequence item
- * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {AsyncIterable<import("../types/baseTypes").JSONPathValueType>|Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @param {Array<import("../types/baseTypes").MatchPathType>} matchers
- * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
+ * @returns {AsyncIterable<import("../types/baseTypes").JSONPathValueType>}
  */
 export function excludeByPath(iterable, matchers) {
   return includeOrExcludeByPath(false, matchers, iterable)
@@ -140,10 +140,10 @@ export function excludeByPath(iterable, matchers) {
 
 /**
  * filter a sequence
- * @param {Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
+ * @param {AsyncIterable<import("../types/baseTypes").JSONPathValueType>|Iterable<import("../types/baseTypes").JSONPathValueType>} iterable
  * @param {Array<import("../types/baseTypes").MatchPathType>|string|null} include
  * @param {Array<import("../types/baseTypes").MatchPathType>|string|null} exclude
- * @returns {Iterable<import("../types/baseTypes").JSONPathValueType>}
+ * @returns {AsyncIterable<import("../types/baseTypes").JSONPathValueType>|Iterable<import("../types/baseTypes").JSONPathValueType>}
  */
 export function filterByPath(iterable, include = null, exclude = null) {
   let iter = iterable

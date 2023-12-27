@@ -25,7 +25,7 @@ describe("JSONParser sample files", () => {
       const json = await fs.readFile(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for (const [k, v] of parser.parse(json)) {
+      for await (const [k, v] of parser.parse([json])) {
         objBuilder.add(k, v)
       }
 

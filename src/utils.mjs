@@ -150,3 +150,25 @@ export function strToMatchSegment(str, index = 0) {
   }
   throw new ParsingError(`Invalid fragment : ${str}`, index)
 }
+
+/**
+ * parse a json or json fragment
+ * @template T
+ * @param {AsyncIterable<T>|Iterable<T>} iterator
+ * @returns {Promise<Array<T>>}
+ */
+export async function toArray(iterator) {
+  const arr = []
+  for await (const i of iterator) arr.push(i)
+  return arr
+}
+
+/**
+ * parse a json or json fragment
+ * @param {AsyncIterable<string>|Iterable<string>} iterator
+ * @returns {AsyncIterable<string>}
+ */
+export async function* addTrailingSpace(iterator) {
+  yield* iterator
+  yield " "
+}

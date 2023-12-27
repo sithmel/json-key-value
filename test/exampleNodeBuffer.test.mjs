@@ -22,13 +22,11 @@ async function filterFile(filename, include) {
   const parser = new JSONParser()
   const builder = new ObjBuilder()
 
-  for await (const chunk of readStream) {
-    const iterable = parser.parse(chunk)
-    for (const [path, value] of filterByPath(iterable, include)) {
-      builder.add(path, value)
-    }
+  const iterable = parser.parse(readStream)
+  for await (const [path, value] of filterByPath(iterable, include)) {
+    builder.add(path, value)
   }
-
+  readStream.destroy()
   return builder.object
 }
 

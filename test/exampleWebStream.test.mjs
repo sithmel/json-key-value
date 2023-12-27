@@ -58,15 +58,15 @@ async function filterJSONStream(readable, writable, include, controller) {
   const writer = writable.getWriter()
 
   const parser = new JSONParser()
-  const builder = new JSONBuilder(async (data) => {
-    writer.write(encoder.encode(data))
-  })
+  const builder = new JSONBuilder(async (data) =>
+    writer.write(encoder.encode(data)),
+  )
 
-  for await (const text of decodedReadableStream(readable)) {
-    const iterable = parser.parse(text)
-    for (const [path, value] of filterByPath(iterable, include)) {
-      builder.add(path, value)
-    }
+  const chunks = decodedReadableStream(readable)
+  const iterable = parser.parse(chunks)
+  const filtered = filterByPath(iterable, include)
+  for await (const [path, value] of filtered) {
+    builder.add(path, value)
   }
   controller.abort()
   await builder.end()

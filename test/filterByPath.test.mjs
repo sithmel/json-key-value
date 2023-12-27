@@ -3,6 +3,7 @@ import assert from "assert"
 import pkg from "zunit"
 
 import { Matcher, includeByPath, excludeByPath } from "../src/filterByPath.mjs"
+import { toArray } from "../src/utils.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 describe("pathMatcher", () => {
@@ -74,91 +75,85 @@ describe("pathMatcher", () => {
     })
   })
   describe("includeByPath", () => {
-    it("includes none", () =>
-      assert.deepEqual(
-        Array.from(
-          includeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [],
-          ),
+    it("includes none", async () => {
+      const seq = await toArray(
+        includeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [],
         ),
-        [],
-      ))
-    it("includes one", () =>
-      assert.deepEqual(
-        Array.from(
-          includeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [[{ type: "match", match: "a" }]],
-          ),
+      )
+      assert.deepEqual(seq, [])
+    })
+    it("includes one", async () => {
+      const seq = await toArray(
+        includeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [[{ type: "match", match: "a" }]],
         ),
-        [[["a"], 1]],
-      ))
-    it("includes two", () =>
-      assert.deepEqual(
-        Array.from(
-          includeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
-          ),
+      )
+      assert.deepEqual(seq, [[["a"], 1]])
+    })
+    it("includes two", async () => {
+      const seq = await toArray(
+        includeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
         ),
-        [
-          [["a"], 1],
-          [["b"], 2],
-        ],
-      ))
+      )
+      assert.deepEqual(seq, [
+        [["a"], 1],
+        [["b"], 2],
+      ])
+    })
   })
   describe("excludeByPath", () => {
-    it("exclude none", () =>
-      assert.deepEqual(
-        Array.from(
-          excludeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [],
-          ),
+    it("exclude none", async () => {
+      const seq = await toArray(
+        excludeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [],
         ),
-        [
-          [["a"], 1],
-          [["b"], 2],
-        ],
-      ))
-    it("exclude one", () =>
-      assert.deepEqual(
-        Array.from(
-          excludeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [[{ type: "match", match: "a" }]],
-          ),
+      )
+      assert.deepEqual(seq, [
+        [["a"], 1],
+        [["b"], 2],
+      ])
+    })
+    it("exclude one", async () => {
+      const seq = await toArray(
+        excludeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [[{ type: "match", match: "a" }]],
         ),
-        [[["b"], 2]],
-      ))
-    it("exclude two", () =>
-      assert.deepEqual(
-        Array.from(
-          excludeByPath(
-            [
-              [["a"], 1],
-              [["b"], 2],
-            ],
-            [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
-          ),
+      )
+      assert.deepEqual(seq, [[["b"], 2]])
+    })
+    it("exclude two", async () => {
+      const seq = await toArray(
+        excludeByPath(
+          [
+            [["a"], 1],
+            [["b"], 2],
+          ],
+          [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
         ),
-        [],
-      ))
+      )
+      assert.deepEqual(seq, [])
+    })
   })
 })
