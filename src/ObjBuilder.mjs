@@ -9,11 +9,31 @@ function initObject(pathSegment) {
   return typeof pathSegment === "number" && pathSegment >= 0 ? [] : {}
 }
 export default class ObjBuilder {
-  constructor() {
+  /**
+   * @param {{compactArrays?: boolean}} options
+   */
+  constructor(options = {}) {
+    const { compactArrays } = options
     this.object = undefined
+    this.compactArrays = compactArrays ?? false
+  }
+
+  /**
+   *
+   * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
+   * @param {import("../types/baseTypes").JSONValueType} currentObject
+   * @returns {import("../types/baseTypes").JSONSegmentPathType}
+   */
+  calculateRealIndex(pathSegment, currentObject) {
+    if (typeof pathSegment === "string" || !this.compactArrays) {
+      return pathSegment
+    }
+    if (Array.isArray(currentObject)) {
+      return currentObject.length
+    }
+    return 0
   }
   /**
-   * Implement JSON reviver feature as for specs of JSON.parse
    * @param {import("../types/baseTypes").JSONPathType} path
    * @param {import("../types/baseTypes").JSONValueType} value
    * @returns {void}
@@ -30,7 +50,7 @@ export default class ObjBuilder {
     for (let i = 0; i < path.length - 1; i++) {
       // ignoring type errors here:
       // if path is inconsistent with data, it should throw an exception
-      const currentPathSegment = path[i]
+      const currentPathSegment = this.calculateRealIndex(path[i], currentObject)
       const nextPathSegment = path[i + 1]
       // @ts-ignore
       if (currentObject[currentPathSegment] === undefined) {
@@ -41,6 +61,11 @@ export default class ObjBuilder {
       currentObject = currentObject[currentPathSegment]
     }
     // @ts-ignore
-    currentObject[path[path.length - 1]] = value
+    const currentPathSegment = this.calculateRealIndex(
+      path[path.length - 1],
+      currentObject,
+    )
+    // @ts-ignore
+    currentObject[currentPathSegment] = value
   }
 }

@@ -65,19 +65,6 @@ export function slice(sliceFrom?: number, sliceTo?: number): import("../types/ba
  * @returns {import("../types/baseTypes").MatchSegmentType}
  */
 export function strToMatchSegment(str: string, index?: number): import("../types/baseTypes").MatchSegmentType;
-/**
- * parse a json or json fragment
- * @template T
- * @param {AsyncIterable<T>|Iterable<T>} iterator
- * @returns {Promise<Array<T>>}
- */
-export function toArray<T>(iterator: AsyncIterable<T> | Iterable<T>): Promise<T[]>;
-/**
- * parse a json or json fragment
- * @param {AsyncIterable<string>|Iterable<string>} iterator
- * @returns {AsyncIterable<string>}
- */
-export function addTrailingSpace(iterator: AsyncIterable<string> | Iterable<string>): AsyncIterable<string>;
 export class ParsingError extends Error {
     /**
      * @param {string} message

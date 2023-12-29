@@ -34,10 +34,10 @@ export default class JSONParser {
     isFinished(): boolean;
     /**
      * parse a json or json fragment
-     * @param {AsyncIterable<string>|Iterable<string>} chunks
-     * @returns {AsyncIterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+     * @param {string} chunk
+     * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
      */
-    parse(chunks: AsyncIterable<string> | Iterable<string>): AsyncIterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
+    parse(chunk: string): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
 }
 /**
  * Enum for parser state

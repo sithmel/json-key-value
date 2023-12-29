@@ -24,7 +24,7 @@ export class ParsingError extends Error {
  * @returns {boolean}
  */
 export function isWhitespace(c) {
-  return c === "\r" || c === "\n" || c === " " || c === "\t"
+  return c === "\n" || c === " " || c === "\r" || c === "\t"
 }
 
 /**
@@ -149,26 +149,4 @@ export function strToMatchSegment(str, index = 0) {
     return match(str)
   }
   throw new ParsingError(`Invalid fragment : ${str}`, index)
-}
-
-/**
- * parse a json or json fragment
- * @template T
- * @param {AsyncIterable<T>|Iterable<T>} iterator
- * @returns {Promise<Array<T>>}
- */
-export async function toArray(iterator) {
-  const arr = []
-  for await (const i of iterator) arr.push(i)
-  return arr
-}
-
-/**
- * parse a json or json fragment
- * @param {AsyncIterable<string>|Iterable<string>} iterator
- * @returns {AsyncIterable<string>}
- */
-export async function* addTrailingSpace(iterator) {
-  yield* iterator
-  yield " "
 }

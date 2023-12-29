@@ -2,8 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { Matcher, includeByPath, excludeByPath } from "../src/filterByPath.mjs"
-import { toArray } from "../src/utils.mjs"
+import { Matcher, PathMatcher } from "../src/PathMatcher.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 describe("pathMatcher", () => {
@@ -74,86 +73,30 @@ describe("pathMatcher", () => {
       assert.equal(matcher.isExhausted, false)
     })
   })
-  describe("includeByPath", () => {
-    it("includes none", async () => {
-      const seq = await toArray(
-        includeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [],
-        ),
-      )
-      assert.deepEqual(seq, [])
+  describe("PathMatcher", () => {
+    it("matches one", () => {
+      const matchers = new PathMatcher([[{ type: "match", match: "a" }]])
+      matchers.nextMatch(["a"])
+      assert.equal(matchers.doesMatch, true)
+      assert.equal(matchers.isExhausted, false)
+      matchers.nextMatch(["b"])
+      assert.equal(matchers.doesMatch, false)
+      assert.equal(matchers.isExhausted, true)
     })
-    it("includes one", async () => {
-      const seq = await toArray(
-        includeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [[{ type: "match", match: "a" }]],
-        ),
-      )
-      assert.deepEqual(seq, [[["a"], 1]])
-    })
-    it("includes two", async () => {
-      const seq = await toArray(
-        includeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
-        ),
-      )
-      assert.deepEqual(seq, [
-        [["a"], 1],
-        [["b"], 2],
+    it("matches one and finish", () => {
+      const matchers = new PathMatcher([
+        [{ type: "match", match: "a" }],
+        [{ type: "match", match: "b" }],
       ])
-    })
-  })
-  describe("excludeByPath", () => {
-    it("exclude none", async () => {
-      const seq = await toArray(
-        excludeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [],
-        ),
-      )
-      assert.deepEqual(seq, [
-        [["a"], 1],
-        [["b"], 2],
-      ])
-    })
-    it("exclude one", async () => {
-      const seq = await toArray(
-        excludeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [[{ type: "match", match: "a" }]],
-        ),
-      )
-      assert.deepEqual(seq, [[["b"], 2]])
-    })
-    it("exclude two", async () => {
-      const seq = await toArray(
-        excludeByPath(
-          [
-            [["a"], 1],
-            [["b"], 2],
-          ],
-          [[{ type: "match", match: "a" }], [{ type: "match", match: "b" }]],
-        ),
-      )
-      assert.deepEqual(seq, [])
+      matchers.nextMatch(["a"])
+      assert.equal(matchers.doesMatch, true)
+      assert.equal(matchers.isExhausted, false)
+      matchers.nextMatch(["b"])
+      assert.equal(matchers.doesMatch, true)
+      assert.equal(matchers.isExhausted, false)
+      matchers.nextMatch(["c"])
+      assert.equal(matchers.doesMatch, false)
+      assert.equal(matchers.isExhausted, true)
     })
   })
 })

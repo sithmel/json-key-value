@@ -3,7 +3,6 @@ import assert from "assert"
 import pkg from "zunit"
 
 import JSONParser from "../src/JSONParser.mjs"
-import { toArray } from "../src/utils.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 
@@ -12,87 +11,92 @@ describe("JSONParser", () => {
   beforeEach(() => {
     parser = new JSONParser()
   })
-  it("can resume", async () => {
-    const seq = await toArray(parser.parse(['"t', "es", "t", '"']))
+  it("can resume", () => {
+    const seq = []
+    for (const chunk of ['"t', "es", "t", '"']) {
+      for (const item of parser.parse(chunk)) {
+        seq.push(item)
+      }
+    }
     assert.deepEqual(seq, [[[], "test"]])
     assert.equal(parser.isFinished(), true)
   })
 
   describe("strings", () => {
-    it("works with a simple string", async () => {
-      const seq = await toArray(parser.parse('"test"'))
+    it("works with a simple string", () => {
+      const seq = Array.from(parser.parse('"test"'))
       assert.deepEqual(seq, [[[], "test"]])
     })
-    it("works with slashes", async () => {
-      const seq = await toArray(parser.parse('"hello\\nworld"'))
+    it("works with slashes", () => {
+      const seq = Array.from(parser.parse('"hello\\nworld"'))
       assert.deepEqual(seq, [[[], "hello\nworld"]])
     })
-    it("works with unicode", async () => {
-      const seq = await toArray(parser.parse('"hell\\u006f"'))
+    it("works with unicode", () => {
+      const seq = Array.from(parser.parse('"hell\\u006f"'))
       assert.deepEqual(seq, [[[], "hello"]])
     })
   })
   describe("numbers", () => {
-    it("does work without trailing space ", async () => {
-      const seq = await toArray(parser.parse("100"))
+    it("does not work without trailing space ", () => {
+      const seq = Array.from(parser.parse("100"))
+      assert.deepEqual(seq, [])
+    })
+
+    it("works with a number", () => {
+      const seq = Array.from(parser.parse("100 "))
       assert.deepEqual(seq, [[[], 100]])
     })
 
-    it("works with a number", async () => {
-      const seq = await toArray(parser.parse("100 "))
-      assert.deepEqual(seq, [[[], 100]])
-    })
-
-    it("works with decimals", async () => {
-      const seq = await toArray(parser.parse("10.05 "))
+    it("works with decimals", () => {
+      const seq = Array.from(parser.parse("10.05 "))
       assert.deepEqual(seq, [[[], 10.05]])
     })
 
-    it("works with exp", async () => {
-      const seq = await toArray(parser.parse("10e2 "))
+    it("works with exp", () => {
+      const seq = Array.from(parser.parse("10e2 "))
       assert.deepEqual(seq, [[[], 1000]])
     })
 
-    it("works with decimals exp", async () => {
-      const seq = await toArray(parser.parse("10.3e2 "))
+    it("works with decimals exp", () => {
+      const seq = Array.from(parser.parse("10.3e2 "))
       assert.deepEqual(seq, [[[], 1030]])
     })
 
-    it("works with exp and sign", async () => {
-      const seq = await toArray(parser.parse("10e-1 "))
+    it("works with exp and sign", () => {
+      const seq = Array.from(parser.parse("10e-1 "))
       assert.deepEqual(seq, [[[], 1]])
     })
   })
   describe("booleans and null", () => {
-    it("works with true", async () => {
-      const seq = await toArray(parser.parse("true"))
+    it("works with true", () => {
+      const seq = Array.from(parser.parse("true"))
       assert.deepEqual(seq, [[[], true]])
     })
-    it("works with false", async () => {
-      const seq = await toArray(parser.parse("false"))
+    it("works with false", () => {
+      const seq = Array.from(parser.parse("false"))
       assert.deepEqual(seq, [[[], false]])
     })
-    it("works with null", async () => {
-      const seq = await toArray(parser.parse("null"))
+    it("works with null", () => {
+      const seq = Array.from(parser.parse("null"))
       assert.deepEqual(seq, [[[], null]])
     })
   })
   describe("object", () => {
-    it("works with an empty object", async () => {
-      const seq = await toArray(parser.parse("{}"))
+    it("works with an empty object", () => {
+      const seq = Array.from(parser.parse("{}"))
       assert.deepEqual(seq, [[[], {}]])
       assert.equal(parser.isFinished(), true)
     })
-    it("works with a minimal object", async () => {
-      const seq = await toArray(parser.parse(`{"test":1}`))
+    it("works with a minimal object", () => {
+      const seq = Array.from(parser.parse(`{"test":1}`))
       assert.deepEqual(seq, [
         [[], {}],
         [["test"], 1],
       ])
       assert.equal(parser.isFinished(), true)
     })
-    it("works with an object with multiple prop", async () => {
-      const seq = await toArray(parser.parse(`{"test":1, "test1":"xyz"}`))
+    it("works with an object with multiple prop", () => {
+      const seq = Array.from(parser.parse(`{"test":1, "test1":"xyz"}`))
       assert.deepEqual(seq, [
         [[], {}],
         [["test"], 1],
@@ -102,21 +106,21 @@ describe("JSONParser", () => {
     })
   })
   describe("array", () => {
-    it("works with an empty array", async () => {
-      const seq = await toArray(parser.parse("[]"))
+    it("works with an empty array", () => {
+      const seq = Array.from(parser.parse("[]"))
       assert.deepEqual(seq, [[[], []]])
       assert.equal(parser.isFinished(), true)
     })
-    it("works with a minimal array", async () => {
-      const seq = await toArray(parser.parse(`[1]`))
+    it("works with a minimal array", () => {
+      const seq = Array.from(parser.parse(`[1]`))
       assert.deepEqual(seq, [
         [[], []],
         [[0], 1],
       ])
       assert.equal(parser.isFinished(), true)
     })
-    it("works with an array with multiple items", async () => {
-      const seq = await toArray(parser.parse(`[1,"xyz"]`))
+    it("works with an array with multiple items", () => {
+      const seq = Array.from(parser.parse(`[1,"xyz"]`))
       assert.deepEqual(seq, [
         [[], []],
         [[0], 1],
@@ -126,8 +130,8 @@ describe("JSONParser", () => {
     })
   })
   describe("nesting", () => {
-    it("works with object nested into object (1)", async () => {
-      const seq = await toArray(parser.parse('{"test1":{"test2":1}}'))
+    it("works with object nested into object (1)", () => {
+      const seq = Array.from(parser.parse('{"test1":{"test2":1}}'))
       assert.deepEqual(seq, [
         [[], {}],
         [["test1"], {}],
@@ -136,10 +140,8 @@ describe("JSONParser", () => {
       assert.equal(parser.isFinished(), true)
     })
 
-    it("works with object nested into object (2)", async () => {
-      const seq = await toArray(
-        parser.parse('{"test1":{"test2":1}, "test3":2}'),
-      )
+    it("works with object nested into object (2)", () => {
+      const seq = Array.from(parser.parse('{"test1":{"test2":1}, "test3":2}'))
       assert.deepEqual(seq, [
         [[], {}],
         [["test1"], {}],
@@ -149,8 +151,8 @@ describe("JSONParser", () => {
       assert.equal(parser.isFinished(), true)
     })
 
-    it("works with object nested into arrays (1)", async () => {
-      const seq = await toArray(parser.parse('[{"test1":1}, {"test2":2}]'))
+    it("works with object nested into arrays (1)", () => {
+      const seq = Array.from(parser.parse('[{"test1":1}, {"test2":2}]'))
       assert.deepEqual(seq, [
         [[], []],
         [[0], {}],
@@ -161,8 +163,8 @@ describe("JSONParser", () => {
       assert.equal(parser.isFinished(), true)
     })
 
-    it("works with object nested into arrays (2)", async () => {
-      const seq = await toArray(
+    it("works with object nested into arrays (2)", () => {
+      const seq = Array.from(
         parser.parse('[{"test1":[1, "xyz"]}, {"test2":2}]'),
       )
       assert.deepEqual(seq, [
@@ -177,8 +179,8 @@ describe("JSONParser", () => {
       assert.equal(parser.isFinished(), true)
     })
 
-    it("works with object nested into arrays (3)", async () => {
-      const seq = await toArray(parser.parse("[[1, 2, 3], [4, 5, 6]]"))
+    it("works with object nested into arrays (3)", () => {
+      const seq = Array.from(parser.parse("[[1, 2, 3], [4, 5, 6]]"))
       assert.deepEqual(seq, [
         [[], []],
         [[0], []],

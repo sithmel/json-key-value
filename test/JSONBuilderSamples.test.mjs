@@ -23,13 +23,15 @@ describe("JSONBuilder sample files", () => {
     it(`works with ${filename}`, async () => {
       let str = ""
 
-      const builder = new JSONBuilder(async (data) => {
-        str += data
+      const builder = new JSONBuilder({
+        onData: async (data) => {
+          str += data
+        },
       })
       const json = await fs.readFile(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for await (const [k, v] of parser.parse([json])) {
+      for await (const [k, v] of parser.parse(json)) {
         builder.add(k, v)
       }
       await builder.end()

@@ -10,8 +10,10 @@ const { describe, it, oit, odescribe } = pkg
 async function testObj(obj) {
   let str = ""
   const parser = new ObjParser()
-  const builder = new JSONBuilder(async (data) => {
-    str += data
+  const builder = new JSONBuilder({
+    onData: async (data) => {
+      str += data
+    },
   })
   for (const [path, value] of parser.parse(obj)) {
     builder.add(path, value)
@@ -20,10 +22,13 @@ async function testObj(obj) {
   assert.deepEqual(JSON.parse(str), obj, str)
 }
 
-async function testSequence(sequence, obj) {
+async function testSequence(sequence, obj, compactArrays = false) {
   let str = ""
-  const builder = new JSONBuilder(async (data) => {
-    str += data
+  const builder = new JSONBuilder({
+    compactArrays,
+    onData: async (data) => {
+      str += data
+    },
   })
   for (const [path, value] of sequence) {
     builder.add(path, value)
@@ -117,6 +122,17 @@ describe("JSONBuilder", () => {
         [[null, 1], [2]],
       )
     })
+    it("works with 1 array with more elements (compacting)", () => {
+      testSequence(
+        [
+          [[0, 1], 1],
+          [[1, 0], 2],
+        ],
+        [[1], [2]],
+        true,
+      )
+    })
+
     it("works with mix array and obj", () => {
       testSequence(
         [
@@ -130,13 +146,26 @@ describe("JSONBuilder", () => {
     it("reconstruct missing array pieces", () => {
       testSequence([[[2], 1]], [null, null, 1])
     })
-    it("reconstruct missing array pieces", () => {
+    it("compacts when missing array pieces", () => {
+      testSequence([[[2], 1]], [1], true)
+    })
+    it("reconstruct missing array pieces(2)", () => {
       testSequence(
         [
           [[0], "a"],
           [[3], 1],
         ],
         ["a", null, null, 1],
+      )
+    })
+    it("compacts when missing array pieces(2)", () => {
+      testSequence(
+        [
+          [[0], "a"],
+          [[3], 1],
+        ],
+        ["a", 1],
+        true,
       )
     })
   })

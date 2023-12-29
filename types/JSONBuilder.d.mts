@@ -1,15 +1,19 @@
 export default class JSONBuilder {
     /**
      * JSONBuilder
-     * @param {(arg0: string) => Promise<void>} onData
+     * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
      */
-    constructor(onData: (arg0: string) => Promise<void>);
+    constructor({ onData, compactArrays }: {
+        onData: (arg0: string) => Promise<void>;
+        compactArrays?: boolean | undefined;
+    });
     /** @type {import("../types/baseTypes").JSONPathType} */
     currentPath: import("../types/baseTypes").JSONPathType;
     onData: (arg0: string) => Promise<void>;
     /** @type CONTEXT */
     context: CONTEXT;
     lastWritePromise: Promise<void>;
+    compactArrays: boolean;
     /**
      * @param {string} str
      */

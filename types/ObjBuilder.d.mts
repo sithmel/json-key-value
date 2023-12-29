@@ -1,7 +1,20 @@
 export default class ObjBuilder {
-    object: import("../types/baseTypes").JSONValueType | undefined;
     /**
-     * Implement JSON reviver feature as for specs of JSON.parse
+     * @param {{compactArrays?: boolean}} options
+     */
+    constructor(options?: {
+        compactArrays?: boolean | undefined;
+    });
+    object: import("../types/baseTypes").JSONValueType | undefined;
+    compactArrays: boolean;
+    /**
+     *
+     * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
+     * @param {import("../types/baseTypes").JSONValueType} currentObject
+     * @returns {import("../types/baseTypes").JSONSegmentPathType}
+     */
+    calculateRealIndex(pathSegment: import("../types/baseTypes").JSONSegmentPathType, currentObject: import("../types/baseTypes").JSONValueType): import("../types/baseTypes").JSONSegmentPathType;
+    /**
      * @param {import("../types/baseTypes").JSONPathType} path
      * @param {import("../types/baseTypes").JSONValueType} value
      * @returns {void}

@@ -22,15 +22,16 @@ const CONTEXT = {
 export default class JSONBuilder {
   /**
    * JSONBuilder
-   * @param {(arg0: string) => Promise<void>} onData
+   * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
    */
-  constructor(onData) {
+  constructor({ onData, compactArrays = false }) {
     /** @type {import("../types/baseTypes").JSONPathType} */
     this.currentPath = []
     this.onData = onData
     /** @type CONTEXT */
     this.context = CONTEXT.NULL
     this.lastWritePromise = Promise.resolve()
+    this.compactArrays = compactArrays
   }
 
   /**
@@ -102,9 +103,11 @@ export default class JSONBuilder {
             `Index are in the wrong order: before ${previousIndex} then ${pathSegment} in [${path}]`,
           )
         }
-        const numberOfNulls = pathSegment - (previousIndex + 1)
-        if (numberOfNulls > 0) {
-          this._output(Array(numberOfNulls).fill("null").join(",") + ",")
+        if (!this.compactArrays) {
+          const numberOfNulls = pathSegment - (previousIndex + 1)
+          if (numberOfNulls > 0) {
+            this._output(Array(numberOfNulls).fill("null").join(",") + ",")
+          }
         }
       } else {
         this._output(

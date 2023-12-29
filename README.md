@@ -28,10 +28,12 @@ JSONParser is a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) complia
 
 ```js
 const parser = new JSONParser()
-for await (const [path, value] of parser.parse(['{"hello": "wo', '"rld"}'])) {
+for (const [path, value] of parser.parse(['{"hello": "wo', '"rld"}'])) {
   console.log(path, value) // ["hello"] "world"
 }
 ```
+
+_There is a extremely rare corner case where the parser doesn't work as expected: when a json consists in a single number. In that case it is necessary to add a trailing space to make it work correctly!_
 
 ## ObjParser
 
@@ -71,14 +73,24 @@ objBuilder.add([2], "hello world")
 objBuilder.object === [null, null, "hello world"]
 ```
 
+Unless the options `compactArrays` is true:
+
+```js
+const objBuilder = new ObjBuilder({ compactArrays: true })
+objBuilder.add([2], "hello world")
+objBuilder.object === ["hello world"]
+```
+
 ## JSONBuilder
 
 JSONBuilder allows to reconstruct a JSON stream from a sequence:
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder(async (data) => {
-  str += data // this is an async function to allow writing to a buffer
+const jsonBuilder = new JSONBuilder({
+  onData: async (data) => {
+    str += data // this is an async function to allow writing to a buffer
+  },
 })
 objBuilder.add([], {}) // build initial object
 objBuilder.add(["hello"], "world")
@@ -92,8 +104,10 @@ The implementation forgives if "containers" (arrays and objects) are omitted.
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder(async (data) => {
-  str += data
+const jsonBuilder = new JSONBuilder({
+  onData: async (data) => {
+    str += data
+  },
 })
 objBuilder.add(["hello"], "world")
 await objBuilder.end()
@@ -104,12 +118,29 @@ It also fills empty array positions with nulls:
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder(async (data) => {
-  str += data
+const jsonBuilder = new JSONBuilder({
+  onData: async (data) => {
+    str += data
+  },
 })
 objBuilder.add([2], "hello world")
 await objBuilder.end()
 str === '[null,null,"hello world"]'
+```
+
+Unless the options `compactArrays` is chosen:
+
+```js
+let str = ""
+const jsonBuilder = new JSONBuilder({
+  onData: async (data) => {
+    str += data
+  },
+  compactArrays: true,
+})
+objBuilder.add([2], "hello world")
+await objBuilder.end()
+str === '["hello world"]'
 ```
 
 ## Utilities
@@ -177,32 +208,39 @@ to:
 
 I suggest [iter-tools](https://github.com/iter-tools/iter-tools) to work with iterables and async iterables.
 
-## filterByPath
+## PathMatcher
 
 A frequent type of filtering of these sequences is based on the "path". This is more complex than a simple filter, because it should be able to figure out when matches are no longer possible so that it is not necessary to parse the rest of the JSON.
 
 ```js
-async function getPricesWithVAT(obj) {
+function getPricesWithVAT(obj) {
   const builder = new ObjBuilder()
   const parser = new ObjParser()
-
-  for await (const [path, value] of filterByPath(
-    parser.parse(obj),
-    [[match(prices)]], // this is a list of all paths to include
-  )) {
+  const matcher = new Matcher([[match(prices)]]) // this is a path expression (see below)
+  for (const [path, value] of matcher.filterSequence(parser.parse(obj))) {
     builder.add(path.slice(1), value * 0.2)
   }
   return builder.object
 }
 ```
 
-filterByPath takes as input:
+`filterSequence` is a shorthand method that allows to filter an iterable by path.
+It is the equivalent of:
 
-- an iterable or asyncIterable of path, value pairs
-- a list of path expressions matching the pairs to include
-- a list of path expressions matching the pairs to exclude
-
-It returns an asyncIterable with the filtered path, value pairs.
+```js
+for (const [path, value] of parser.parse(obj)) {
+  // ingest the path and check
+  // - does it match? (doesMatch)
+  // - are there any other matches possible? (isExhausted)
+  matcher.nextMatch(path)
+  if (matcher.doesMatch) {
+    builder.add(path.slice(1), value * 0.2)
+  }
+  if (matcher.isExhausted) {
+    break
+  }
+}
+```
 
 ## Path expressions
 
@@ -222,7 +260,7 @@ Enough with the explanation! Let's see the syntax.
 Path expressions can be an array of paths, with each path being an array of fragments.
 For example:
 
-```js
+```
 [
   [{type: "match", match: "hello"}, {type: "match", match: 2}],
   [{type: "match", match: "world"}, {type: "slice": sliceFrom: 0, sliceTo: 3}],
@@ -240,8 +278,8 @@ _match_ is used for direct match of object keys or array index.
 _slice_ is used to match an interval of indexes. If the first index is omitted, is assumed to be 0, if the last is omitted is assumed to be Infinity.
 It is also possible to use helpers to make it more concise:
 
-```js
-;[
+```
+[
   [match("hello"), match(2)],
   [match("world"), slice(0, 3)],
 ]
@@ -285,17 +323,28 @@ async function filterJSONStream(readable, writable, include, controller) {
   const writer = writable.getWriter()
 
   const parser = new JSONParser()
-  const builder = new JSONBuilder(async (data) =>
-    writer.write(encoder.encode(data)),
-  )
+  const builder = new JSONBuilder({
+    onData: async (data) => writer.write(encoder.encode(data)),
+  })
+  const matcher = new PathMatcher(include)
 
-  const chunks = decodedReadableStream(readable)
-  const iterable = parser.parse(chunks)
-  const filtered = filterByPath(iterable, include)
-  for await (const [path, value] of filtered) {
-    builder.add(path, value)
+  for await (const chunk of decodedReadableStream(readable)) {
+    if (matcher.isExhausted) {
+      break
+    }
+
+    for (const [path, value] of parser.parse(chunk)) {
+      matcher.nextMatch(path)
+      if (matcher.doesMatch) {
+        builder.add(path, value)
+      }
+      if (matcher.isExhausted) {
+        break
+      }
+    }
   }
-  controller.abort() // this interrupt the fetch when I get the data I need!
+
+  controller.abort()
   await builder.end()
 }
 
@@ -323,12 +372,24 @@ async function filterFile(filename, include) {
   const readStream = fs.createReadStream(filename, { encoding: "utf-8" })
   const parser = new JSONParser()
   const builder = new ObjBuilder()
+  const matcher = new PathMatcher(include)
 
-  const iterable = parser.parse(readStream)
-  for await (const [path, value] of filterByPath(iterable, include)) {
-    builder.add(path, value)
+  for await (const chunk of readStream) {
+    if (matcher.isExhausted) {
+      break
+    }
+
+    for (const [path, value] of parser.parse(chunk)) {
+      matcher.nextMatch(path)
+      if (matcher.doesMatch) {
+        builder.add(path, value)
+      }
+      if (matcher.isExhausted) {
+        break
+      }
+    }
   }
-  readStream.destroy() // no need to read the rest
+  readStream.destroy()
   return builder.object
 }
 ```

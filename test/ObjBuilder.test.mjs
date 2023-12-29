@@ -4,7 +4,7 @@ import pkg from "zunit"
 
 import ObjBuilder from "../src/ObjBuilder.mjs"
 
-const { describe, it } = pkg
+const { describe, it, oit } = pkg
 
 describe("ObjBuilder", () => {
   it("works with scalars", () => {
@@ -40,5 +40,11 @@ describe("ObjBuilder", () => {
     objBuilder.add(["a"], [])
     objBuilder.add(["a", 3], 3)
     assert.deepEqual(objBuilder.object, { a: [, , , 3] })
+  })
+  it("compacts arrays", () => {
+    const objBuilder = new ObjBuilder({ compactArrays: true })
+    objBuilder.add(["a"], [])
+    objBuilder.add(["a", 3], 3)
+    assert.deepEqual(objBuilder.object, { a: [3] })
   })
 })
