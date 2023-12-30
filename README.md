@@ -1,11 +1,11 @@
 # json-key-value
 
-json-key-value is a toolkit to work with JSON as they are converted to a sequence to path value pairs.
+json-key-value is a toolkit to work with JSON as they are converted to a sequence to path value pairs. It is minimal (no dependencies) but work well with other libraries. It is designed for both server and client.
 
 ## The idea
 
 The main idea behind this library is that a JSON can be converted into a sequence of "path, value" pairs and can be reconstructed from this sequence.
-This allows to filter and transform a big JSON as a stream, without having to load it in memory
+This allows to filter and transform a big JSON as a stream, without having to load it in memory. It also make it easier to work with JSON and JS objects using filter/map/reduce.
 
 An example of a sequence is:
 
@@ -19,39 +19,42 @@ An example of a sequence is:
 
 ## About the ordering
 
-Streaming JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the normal order in which data are stored in JSON.
+Streaming out JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the normal order in which data are stored in JSON.
 Alternatively, it also works if the paths are sorted comparing object keys in lexicographic order and array indexes from the smallest to the biggest. In this case, the structure will be respected, but not necessarily the order the keys presents in the original JSON (ES2015 standard introduced the concept of key ordering, but it is not respected here).
 
-## JSONParser
+## StreamToSequence
 
-JSONParser is a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser, designed to work with an iterable or asyncIterable of strings. String decoding from buffer is not provided, leaving that to different buffer implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
+StreamToSequence converts chunk of strings coming from an iterable in a sequence.
+It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. String decoding from buffer is not provided, leaving that to different buffer implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
 
 ```js
-const parser = new JSONParser()
-for (const [path, value] of parser.parse(['{"hello": "wo', '"rld"}'])) {
+const parser = new StreamToSequence()
+for (const chunk of ['{"hello": "wo', '"rld"}']) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value) // ["hello"] "world"
+  }
+}
+```
+
+_There is an extremely rare corner case where the parser doesn't work as expected: when a json consists in a **single number and no trailing spaces**. In that case it is necessary to add a trailing space to make it work correctly!_
+
+## ObjectToSequence
+
+ObjectToSequence transforms a js object into a sequence:
+
+```js
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter({ hello: world })) {
   console.log(path, value) // ["hello"] "world"
 }
 ```
 
-_There is a extremely rare corner case where the parser doesn't work as expected: when a json consists in a single number. In that case it is necessary to add a trailing space to make it work correctly!_
+## SequenceToObject
 
-## ObjParser
-
-ObjParser transforms a js object to a sequence of path values:
+SequenceToObject reconstructs an object from a sequence:
 
 ```js
-const parser = new ObjParser()
-for (const [path, value] of parser.parse({ hello: world })) {
-  console.log(path, value) // ["hello"] "world"
-}
-```
-
-## ObjBuilder
-
-ObjBuilder reconstructs an object from a sequence:
-
-```js
-const objBuilder = new ObjBuilder()
+const objBuilder = new SequenceToObject()
 objBuilder.add([], {}) // build initial object
 objBuilder.add(["hello"], "world")
 objBuilder.object === { hello: "world" }
@@ -60,7 +63,7 @@ objBuilder.object === { hello: "world" }
 The implementation forgives if "containers" (arrays and objects) are omitted
 
 ```js
-const objBuilder = new ObjBuilder()
+const objBuilder = new SequenceToObject()
 objBuilder.add(["hello"], "world")
 objBuilder.object === { hello: "world" }
 ```
@@ -68,7 +71,7 @@ objBuilder.object === { hello: "world" }
 It also fills empty array positions with nulls:
 
 ```js
-const objBuilder = new ObjBuilder()
+const objBuilder = new SequenceToObject()
 objBuilder.add([2], "hello world")
 objBuilder.object === [null, null, "hello world"]
 ```
@@ -76,25 +79,25 @@ objBuilder.object === [null, null, "hello world"]
 Unless the options `compactArrays` is true:
 
 ```js
-const objBuilder = new ObjBuilder({ compactArrays: true })
+const objBuilder = new SequenceToObject({ compactArrays: true })
 objBuilder.add([2], "hello world")
 objBuilder.object === ["hello world"]
 ```
 
-## JSONBuilder
+## SequenceToStream
 
-JSONBuilder allows to reconstruct a JSON stream from a sequence:
+SequenceToStream allows to reconstruct a JSON stream from a sequence:
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder({
+const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
     str += data // this is an async function to allow writing to a buffer
   },
 })
-objBuilder.add([], {}) // build initial object
-objBuilder.add(["hello"], "world")
-await objBuilder.end() // wait that all pairs are emitted
+jsonStreamer.add([], {}) // build initial object
+jsonStreamer.add(["hello"], "world")
+await jsonStreamer.end() // wait that all pairs are emitted
 str === '{"hello":"world"}'
 ```
 
@@ -104,13 +107,13 @@ The implementation forgives if "containers" (arrays and objects) are omitted.
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder({
+const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
     str += data
   },
 })
-objBuilder.add(["hello"], "world")
-await objBuilder.end()
+jsonStreamer.add(["hello"], "world")
+await jsonStreamer.end()
 str === '{"hello":"world"}'
 ```
 
@@ -118,13 +121,13 @@ It also fills empty array positions with nulls:
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder({
+const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
     str += data
   },
 })
-objBuilder.add([2], "hello world")
-await objBuilder.end()
+jsonStreamer.add([2], "hello world")
+await jsonStreamer.end()
 str === '[null,null,"hello world"]'
 ```
 
@@ -132,14 +135,14 @@ Unless the options `compactArrays` is chosen:
 
 ```js
 let str = ""
-const jsonBuilder = new JSONBuilder({
+const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
     str += data
   },
   compactArrays: true,
 })
-objBuilder.add([2], "hello world")
-await objBuilder.end()
+jsonStreamer.add([2], "hello world")
+await jsonStreamer.end()
 str === '["hello world"]'
 ```
 
@@ -147,7 +150,7 @@ str === '["hello world"]'
 
 ### reviver
 
-The [JSON parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) method has an optional argument "reviver" that allows to transform the js object. This can't work on a sequence, and for this reason is provided as a separate function.
+The native [JSON parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) has an optional argument "reviver" that allows to transform the js object. This can't work on a sequence, and for this reason is provided as a separate function.
 
 ### pathConverter
 
@@ -165,14 +168,14 @@ path === pathConverter.stringToPath(pathString)
 
 # Work with the sequence
 
-Both JSONParser.parse and ObjParser.parse returns an iterable of path/value pairs (asyncIterable in case of JSONParser.parse).
-These can be transformed using a for await loop, and then converted to an object (ObjBuilder) or a JSON stream (JSONBuilder):
+Both StreamToSequence.iter and ObjectToSequence.iter return an iterable of path/value pairs.
+These can be transformed using a for await loop, and then converted to an object (SequenceToObject) or a JSON stream (SequenceToStream):
 
 ```js
 function getPricesWithVAT(obj) {
-  const builder = new ObjBuilder()
-  const parser = new ObjParser()
-  for (const await [path, value] of parser.parse(obj)) {
+  const builder = new SequenceToObject()
+  const parser = new ObjectToSequence()
+  for (const await [path, value] of parser.iter(obj)) {
     if (path[0] === "prices") {
       builder.add(path.slice(1), value * 0.2)
     }
@@ -199,7 +202,7 @@ to:
 
 ```json
 {
-  "Subscription 1 month": 20,
+  "Subscription 1 month": 24,
   "Subscription 2 month": 42,
   "Subscription 6 month": 120,
   "Subscription 1 year": 216
@@ -214,11 +217,11 @@ A frequent type of filtering of these sequences is based on the "path". This is 
 
 ```js
 function getPricesWithVAT(obj) {
-  const builder = new ObjBuilder()
-  const parser = new ObjParser()
-  const matcher = new Matcher([[match(prices)]]) // this is a path expression (see below)
-  for (const [path, value] of matcher.filterSequence(parser.parse(obj))) {
-    builder.add(path.slice(1), value * 0.2)
+  const builder = new SequenceToObject()
+  const parser = new ObjectToSequence()
+  const matcher = new Matcher([[match("prices")]]) // this is a path expression (see below)
+  for (const [path, value] of matcher.filterSequence(parser.iter(obj))) {
+    builder.add(path.slice(1), value * 1.2)
   }
   return builder.object
 }
@@ -228,37 +231,89 @@ function getPricesWithVAT(obj) {
 It is the equivalent of:
 
 ```js
-for (const [path, value] of parser.parse(obj)) {
-  // ingest the path and check
-  // - does it match? (doesMatch)
-  // - are there any other matches possible? (isExhausted)
-  matcher.nextMatch(path)
-  if (matcher.doesMatch) {
-    builder.add(path.slice(1), value * 0.2)
+function getPricesWithVAT(obj) {
+  const builder = new SequenceToObject()
+  const parser = new ObjectToSequence()
+
+  const matcher = new Matcher([[match("prices")]])
+
+  for (const [path, value] of parser.iter(obj)) {
+    // ingest the path and check
+    // - does it match? (doesMatch)
+    // - are there any other matches possible? (isExhausted)
+    matcher.nextMatch(path)
+    if (matcher.doesMatch) {
+      builder.add(path.slice(1), value * 1.2)
+    }
+    if (matcher.isExhausted) {
+      break
+    }
   }
-  if (matcher.isExhausted) {
-    break
-  }
+  return builder.object
 }
 ```
 
 ## Path expressions
 
-Path expressions are a concise way to match a JSON fragment by path. It is not a general purpose query language like [json pointer](https://datatracker.ietf.org/doc/rfc6901/) or [json path](https://datatracker.ietf.org/doc/draft-ietf-jsonpath-base/). They are designed to work on js objects while are loaded in memory. Path expressions are intentionally limited to performant filtering of path/value sequences.
+Path expressions are a concise way to match a JSON fragment by path. It is not a general purpose query language like [json pointer](https://datatracker.ietf.org/doc/rfc6901/) or [json path](https://datatracker.ietf.org/doc/draft-ietf-jsonpath-base/). Because they are designed to work on js objects while streamed. Path expressions are intentionally limited to performant filtering of path/value sequences.
 With path expressions you can match fragments of path by their position, array indices and slices.
-Here are a list of features that were deliberately excluded as they make impossible to terminate early:
+Here are a list of features that were deliberately excluded as they make impossible to terminate the stream as soon as all possible matches are exhausted:
 
 - any type of fragment matching that is not a direct match (negative match, globbing, reg exp )
 - match by value
 - fragment match at any level
 
 These can all be easily implemented using a regular **filter** function, like the one that can be found in [iter-tools](https://github.com/iter-tools/iter-tools).
-Enough with the explanation! Let's see the syntax.
+Enough with the explanation! Let's have a look at the syntax.
 
 ## Path expressions as arrays
 
-Path expressions can be an array of paths, with each path being an array of fragments.
+A single path expression allows to match a subtree of a JSON by its path.
 For example:
+
+```
+[{type: "match", match: "universe"}]
+```
+
+Matches all paths starting with "universe". For example:
+
+```
+["universe"]
+["universe", "earth"]
+etc.
+```
+
+It is possible to specify a subtree like this:
+
+```
+[{type: "match", match: "universe"}, {type: "match", match: "earth"}]
+```
+
+That matches:
+
+```
+["universe", "earth"]
+["universe", "earth", "Europe"]
+etc.
+```
+
+And doesn't match
+
+```
+["universe"]
+["universe", "mars"]
+etc.
+```
+
+Path expressions support direct match of object keys and array indexes as well as array slices.
+_match_ is used for direct match of object keys or array index.
+_slice_ is used to match an interval of indexes.
+
+- `{type: "match", match: "universe"}`
+- `{type: "match", match: 2}`
+- `{type: "slice": sliceFrom: 0, sliceTo: 3}`
+
+They are used in an array to allow multiple matches:
 
 ```
 [
@@ -269,13 +324,11 @@ For example:
 
 These are matching paths that starts with:
 
-- hello[2]
-- world[0]
-- world[1]
-- world[2]
+- **["hello", 2]**
+- **["world", 0]**
+- **["world", 1]**
+- **["world", 2]**
 
-_match_ is used for direct match of object keys or array index.
-_slice_ is used to match an interval of indexes. If the first index is omitted, is assumed to be 0, if the last is omitted is assumed to be Infinity.
 It is also possible to use helpers to make it more concise:
 
 ```
@@ -284,6 +337,8 @@ It is also possible to use helpers to make it more concise:
   [match("world"), slice(0, 3)],
 ]
 ```
+
+Using the slice helper, if the first index is omitted, is assumed to be 0, if the last is omitted is assumed to be Infinity.
 
 ## Path expressions as strings
 
@@ -303,6 +358,9 @@ These are all equivalent expressions:
 ```
 
 Either brackets or dots can be used as separators. Strings can be wrapped in double quotes: in this case any character can be used, but special character needs to be escaped as described in the [JSON specs](https://datatracker.ietf.org/doc/html/rfc8259). Unquoted strings can be used but only letters, numbers and underscores can be used.
+On slices, if the first number is omitted, is considered 0, if the second number is omitted is considered Infinity.
+
+**stringToPathExp and pathExpToString** can be used to convert string to path expressions and vice versa. PathMatcher does the conversion automatically.
 
 # Examples
 
@@ -322,8 +380,8 @@ async function filterJSONStream(readable, writable, include, controller) {
   const encoder = new TextEncoder()
   const writer = writable.getWriter()
 
-  const parser = new JSONParser()
-  const builder = new JSONBuilder({
+  const parser = new StreamToSequence()
+  const builder = new SequenceToStream({
     onData: async (data) => writer.write(encoder.encode(data)),
   })
   const matcher = new PathMatcher(include)
@@ -333,7 +391,7 @@ async function filterJSONStream(readable, writable, include, controller) {
       break
     }
 
-    for (const [path, value] of parser.parse(chunk)) {
+    for (const [path, value] of parser.iter(chunk)) {
       matcher.nextMatch(path)
       if (matcher.doesMatch) {
         builder.add(path, value)
@@ -370,8 +428,8 @@ This function read part of a JSON from a file.
 ```js
 async function filterFile(filename, include) {
   const readStream = fs.createReadStream(filename, { encoding: "utf-8" })
-  const parser = new JSONParser()
-  const builder = new ObjBuilder()
+  const parser = new StreamToSequence()
+  const builder = new SequenceToObject()
   const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
@@ -379,7 +437,7 @@ async function filterFile(filename, include) {
       break
     }
 
-    for (const [path, value] of parser.parse(chunk)) {
+    for (const [path, value] of parser.iter(chunk)) {
       matcher.nextMatch(path)
       if (matcher.doesMatch) {
         builder.add(path, value)
@@ -393,3 +451,44 @@ async function filterFile(filename, include) {
   return builder.object
 }
 ```
+
+## Streaming and non streaming parser
+
+The library provides 2 ways to get a sequence `ObjectToSequence` and `StreamToSequence`.
+You can use ObjectToSequence to return a sequence of path, value pairs from an object.
+
+```js
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter(obj)) {
+  // ..
+}
+```
+
+Of course you can easily convert it from a string:
+
+```js
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter(JSON.parse(obj))) {
+  // ..
+}
+```
+
+How does this differ from StreamToSequence? When should we use one or the other?
+StreamToSequence is a streaming parser, so it doesn't require to load the entire string in memory to work.
+
+From the point of view of raw speed StreamToSequence is approximatively 10 times slower.
+However, there are 2 specific cases that makes it convenient:
+
+### Memory footprint
+
+StreamToSequence is much more memory friendly, not having to load the entire JSON as a string in memory. In my experience this doesn't necessarily reflect in a speed penalty, as the garbage collector is very fast. However, loading huge file can cause to run out of memory.
+
+### Partial loading
+
+Using PathMatcher, we don't necessarily need to read an entire stream to get the data we need.
+That means that there are 2 factors to influence the speed:
+
+- How much of the stream do I need to read as average?
+- How fast is the stream? (is it a file on a local SSD? a network resource? etc.)
+
+This is often something worth testing before picking the right tool.

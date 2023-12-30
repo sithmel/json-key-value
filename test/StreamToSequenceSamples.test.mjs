@@ -4,15 +4,15 @@ import pkg from "zunit"
 import fs from "fs/promises"
 import path from "path"
 
-import ObjBuilder from "../src/ObjBuilder.mjs"
-import JSONParser from "../src/JSONParser.mjs"
+import SequenceToObject from "../src/SequenceToObject.mjs"
+import StreamToSequence from "../src/StreamToSequence.mjs"
 
 const { describe, it, beforeEach } = pkg
 
-describe("JSONParser sample files", () => {
+describe("StreamToSequence sample files", () => {
   let parser
   beforeEach(() => {
-    parser = new JSONParser()
+    parser = new StreamToSequence()
   })
   for (const filename of [
     "creationix.json",
@@ -21,17 +21,17 @@ describe("JSONParser sample files", () => {
     "twitter.json",
   ]) {
     it(`works with ${filename}`, async () => {
-      const objBuilder = new ObjBuilder()
+      const builder = new SequenceToObject()
       const json = await fs.readFile(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for (const [k, v] of parser.parse(json)) {
-        objBuilder.add(k, v)
+      for (const [k, v] of parser.iter(json)) {
+        builder.add(k, v)
       }
 
       assert.equal(parser.isFinished(), true)
       const parsed = JSON.parse(json)
-      assert.deepEqual(objBuilder.object, parsed)
+      assert.deepEqual(builder.object, parsed)
     })
   }
 })

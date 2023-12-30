@@ -1,6 +1,6 @@
 import { PathMatcher } from "../src/PathMatcher.mjs"
-import JSONParser from "../src/JSONParser.mjs"
-import ObjBuilder from "../src/ObjBuilder.mjs"
+import StreamToSequence from "../src/StreamToSequence.mjs"
+import SequenceToObject from "../src/SequenceToObject.mjs"
 import fs from "fs"
 import path from "path"
 
@@ -9,8 +9,8 @@ async function filterFile(filename, include) {
     path.join("test", "samples", filename),
     { encoding: "utf-8" },
   )
-  const parser = new JSONParser()
-  const builder = new ObjBuilder({ compactArrays: true })
+  const parser = new StreamToSequence()
+  const builder = new SequenceToObject({ compactArrays: true })
   const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
@@ -18,7 +18,7 @@ async function filterFile(filename, include) {
       break
     }
 
-    for (const [path, value] of parser.parse(chunk)) {
+    for (const [path, value] of parser.iter(chunk)) {
       matcher.nextMatch(path)
       if (matcher.doesMatch) {
         builder.add(path, value)
@@ -34,7 +34,7 @@ async function filterFile(filename, include) {
 
 let t0 = performance.now()
 // console.profile()
-const obj = await filterFile("twitter.json", "[1000]")
+const obj = await filterFile("twitter.json", "[1600]")
 // console.profileEnd()
 // console.log(obj)
 console.log(performance.now() - t0)

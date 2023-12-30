@@ -1,5 +1,5 @@
 //@ts-check
-import toPathExp from "./toPathExp.mjs"
+import { stringToPathExp } from "./pathExp.mjs"
 export class Matcher {
   /**
    * Performs matches and checks if the matcher will no longer
@@ -27,6 +27,7 @@ export class Matcher {
   }
 
   /**
+   * @package
    * @param {number} level
    */
   _setIsExhausted(level) {
@@ -34,6 +35,7 @@ export class Matcher {
     this.doesMatch = false
   }
   /**
+   * @package
    * @param {number} level
    */
   _setLevelExhausted(level) {
@@ -43,6 +45,7 @@ export class Matcher {
     }
   }
   /**
+   * Check for match
    * @param {import("../types/baseTypes").JSONPathType} path
    */
   nextMatch(path) {
@@ -80,17 +83,21 @@ export class Matcher {
 }
 export class PathMatcher {
   /**
+   * Matches multiple patch expressions until they are exhausted
    * @param {Array<import("../types/baseTypes").MatchPathType>|string} matchersDataOrString
    */
   constructor(matchersDataOrString) {
-    const matchersData = toPathExp(matchersDataOrString)
+    const matchersData = stringToPathExp(matchersDataOrString)
     /** @type Array<Matcher> */
     this.matchers = matchersData.map((m) => new Matcher(m))
     this.filterExhausted = new Set()
     this.isExhausted = false
     this.doesMatch = false
   }
+
   /**
+   * Check if a path is matching with any path expressions.
+   * It updates the attributes "doesMatch" and "IsExhausted"
    * @param {import("../types/baseTypes").JSONPathType} path
    */
   nextMatch(path) {
@@ -117,6 +124,7 @@ export class PathMatcher {
   }
 
   /**
+   * Shorthand to filter an iterable of path/value pairs
    * @param {Array<import("../types/baseTypes").JSONPathValueType>} iterable
    */
   *filterSequence(iterable) {

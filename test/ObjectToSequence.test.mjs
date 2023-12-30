@@ -2,8 +2,8 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import ObjParser from "../src/ObjParser.mjs"
-import ObjBuilder from "../src/ObjBuilder.mjs"
+import ObjectToSequence from "../src/ObjectToSequence.mjs"
+import SequenceToObject from "../src/SequenceToObject.mjs"
 
 const { describe, it, beforeEach } = pkg
 
@@ -11,10 +11,10 @@ describe("ObjParser", () => {
   let parse
   let builder
   beforeEach(() => {
-    builder = new ObjBuilder()
-    const parser = new ObjParser()
+    builder = new SequenceToObject()
+    const parser = new ObjectToSequence()
     parse = (obj) => {
-      for (const [path, value] of parser.parse(obj)) {
+      for (const [path, value] of parser.iter(obj)) {
         builder.add(path, value)
       }
     }

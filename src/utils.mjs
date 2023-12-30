@@ -20,6 +20,7 @@ export class ParsingError extends Error {
 
 /**
  * Check if there is a white space
+ * @package
  * @param {string} c
  * @returns {boolean}
  */
@@ -29,6 +30,7 @@ export function isWhitespace(c) {
 
 /**
  * Return true if value is an array or object
+ * @package
  * @param {any} value
  * @returns {boolean}
  */
@@ -38,6 +40,7 @@ export function isArrayOrObject(value) {
 
 /**
  * Return oldPath and newPath excluding the common part
+ * @package
  * @param {import("../types/baseTypes").JSONPathType} oldPath
  * @param {import("../types/baseTypes").JSONPathType} newPath
  * @returns {number}
@@ -54,6 +57,7 @@ export function getCommonPathIndex(oldPath, newPath) {
 
 /**
  * Transform a value in JSON
+ * @package
  * @param {import("../types/baseTypes").JSONValueType} value
  * @returns {string}
  */
@@ -70,6 +74,7 @@ export function valueToString(value) {
 
 /**
  * Yields item arrays from end back to index, yield true on last
+ * @package
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -83,6 +88,7 @@ export function* fromEndToIndex(array, index) {
 
 /**
  * Yields item arrays from index to end, yield true on first
+ * @package
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -96,6 +102,7 @@ export function* fromIndexToEnd(array, index) {
 
 /**
  * "}" or "]"
+ * @package
  * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
  * @returns {string}
  */
@@ -128,6 +135,7 @@ const unquotedStringRE = /^[a-zA-Z_]+[a-zA-Z_0-9]*$/
 
 /**
  * Generate MatchSegmentType from a string
+ * @package
  * @param {string} str
  * @param {number} index
  * @returns {import("../types/baseTypes").MatchSegmentType}

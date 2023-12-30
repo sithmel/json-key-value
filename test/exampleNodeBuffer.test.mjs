@@ -3,8 +3,8 @@ import assert from "assert"
 import pkg from "zunit"
 
 import { PathMatcher } from "../src/PathMatcher.mjs"
-import JSONParser from "../src/JSONParser.mjs"
-import ObjBuilder from "../src/ObjBuilder.mjs"
+import StreamToSequence from "../src/StreamToSequence.mjs"
+import SequenceToObject from "../src/SequenceToObject.mjs"
 import fs from "fs"
 import path from "path"
 
@@ -19,8 +19,8 @@ async function filterFile(filename, include) {
     path.join("test", "samples", filename),
     { encoding: "utf-8" },
   )
-  const parser = new JSONParser()
-  const builder = new ObjBuilder()
+  const parser = new StreamToSequence()
+  const builder = new SequenceToObject()
   const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
@@ -28,7 +28,7 @@ async function filterFile(filename, include) {
       break
     }
 
-    for (const [path, value] of parser.parse(chunk)) {
+    for (const [path, value] of parser.iter(chunk)) {
       matcher.nextMatch(path)
       if (matcher.doesMatch) {
         builder.add(path, value)

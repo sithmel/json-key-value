@@ -6,7 +6,7 @@ import {
   fromEndToIndex,
   fromIndexToEnd,
   pathSegmentTerminator,
-} from "../src/utils.mjs"
+} from "./utils.mjs"
 
 /**
  * Enum for CONTEXT
@@ -19,9 +19,9 @@ const CONTEXT = {
   NULL: "NULL",
 }
 
-export default class JSONBuilder {
+export default class SequenceToStream {
   /**
-   * JSONBuilder
+   * Convert a sequence of path value pairs to a stream of characters
    * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
    */
   constructor({ onData, compactArrays = false }) {
@@ -35,6 +35,7 @@ export default class JSONBuilder {
   }
 
   /**
+   * @package
    * @param {string} str
    */
   async _output(str) {
@@ -42,7 +43,7 @@ export default class JSONBuilder {
     this.lastWritePromise = this.onData(str)
   }
   /**
-   * add a sequence
+   * add a new path value pair
    * @param {import("../types/baseTypes").JSONPathType} path
    * @param {import("../types/baseTypes").JSONValueType} value
    * @returns {void}

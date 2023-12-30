@@ -48,6 +48,7 @@ const STATE = {
 const NON_STRING_RE = /^[0-9a-zA-Z_:]$/
 
 /**
+ * @package
  * @param {string} pathStr
  * @returns {Array<import("../types/baseTypes").MatchPathType>}
  */
@@ -189,11 +190,42 @@ function pathExpToMatcherData(pathStr) {
 }
 
 /**
- * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} path
+ * Convert a path expression to array
+ * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} paths
  * @returns {Array<import("../types/baseTypes").MatchPathType>}
  */
-export default function toPathExp(path) {
-  if (path === null) return []
-  if (typeof path === "string") return pathExpToMatcherData(path)
-  return path
+export function stringToPathExp(paths) {
+  if (paths === null) return []
+  if (typeof paths === "string") return pathExpToMatcherData(paths)
+  return paths
+}
+
+/**
+ * Convert a path expression to string
+ * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} paths
+ * @returns {string}
+ */
+export function pathExpToString(paths) {
+  if (paths === null) return ""
+  if (typeof paths === "string") return paths
+  return paths
+    .map((path) => {
+      return path
+        .map((pathSegment) => {
+          if (pathSegment.type === "slice") {
+            const sliceFrom =
+              pathSegment.sliceFrom === 0
+                ? ""
+                : pathSegment.sliceFrom.toString()
+            const sliceTo =
+              pathSegment.sliceTo === Infinity
+                ? ""
+                : pathSegment.sliceTo.toString()
+            return `${sliceFrom}:${sliceTo}`
+          }
+          return JSON.stringify(pathSegment.match) // match
+        })
+        .join(".")
+    })
+    .join(",")
 }

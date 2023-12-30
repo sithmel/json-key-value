@@ -1,4 +1,4 @@
-export default class JSONBuilder {
+export default class SequenceToStream {
     /**
      * JSONBuilder
      * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
@@ -41,4 +41,4 @@ declare namespace CONTEXT {
     let NULL: string;
 }
 export {};
-//# sourceMappingURL=JSONBuilder.d.mts.map
+//# sourceMappingURL=SequenceToStream.d.mts.map

@@ -2,14 +2,16 @@
 
 /**
  * Implement JSON reviver feature as for specs of JSON.parse
+ * @package
  * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
  * @returns {{}|[]}
  */
 function initObject(pathSegment) {
   return typeof pathSegment === "number" && pathSegment >= 0 ? [] : {}
 }
-export default class ObjBuilder {
+export default class SequenceToObject {
   /**
+   * Convert a sequence to a js object
    * @param {{compactArrays?: boolean}} options
    */
   constructor(options = {}) {
@@ -19,12 +21,12 @@ export default class ObjBuilder {
   }
 
   /**
-   *
+   * @package
    * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
    * @param {import("../types/baseTypes").JSONValueType} currentObject
    * @returns {import("../types/baseTypes").JSONSegmentPathType}
    */
-  calculateRealIndex(pathSegment, currentObject) {
+  _calculateRealIndex(pathSegment, currentObject) {
     if (typeof pathSegment === "string" || !this.compactArrays) {
       return pathSegment
     }
@@ -33,7 +35,9 @@ export default class ObjBuilder {
     }
     return 0
   }
+
   /**
+   * Update the object with a new path value pairs
    * @param {import("../types/baseTypes").JSONPathType} path
    * @param {import("../types/baseTypes").JSONValueType} value
    * @returns {void}
@@ -50,7 +54,10 @@ export default class ObjBuilder {
     for (let i = 0; i < path.length - 1; i++) {
       // ignoring type errors here:
       // if path is inconsistent with data, it should throw an exception
-      const currentPathSegment = this.calculateRealIndex(path[i], currentObject)
+      const currentPathSegment = this._calculateRealIndex(
+        path[i],
+        currentObject,
+      )
       const nextPathSegment = path[i + 1]
       // @ts-ignore
       if (currentObject[currentPathSegment] === undefined) {
@@ -61,7 +68,7 @@ export default class ObjBuilder {
       currentObject = currentObject[currentPathSegment]
     }
     // @ts-ignore
-    const currentPathSegment = this.calculateRealIndex(
+    const currentPathSegment = this._calculateRealIndex(
       path[path.length - 1],
       currentObject,
     )

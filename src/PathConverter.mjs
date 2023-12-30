@@ -14,6 +14,7 @@ export default class PathConverter {
   /**
    * Transform an array index in a string that
    * can be sorted in lexicographic order
+   * @package
    * @param {number} index
    * @returns {string}
    */
@@ -27,6 +28,7 @@ export default class PathConverter {
   }
   /**
    * Transform a string in an array index
+   * @package
    * @param {string} str
    * @returns {number}
    */
@@ -34,7 +36,7 @@ export default class PathConverter {
     return parseInt(str.slice(this.numberPrefix.length + 1))
   }
   /**
-   * Convert a path to a string
+   * Convert a path from array to string
    * @param {import("../types/baseTypes").JSONPathType} path
    * @returns {string}
    */
@@ -48,7 +50,7 @@ export default class PathConverter {
       .join(this.separator)
   }
   /**
-   *
+   * Convert a path from string to a array
    * @param {string} str
    * @returns {import("../types/baseTypes").JSONPathType}
    */

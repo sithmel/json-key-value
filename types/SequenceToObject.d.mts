@@ -1,4 +1,4 @@
-export default class ObjBuilder {
+export default class SequenceToObject {
     /**
      * @param {{compactArrays?: boolean}} options
      */
@@ -13,7 +13,7 @@ export default class ObjBuilder {
      * @param {import("../types/baseTypes").JSONValueType} currentObject
      * @returns {import("../types/baseTypes").JSONSegmentPathType}
      */
-    calculateRealIndex(pathSegment: import("../types/baseTypes").JSONSegmentPathType, currentObject: import("../types/baseTypes").JSONValueType): import("../types/baseTypes").JSONSegmentPathType;
+    _calculateRealIndex(pathSegment: import("../types/baseTypes").JSONSegmentPathType, currentObject: import("../types/baseTypes").JSONValueType): import("../types/baseTypes").JSONSegmentPathType;
     /**
      * @param {import("../types/baseTypes").JSONPathType} path
      * @param {import("../types/baseTypes").JSONValueType} value
@@ -21,4 +21,4 @@ export default class ObjBuilder {
      */
     add(path: import("../types/baseTypes").JSONPathType, value: import("../types/baseTypes").JSONValueType): void;
 }
-//# sourceMappingURL=ObjBuilder.d.mts.map
+//# sourceMappingURL=SequenceToObject.d.mts.map

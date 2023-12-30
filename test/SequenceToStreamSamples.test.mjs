@@ -4,15 +4,15 @@ import pkg from "zunit"
 import fs from "fs/promises"
 import path from "path"
 
-import JSONBuilder from "../src/JSONBuilder.mjs"
-import JSONParser from "../src/JSONParser.mjs"
+import SequenceToStream from "../src/SequenceToStream.mjs"
+import StreamToSequence from "../src/StreamToSequence.mjs"
 
 const { describe, oit, it, beforeEach } = pkg
 
-describe("JSONBuilder sample files", () => {
+describe("SequenceToStream sample files", () => {
   let parser
   beforeEach(() => {
-    parser = new JSONParser()
+    parser = new StreamToSequence()
   })
   for (const filename of [
     "creationix.json",
@@ -23,7 +23,7 @@ describe("JSONBuilder sample files", () => {
     it(`works with ${filename}`, async () => {
       let str = ""
 
-      const builder = new JSONBuilder({
+      const builder = new SequenceToStream({
         onData: async (data) => {
           str += data
         },
@@ -31,7 +31,7 @@ describe("JSONBuilder sample files", () => {
       const json = await fs.readFile(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for await (const [k, v] of parser.parse(json)) {
+      for await (const [k, v] of parser.iter(json)) {
         builder.add(k, v)
       }
       await builder.end()

@@ -3,8 +3,8 @@ import assert from "assert"
 import pkg from "zunit"
 
 import { PathMatcher } from "../src/PathMatcher.mjs"
-import JSONParser from "../src/JSONParser.mjs"
-import JSONBuilder from "../src/JSONBuilder.mjs"
+import StreamToSequence from "../src/StreamToSequence.mjs"
+import SequenceToStream from "../src/SequenceToStream.mjs"
 
 const { describe, it, oit, before } = pkg
 
@@ -57,8 +57,8 @@ async function filterJSONStream(readable, writable, include, controller) {
   const encoder = new TextEncoder()
   const writer = writable.getWriter()
 
-  const parser = new JSONParser()
-  const builder = new JSONBuilder({
+  const parser = new StreamToSequence()
+  const builder = new SequenceToStream({
     onData: async (data) => writer.write(encoder.encode(data)),
   })
   const matcher = new PathMatcher(include)
@@ -68,7 +68,7 @@ async function filterJSONStream(readable, writable, include, controller) {
       break
     }
 
-    for (const [path, value] of parser.parse(chunk)) {
+    for (const [path, value] of parser.iter(chunk)) {
       matcher.nextMatch(path)
       if (matcher.doesMatch) {
         builder.add(path, value)

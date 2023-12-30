@@ -1,4 +1,4 @@
-export default class JSONParser {
+export default class StreamToSequence {
     state: string;
     /** @type {Array<STATE>} */
     stateStack: Array<STATE>;
@@ -11,22 +11,22 @@ export default class JSONParser {
      * add another segment to the path
      * @param {string|number} segment
      */
-    pushPathSegment(segment: string | number): void;
+    _pushPathSegment(segment: string | number): void;
     /**
      * remove a segment from the path
      * @returns {string|number}
      */
-    popPathSegment(): string | number;
+    _popPathSegment(): string | number;
     /**
      * add another segment to the path
      * @param {STATE} state
      */
-    pushState(state: STATE): void;
+    _pushState(state: STATE): void;
     /**
      * pops the parser state
      * @returns {string}
      */
-    popState(): string;
+    _popState(): string;
     /**
      * Check if there is a white space
      * @returns {boolean}
@@ -37,7 +37,7 @@ export default class JSONParser {
      * @param {string} chunk
      * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
      */
-    parse(chunk: string): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
+    iter(chunk: string): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
 }
 /**
  * Enum for parser state
@@ -71,4 +71,4 @@ declare namespace STATE {
     let END: string;
 }
 export {};
-//# sourceMappingURL=JSONParser.d.mts.map
+//# sourceMappingURL=StreamToSequence.d.mts.map

@@ -2,20 +2,20 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import JSONBuilder from "../src/JSONBuilder.mjs"
-import ObjParser from "../src/ObjParser.mjs"
+import SequenceToStream from "../src/SequenceToStream.mjs"
+import ObjectToSequence from "../src/ObjectToSequence.mjs"
 
 const { describe, it, oit, odescribe } = pkg
 
 async function testObj(obj) {
   let str = ""
-  const parser = new ObjParser()
-  const builder = new JSONBuilder({
+  const parser = new ObjectToSequence()
+  const builder = new SequenceToStream({
     onData: async (data) => {
       str += data
     },
   })
-  for (const [path, value] of parser.parse(obj)) {
+  for (const [path, value] of parser.iter(obj)) {
     builder.add(path, value)
   }
   await builder.end()
@@ -24,7 +24,7 @@ async function testObj(obj) {
 
 async function testSequence(sequence, obj, compactArrays = false) {
   let str = ""
-  const builder = new JSONBuilder({
+  const builder = new SequenceToStream({
     compactArrays,
     onData: async (data) => {
       str += data
@@ -37,7 +37,7 @@ async function testSequence(sequence, obj, compactArrays = false) {
   assert.deepEqual(JSON.parse(str), obj, str)
 }
 
-describe("JSONBuilder", () => {
+describe("SequenceToStream", () => {
   describe("scalars", () => {
     it("works with scalars (1)", () => {
       testObj("test")
