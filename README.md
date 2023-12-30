@@ -28,6 +28,8 @@ StreamToSequence converts chunk of strings coming from an iterable in a sequence
 It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. String decoding from buffer is not provided, leaving that to different buffer implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
 
 ```js
+import { StreamToSequence } from "json-key-value"
+
 const parser = new StreamToSequence()
 for (const chunk of ['{"hello": "wo', '"rld"}']) {
   for (const [path, value] of parser.iter(chunk)) {
@@ -43,6 +45,8 @@ _There is an extremely rare corner case where the parser doesn't work as expecte
 ObjectToSequence transforms a js object into a sequence:
 
 ```js
+import { ObjectToSequence } from "json-key-value"
+
 const parser = new ObjectToSequence()
 for (const [path, value] of parser.iter({ hello: world })) {
   console.log(path, value) // ["hello"] "world"
@@ -54,6 +58,8 @@ for (const [path, value] of parser.iter({ hello: world })) {
 SequenceToObject reconstructs an object from a sequence:
 
 ```js
+import { SequenceToObject } from "json-key-value"
+
 const objBuilder = new SequenceToObject()
 objBuilder.add([], {}) // build initial object
 objBuilder.add(["hello"], "world")
@@ -89,6 +95,8 @@ objBuilder.object === ["hello world"]
 SequenceToStream allows to reconstruct a JSON stream from a sequence:
 
 ```js
+import { SequenceToStream } from "json-key-value"
+
 let str = ""
 const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
@@ -152,12 +160,20 @@ str === '["hello world"]'
 
 The native [JSON parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) has an optional argument "reviver" that allows to transform the js object. This can't work on a sequence, and for this reason is provided as a separate function.
 
+```js
+import { reviver } from "json-key-value"
+
+const newObject = reviver(obj)
+```
+
 ### pathConverter
 
 PathConverter is a utility class that converts paths in strings (and vice versa).
 It is designed to emit strings that can be stored in a database and retrieved in lexicographic order.
 
 ```js
+import { PathConverter } from "json-key-value"
+
 const separator = "//"
 const numberPrefix = "@@"
 const pathConverter = new PathConverter(separator, prefix)
@@ -172,6 +188,8 @@ Both StreamToSequence.iter and ObjectToSequence.iter return an iterable of path/
 These can be transformed using a for await loop, and then converted to an object (SequenceToObject) or a JSON stream (SequenceToStream):
 
 ```js
+import { SequenceToObject, ObjectToSequence } from "json-key-value"
+
 function getPricesWithVAT(obj) {
   const builder = new SequenceToObject()
   const parser = new ObjectToSequence()
@@ -216,10 +234,12 @@ I suggest [iter-tools](https://github.com/iter-tools/iter-tools) to work with it
 A frequent type of filtering of these sequences is based on the "path". This is more complex than a simple filter, because it should be able to figure out when matches are no longer possible so that it is not necessary to parse the rest of the JSON.
 
 ```js
+import { SequenceToObject, ObjectToSequence, PathMatcher } from "json-key-value"
+
 function getPricesWithVAT(obj) {
   const builder = new SequenceToObject()
   const parser = new ObjectToSequence()
-  const matcher = new Matcher([[match("prices")]]) // this is a path expression (see below)
+  const matcher = new PathMatcher([[match("prices")]]) // this is a path expression (see below)
   for (const [path, value] of matcher.filterSequence(parser.iter(obj))) {
     builder.add(path.slice(1), value * 1.2)
   }
@@ -231,11 +251,13 @@ function getPricesWithVAT(obj) {
 It is the equivalent of:
 
 ```js
+import { SequenceToObject, ObjectToSequence, PathMatcher } from "json-key-value"
+
 function getPricesWithVAT(obj) {
   const builder = new SequenceToObject()
   const parser = new ObjectToSequence()
 
-  const matcher = new Matcher([[match("prices")]])
+  const matcher = new PathMatcher([[match("prices")]])
 
   for (const [path, value] of parser.iter(obj)) {
     // ingest the path and check
@@ -369,6 +391,8 @@ On slices, if the first number is omitted, is considered 0, if the second number
 In this example shows how to filter a JSON using fetch without loading it into memory.
 
 ```js
+import { StreamToSequence, SequenceToStream, PathMatcher } from "json-key-value"
+
 // this transform a readable stream into an asyncIterable of chunks
 async function* decodedReadableStream(readable) {
   const decoder = new TextDecoder()
@@ -426,6 +450,9 @@ async function fetchAndFilter(url, pathExpression) {
 This function read part of a JSON from a file.
 
 ```js
+import fs from "fs"
+import { StreamToSequence, SequenceToObject, PathMatcher } from "json-key-value"
+
 async function filterFile(filename, include) {
   const readStream = fs.createReadStream(filename, { encoding: "utf-8" })
   const parser = new StreamToSequence()
@@ -458,6 +485,8 @@ The library provides 2 ways to get a sequence `ObjectToSequence` and `StreamToSe
 You can use ObjectToSequence to return a sequence of path, value pairs from an object.
 
 ```js
+import { ObjectToSequence } from "json-key-value"
+
 const parser = new ObjectToSequence()
 for (const [path, value] of parser.iter(obj)) {
   // ..
@@ -467,6 +496,8 @@ for (const [path, value] of parser.iter(obj)) {
 Of course you can easily convert it from a string:
 
 ```js
+import { ObjectToSequence } from "json-key-value"
+
 const parser = new ObjectToSequence()
 for (const [path, value] of parser.iter(JSON.parse(obj))) {
   // ..
