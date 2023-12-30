@@ -9,31 +9,35 @@ export default class StreamToSequence {
     unicodeBuffer: string;
     /**
      * add another segment to the path
+     * @package
      * @param {string|number} segment
      */
     _pushPathSegment(segment: string | number): void;
     /**
      * remove a segment from the path
+     * @package
      * @returns {string|number}
      */
     _popPathSegment(): string | number;
     /**
      * add another segment to the path
+     * @package
      * @param {STATE} state
      */
     _pushState(state: STATE): void;
     /**
      * pops the parser state
+     * @package
      * @returns {string}
      */
     _popState(): string;
     /**
-     * Check if there is a white space
+     * Check if the JSON parsing completed correctly
      * @returns {boolean}
      */
     isFinished(): boolean;
     /**
-     * parse a json or json fragment
+     * Parse a json or json fragment, return a sequence of path/value pairs
      * @param {string} chunk
      * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
      */

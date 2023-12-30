@@ -22,20 +22,24 @@ export class Matcher {
     isExhausted: boolean;
     doesMatch: boolean;
     /**
+     * @package
      * @param {number} level
      */
     _setIsExhausted(level: number): void;
     /**
+     * @package
      * @param {number} level
      */
     _setLevelExhausted(level: number): void;
     /**
+     * Check for match
      * @param {import("../types/baseTypes").JSONPathType} path
      */
     nextMatch(path: import("../types/baseTypes").JSONPathType): void;
 }
 export class PathMatcher {
     /**
+     * Matches multiple patch expressions until they are exhausted
      * @param {Array<import("../types/baseTypes").MatchPathType>|string} matchersDataOrString
      */
     constructor(matchersDataOrString: Array<import("../types/baseTypes").MatchPathType> | string);
@@ -45,10 +49,13 @@ export class PathMatcher {
     isExhausted: boolean;
     doesMatch: boolean;
     /**
+     * Check if a path is matching with any path expressions.
+     * It updates the attributes "doesMatch" and "IsExhausted"
      * @param {import("../types/baseTypes").JSONPathType} path
      */
     nextMatch(path: import("../types/baseTypes").JSONPathType): void;
     /**
+     * Shorthand to filter an iterable of path/value pairs
      * @param {Array<import("../types/baseTypes").JSONPathValueType>} iterable
      */
     filterSequence(iterable: Array<import("../types/baseTypes").JSONPathValueType>): Generator<import("../types/baseTypes").JSONValueType[], void, unknown>;

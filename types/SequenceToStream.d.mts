@@ -1,6 +1,6 @@
 export default class SequenceToStream {
     /**
-     * JSONBuilder
+     * Convert a sequence of path value pairs to a stream of characters
      * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
      */
     constructor({ onData, compactArrays }: {
@@ -15,11 +15,12 @@ export default class SequenceToStream {
     lastWritePromise: Promise<void>;
     compactArrays: boolean;
     /**
+     * @package
      * @param {string} str
      */
     _output(str: string): Promise<void>;
     /**
-     * add a sequence
+     * add a new path value pair
      * @param {import("../types/baseTypes").JSONPathType} path
      * @param {import("../types/baseTypes").JSONValueType} value
      * @returns {void}
