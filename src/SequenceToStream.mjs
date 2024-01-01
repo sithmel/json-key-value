@@ -6,6 +6,7 @@ import {
   fromEndToIndex,
   fromIndexToEnd,
   pathSegmentTerminator,
+  isPreviousPathInNewPath,
 } from "./utils.mjs"
 
 /**
@@ -69,7 +70,7 @@ export default class SequenceToStream {
         this._output("{")
       }
     }
-    if (previousPath.length >= path.length) {
+    if (!isPreviousPathInNewPath(previousPath, path)) {
       if (this.context === CONTEXT.OBJECT) {
         this._output("}")
       } else if (this.context === CONTEXT.ARRAY) {

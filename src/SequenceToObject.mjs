@@ -18,6 +18,9 @@ export default class SequenceToObject {
     const { compactArrays } = options
     this.object = undefined
     this.compactArrays = compactArrays ?? false
+
+    this.lastArray = undefined
+    this.lastArrayIndex = undefined
   }
 
   /**
@@ -31,6 +34,15 @@ export default class SequenceToObject {
       return pathSegment
     }
     if (Array.isArray(currentObject)) {
+      // copy values locally
+      const lastArray = this.lastArray
+      const lastArrayIndex = this.lastArrayIndex
+      // update with new values
+      this.lastArray = currentObject
+      this.lastArrayIndex = pathSegment
+      if (currentObject === lastArray && lastArrayIndex === pathSegment) {
+        return currentObject.length - 1
+      }
       return currentObject.length
     }
     return 0

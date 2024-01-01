@@ -47,4 +47,40 @@ describe("SequenceToObject", () => {
     builder.add(["a", 3], 3)
     assert.deepEqual(builder.object, { a: [3] })
   })
+  it("compacts arrays (2)", () => {
+    const builder = new SequenceToObject({ compactArrays: true })
+    builder.add(["collection", 2], {})
+    builder.add(["collection", 2, "brand"], "Rolls Royce")
+    builder.add(["collection", 2, "number"], 8)
+    assert.deepEqual(builder.object, {
+      collection: [{ brand: "Rolls Royce", number: 8 }],
+    })
+  })
+
+  it("compacts arrays (3)", () => {
+    const builder = new SequenceToObject({ compactArrays: true })
+    builder.add(["collection", 2], {})
+    builder.add(["collection", 3, "brand"], "Rolls Royce")
+    builder.add(["collection", 3, "number"], 8)
+    assert.deepEqual(builder.object, {
+      collection: [{}, { brand: "Rolls Royce", number: 8 }],
+    })
+  })
+  it("compacts arrays (4)", () => {
+    const builder = new SequenceToObject({ compactArrays: true })
+    builder.add(["collection", 2], {})
+    builder.add(["collection2", 3, "brand"], "Rolls Royce")
+    builder.add(["collection2", 4, "number"], 8)
+    assert.deepEqual(builder.object, {
+      collection2: [
+        {
+          brand: "Rolls Royce",
+        },
+        {
+          number: 8,
+        },
+      ],
+      collection: [{}],
+    })
+  })
 })

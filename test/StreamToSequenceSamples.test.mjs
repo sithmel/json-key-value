@@ -7,7 +7,7 @@ import path from "path"
 import SequenceToObject from "../src/SequenceToObject.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 
-const { describe, it, beforeEach } = pkg
+const { describe, it, oit, beforeEach } = pkg
 
 describe("StreamToSequence sample files", () => {
   let parser

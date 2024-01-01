@@ -10,6 +10,11 @@ describe("PathConverter", () => {
   beforeEach(() => {
     convert = new PathConverter()
   })
+  it("converts a empty path", () => {
+    assert.equal(convert.pathToString([]), "")
+    assert.deepEqual(convert.stringToPath(""), [])
+  })
+
   it("converts a path", () => {
     assert.equal(convert.pathToString(["a", "b", "c"]), "a//b//c")
   })

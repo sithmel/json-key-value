@@ -39,90 +39,54 @@ async function testSequence(sequence, obj, compactArrays = false) {
 
 describe("SequenceToStream", () => {
   describe("scalars", () => {
-    it("works with scalars (1)", () => {
-      testObj("test")
-    })
-    it("works with scalars (2)", () => {
-      testObj(1.2)
-    })
+    it("works with scalars (1)", () => testObj("test"))
+    it("works with scalars (2)", () => testObj(1.2))
   })
   describe("objects", () => {
-    it("works if empty", () => {
-      testObj({})
-    })
-    it("works with 1 attribute", () => {
-      testObj({ test: 1 })
-    })
-    it("works with 1 nested objects", () => {
-      testObj({ test: { test2: 2 } })
-    })
-    it("works with multiple nested objects", () => {
-      testObj({ test: { test2: { test3: 3 } } })
-    })
-    it("works with more attributes", () => {
-      testObj({ test: 1, test2: 2 })
-    })
-    it("works with multiple nested objects and attributes", () => {
-      testObj({ test: { test2: { test3: 3 } }, test4: 2, test5: "hello" })
-    })
+    it("works if empty", () => testObj({}))
+    it("works with 1 attribute", () => testObj({ test: 1 }))
+    it("works with 1 nested objects", () => testObj({ test: { test2: 2 } }))
+    it("works with multiple nested objects", () =>
+      testObj({ test: { test2: { test3: 3 } } }))
+    it("works with more attributes", () => testObj({ test: 1, test2: 2 }))
+    it("works with multiple nested objects and attributes", () =>
+      testObj({ test: { test2: { test3: 3 } }, test4: 2, test5: "hello" }))
   })
   describe("array", () => {
-    it("works if empty", () => {
-      testObj([])
-    })
-    it("works if 1 element", () => {
-      testObj([1])
-    })
-    it("works if 2 element", () => {
-      testObj([1, "A"])
-    })
-    it("works with nested arrays", () => {
-      testObj([1, ["A", [2]], 3])
-    })
+    it("works if empty", () => testObj([]))
+    it("works if 1 element", () => testObj([1]))
+    it("works if 2 element", () => testObj([1, "A"]))
+    it("works with nested arrays", () => testObj([1, ["A", [2]], 3]))
   })
   describe("array and nested objects", () => {
-    it("works with empty obj array", () => {
-      testObj([{}, {}])
-    })
-    it("works obj in array", () => {
-      testObj([{ test: 2 }])
-    })
-    it("works obj in array", () => {
-      testObj({ test: [1, 2, { a: 2, b: 3 }, 4] })
-    })
+    it("works with empty obj array", () => testObj([{}, {}]))
+    it("works obj in array", () => testObj([{ test: 2 }]))
+    it("works obj in array", () => testObj({ test: [1, 2, { a: 2, b: 3 }, 4] }))
   })
   describe("reconstruct from sequence", () => {
-    it("works with 1 obj 1 attr", () => {
-      testSequence([[["a"], 1]], { a: 1 })
-    })
-    it("works with 1 obj deep paths", () => {
-      testSequence([[["a", "b", "c"], true]], { a: { b: { c: true } } })
-    })
-    it("works with 1 obj more attribs", () => {
+    it("works with 1 obj 1 attr", () => testSequence([[["a"], 1]], { a: 1 }))
+    it("works with 1 obj deep paths", () =>
+      testSequence([[["a", "b", "c"], true]], { a: { b: { c: true } } }))
+    it("works with 1 obj more attribs", () =>
       testSequence(
         [
           [["a", "b"], true],
           [["x", "y"], false],
         ],
         { a: { b: true }, x: { y: false } },
-      )
-    })
-    it("works with 1 array 1 attr", () => {
-      testSequence([[[0], 1]], [1])
-    })
-    it("works with 1 array deep paths", () => {
-      testSequence([[[0, 0, 0], 1]], [[[1]]])
-    })
-    it("works with 1 array with more elements", () => {
+      ))
+    it("works with 1 array 1 attr", () => testSequence([[[0], 1]], [1]))
+    it("works with 1 array deep paths", () =>
+      testSequence([[[0, 0, 0], 1]], [[[1]]]))
+    it("works with 1 array with more elements", () =>
       testSequence(
         [
           [[0, 1], 1],
           [[1, 0], 2],
         ],
         [[null, 1], [2]],
-      )
-    })
-    it("works with 1 array with more elements (compacting)", () => {
+      ))
+    it("works with 1 array with more elements (compacting)", () =>
       testSequence(
         [
           [[0, 1], 1],
@@ -130,35 +94,30 @@ describe("SequenceToStream", () => {
         ],
         [[1], [2]],
         true,
-      )
-    })
+      ))
 
-    it("works with mix array and obj", () => {
+    it("works with mix array and obj", () =>
       testSequence(
         [
           [[0, "a", "b"], true],
           [[0, "c", "d"], false],
         ],
         [{ a: { b: true }, c: { d: false } }],
-      )
-    })
+      ))
 
-    it("reconstruct missing array pieces", () => {
-      testSequence([[[2], 1]], [null, null, 1])
-    })
-    it("compacts when missing array pieces", () => {
-      testSequence([[[2], 1]], [1], true)
-    })
-    it("reconstruct missing array pieces(2)", () => {
+    it("reconstruct missing array pieces", () =>
+      testSequence([[[2], 1]], [null, null, 1]))
+    it("compacts when missing array pieces", () =>
+      testSequence([[[2], 1]], [1], true))
+    it("reconstruct missing array pieces(2)", () =>
       testSequence(
         [
           [[0], "a"],
           [[3], 1],
         ],
         ["a", null, null, 1],
-      )
-    })
-    it("compacts when missing array pieces(2)", () => {
+      ))
+    it("compacts when missing array pieces(2)", () =>
       testSequence(
         [
           [[0], "a"],
@@ -166,7 +125,42 @@ describe("SequenceToStream", () => {
         ],
         ["a", 1],
         true,
-      )
-    })
+      ))
+    it("compacts arrays", () =>
+      testSequence(
+        [
+          [["collection", 2], {}],
+          [["collection", 2, "brand"], "Rolls Royce"],
+          [["collection", 2, "number"], 8],
+        ],
+        {
+          collection: [{ brand: "Rolls Royce", number: 8 }],
+        },
+        true,
+      ))
+    it("reconstruct with skipping indexes", () =>
+      testSequence(
+        [
+          [["collection", 2], {}],
+          [["collection", 3, "brand"], "Rolls Royce"],
+          [["collection", 3, "number"], 8],
+        ],
+        {
+          collection: [{}, { brand: "Rolls Royce", number: 8 }],
+        },
+        true,
+      ))
+    it("reconstruct with skipping indexes", () =>
+      testSequence(
+        [
+          [["collection", 2], {}],
+          [["collection", 3, "brand"], "Rolls Royce"],
+          [["collection", 3, "number"], 8],
+        ],
+        {
+          collection: [null, null, {}, { brand: "Rolls Royce", number: 8 }],
+        },
+        false,
+      ))
   })
 })

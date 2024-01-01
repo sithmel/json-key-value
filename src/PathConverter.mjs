@@ -55,6 +55,7 @@ export default class PathConverter {
    * @returns {import("../types/baseTypes").JSONPathType}
    */
   stringToPath(str) {
+    if (str.length === 0) return []
     return str
       .split(this.separator)
       .map((str) =>

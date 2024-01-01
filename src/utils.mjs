@@ -56,6 +56,24 @@ export function getCommonPathIndex(oldPath, newPath) {
 }
 
 /**
+ * Check if oldPath is contained in the new path
+ * @package
+ * @param {import("../types/baseTypes").JSONPathType} oldPath
+ * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @returns {boolean}
+ */
+export function isPreviousPathInNewPath(oldPath, newPath) {
+  if (oldPath.length > newPath.length) return false
+  const length = Math.min(oldPath.length, newPath.length)
+  for (let i = 0; i < length; i++) {
+    if (oldPath[i] !== newPath[i]) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
  * Transform a value in JSON
  * @package
  * @param {import("../types/baseTypes").JSONValueType} value

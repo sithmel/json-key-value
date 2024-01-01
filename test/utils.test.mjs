@@ -9,6 +9,7 @@ import {
   fromEndToIndex,
   fromIndexToEnd,
   strToMatchSegment,
+  isPreviousPathInNewPath,
 } from "../src/utils.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
@@ -130,5 +131,24 @@ describe("utils", () => {
         type: "match",
         match: "xyz12",
       }))
+  })
+  describe("isPreviousPathInNewPath", () => {
+    it("works on same path", () =>
+      assert.equal(isPreviousPathInNewPath(["x"], ["x"]), true))
+    it("works with empty paths", () =>
+      assert.equal(isPreviousPathInNewPath([], []), true))
+    it("works with empty paths (2)", () =>
+      assert.equal(isPreviousPathInNewPath([], ["x"]), true))
+    it("works with empty paths (3)", () =>
+      assert.equal(isPreviousPathInNewPath(["x"], []), false))
+    it("works with common path", () =>
+      assert.equal(isPreviousPathInNewPath(["x", "y"], ["x", "y", 1]), true))
+    it("works with uncommon path", () =>
+      assert.equal(
+        isPreviousPathInNewPath(["x", "y", 2], ["x", "y", 1]),
+        false,
+      ))
+    it("works with uncommon path (2)", () =>
+      assert.equal(isPreviousPathInNewPath(["x", "y"], ["x"]), false))
   })
 })

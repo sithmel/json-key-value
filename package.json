@@ -1,7 +1,7 @@
 {
   "name": "json-key-value",
   "version": "0.0.5",
-  "description": "",
+  "description": "Allows to work on JSON as a sequence to path/value pairs",
   "main": "src/index.mjs",
   "type": "module",
   "types": "types/index.d.mts",
