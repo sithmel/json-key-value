@@ -1,7 +1,6 @@
 //@ts-check
 
 /**
- * Implement JSON reviver feature as for specs of JSON.parse
  * @package
  * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
  * @returns {{}|[]}
