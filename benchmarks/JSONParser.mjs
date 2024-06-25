@@ -34,7 +34,7 @@ async function filterFile(filename, include) {
 
 let t0 = performance.now()
 // console.profile()
-const obj = await filterFile("twitter.json", "[1600]")
+const obj = await filterFile("twitter.json", "[16000]")
 // console.profileEnd()
 // console.log(obj)
 console.log(performance.now() - t0)

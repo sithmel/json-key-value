@@ -24,13 +24,7 @@ function parseNumber(str, index) {
  * @enum {string}
  */
 const STATE = {
-  VALUE: "VALUE", // general stuff
-  OPEN_OBJECT: "OPEN_OBJECT", // {
-  CLOSE_OBJECT: "CLOSE_OBJECT", // }
-  OPEN_ARRAY: "OPEN_ARRAY", // [
-  CLOSE_ARRAY: "CLOSE_ARRAY", // ]
-  OPEN_KEY: "OPEN_KEY", // , "a"
-  CLOSE_KEY: "CLOSE_KEY", // :
+  IDLE: "IDLE", // general stuff
   TRUE: "TRUE", // r
   TRUE2: "TRUE2", // u
   TRUE3: "TRUE3", // e
@@ -45,168 +39,33 @@ const STATE = {
   STRING: "STRING", // ""
   STRING_SLASH_CHAR: "STRING_SLASH_CHAR", // "\"
   STRING_UNICODE_CHAR: "STRING_UNICODE_CHAR", // "\u"
-  END: "END", // last state
 }
 
-export default class StreamToSequence {
+export default class StreamToSequenceTokenizer {
   /**
    * Convert a stream of characters (in chunks) to a sequence of path/value pairs
    */
   constructor() {
-    this.state = STATE.VALUE
-    /** @type {Array<STATE>} */
-    this.stateStack = [STATE.END]
+    this.state = STATE.IDLE
     this.char = ""
-    /** @type {import("../types/baseTypes").JSONPathType} */
-    this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
     this.stringBuffer = "" // this stores strings temporarily (keys and values)
     this.unicodeBuffer = "" // this stores unicode codes (\uxxx)
   }
 
   /**
-   * add another segment to the path
-   * @package
-   * @param {string|number} segment
-   */
-  _pushPathSegment(segment) {
-    this.currentPath = [...this.currentPath, segment]
-  }
-
-  /**
-   * remove a segment from the path
-   * @package
-   * @returns {string|number}
-   */
-  _popPathSegment() {
-    const lastElement = this.currentPath[this.currentPath.length - 1]
-    this.currentPath = this.currentPath.slice(0, -1)
-    return lastElement
-  }
-
-  /**
-   * add another segment to the path
-   * @package
-   * @param {STATE} state
-   */
-  _pushState(state) {
-    this.stateStack.push(state)
-  }
-
-  /**
-   * pops the parser state
-   * @package
-   * @returns {string}
-   */
-  _popState() {
-    const state = this.stateStack.pop()
-    if (state == null) {
-      throw new Error("Invalid state")
-    }
-    return state
-  }
-
-  /**
-   * Check if the JSON parsing completed correctly
-   * @returns {boolean}
-   */
-  isFinished() {
-    return this.state === STATE.END
-  }
-
-  /**
    * Parse a json or json fragment, return a sequence of path/value pairs
    * @param {string} chunk
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   * @returns {Iterable<string|boolean|null|number|Symbol>}
    */
   *iter(chunk) {
     for (let index = 0; index < chunk.length; index++) {
       this.char = chunk[index]
       switch (this.state) {
-        case STATE.END: // last possible state
-          if (isWhitespace(this.char)) continue
-          throw new ParsingError("Malformed JSON", index)
-
-        case STATE.OPEN_KEY: // after the "," in an object
-          if (isWhitespace(this.char)) continue
-          if (this.char === '"') {
-            this._pushState(STATE.CLOSE_KEY)
-            this.state = STATE.STRING
-            this.stringBuffer = ""
-          } else {
-            throw new ParsingError(
-              'Malformed object key should start with "',
-              index,
-            )
-          }
-          continue
-
-        case STATE.OPEN_OBJECT: // after the "{" in an object
-          if (isWhitespace(this.char)) continue
-          if (this.char === "}") {
-            this.state = this._popState()
-            continue
-          }
-          if (this.char === '"') {
-            this._pushState(STATE.CLOSE_KEY)
-            this.state = STATE.STRING
-            this.stringBuffer = ""
-          } else {
-            throw new ParsingError(
-              'Malformed object key should start with "',
-              index,
-            )
-          }
-          continue
-
-        case STATE.CLOSE_KEY: // after the key is over
-          if (isWhitespace(this.char)) continue
-          if (this.char === ":") {
-            this._pushPathSegment(this.stringBuffer)
-            this._pushState(STATE.CLOSE_OBJECT)
-            this.state = STATE.VALUE
-          } else {
-            throw new ParsingError("Bad object", index)
-          }
-          continue
-
-        case STATE.CLOSE_OBJECT: // after the value is parsed and the object can be closed
-          if (isWhitespace(this.char)) continue
-          if (this.char === "}") {
-            this._popPathSegment()
-            this.state = this._popState()
-          } else if (this.char === ",") {
-            this._popPathSegment()
-            this.state = STATE.OPEN_KEY
-          } else {
-            throw new ParsingError("Bad object", index)
-          }
-          continue
-
-        case STATE.OPEN_ARRAY: // after an array is open
-          if (isWhitespace(this.char)) continue
-          this._pushPathSegment(0)
-          if (this.char === "]") {
-            this._popPathSegment()
-            this.state = this._popState()
-            continue
-          } else {
-            this.state = STATE.VALUE
-            this._pushState(STATE.CLOSE_ARRAY)
-            index-- // after an array there always a value straight away
-          }
-          continue
-
-        case STATE.VALUE: // any value
+        case STATE.IDLE: // any value
           if (isWhitespace(this.char)) continue
           if (this.char === '"') {
             this.state = STATE.STRING
             this.stringBuffer = ""
-          } else if (this.char === "{") {
-            yield [this.currentPath, {}]
-            this.state = STATE.OPEN_OBJECT
-          } else if (this.char === "[") {
-            yield [this.currentPath, []]
-            this.state = STATE.OPEN_ARRAY
           } else if (this.char === "t") {
             this.state = STATE.TRUE
           } else if (this.char === "f") {
@@ -220,35 +79,27 @@ export default class StreamToSequence {
             // keep and continue
             this.state = STATE.NUMBER
             this.stringBuffer = this.char
-          } else {
-            throw new ParsingError("Bad value", index)
-          }
-          continue
-
-        case STATE.CLOSE_ARRAY: // array ready to end, or restart after the comma
-          if (isWhitespace(this.char)) continue
-          if (this.char === ",") {
-            const formerIndex = this._popPathSegment()
-            if (typeof formerIndex !== "number") {
-              throw new ParsingError("Array index should be a number", index)
-            }
-            this._pushPathSegment(formerIndex + 1) // next item in the array
-            this._pushState(STATE.CLOSE_ARRAY)
-            this.state = STATE.VALUE
+          } else if (this.char === "{") {
+            yield Symbol.for("{")
+          } else if (this.char === "}") {
+            yield Symbol.for("}")
+          } else if (this.char === "[") {
+            yield Symbol.for("[")
           } else if (this.char === "]") {
-            this._popPathSegment() // array is over
-            this.state = this._popState()
+            yield Symbol.for("]")
+          } else if (this.char === ":") {
+            yield Symbol.for(":")
+          } else if (this.char === ",") {
+            yield Symbol.for(",")
           } else {
-            throw new ParsingError("Bad array", index)
+            throw new ParsingError("Invalid character", index)
           }
           continue
 
         case STATE.STRING: // a string (either value or key)
           if (this.char === '"') {
-            this.state = this._popState()
-            if (this.state !== STATE.CLOSE_KEY) {
-              yield [this.currentPath, this.stringBuffer]
-            }
+            yield this.stringBuffer
+            this.state = STATE.IDLE
           } else if (this.char === "\\") {
             this.state = STATE.STRING_SLASH_CHAR
           } else {
@@ -330,8 +181,8 @@ export default class StreamToSequence {
 
         case STATE.TRUE3:
           if (this.char === "e") {
-            yield [this.currentPath, true]
-            this.state = this._popState()
+            yield true
+            this.state = STATE.IDLE
           } else
             throw new ParsingError(
               "Invalid true started with tru" + this.char,
@@ -368,8 +219,8 @@ export default class StreamToSequence {
 
         case STATE.FALSE4:
           if (this.char === "e") {
-            yield [this.currentPath, false]
-            this.state = this._popState()
+            yield false
+            this.state = STATE.IDLE
           } else
             throw new ParsingError(
               "Invalid false started with fals" + this.char,
@@ -397,8 +248,8 @@ export default class StreamToSequence {
 
         case STATE.NULL3:
           if (this.char === "l") {
-            yield [this.currentPath, null]
-            this.state = this._popState()
+            yield null
+            this.state = STATE.IDLE
           } else
             throw new ParsingError(
               "Invalid null started with nul" + this.char,
@@ -416,8 +267,8 @@ export default class StreamToSequence {
           ) {
             this.stringBuffer += this.char
           } else {
-            yield [this.currentPath, parseNumber(this.stringBuffer, index)]
-            this.state = this._popState()
+            yield parseNumber(this.stringBuffer, index)
+            this.state = STATE.IDLE
             index--
           }
           continue
