@@ -41,6 +41,14 @@ const STATE = {
   STRING_UNICODE_CHAR: "STRING_UNICODE_CHAR", // "\u"
 }
 
+const SYMBOLS = {
+  OPEN_BRACES: Symbol.for("{"),
+  CLOSED_BRACES: Symbol.for("}"),
+  OPEN_BRACKET: Symbol.for("["),
+  CLOSED_BRACKET: Symbol.for("]"),
+  COLON: Symbol.for(":"),
+  COMMA: Symbol.for(","),
+}
 export default class StreamToSequenceTokenizer {
   /**
    * Convert a stream of characters (in chunks) to a sequence of path/value pairs
@@ -80,17 +88,17 @@ export default class StreamToSequenceTokenizer {
             this.state = STATE.NUMBER
             this.stringBuffer = this.char
           } else if (this.char === "{") {
-            yield Symbol.for("{")
+            yield SYMBOLS.OPEN_BRACES
           } else if (this.char === "}") {
-            yield Symbol.for("}")
+            yield SYMBOLS.CLOSED_BRACES
           } else if (this.char === "[") {
-            yield Symbol.for("[")
+            yield SYMBOLS.OPEN_BRACKET
           } else if (this.char === "]") {
-            yield Symbol.for("]")
+            yield SYMBOLS.CLOSED_BRACKET
           } else if (this.char === ":") {
-            yield Symbol.for(":")
+            yield SYMBOLS.COLON
           } else if (this.char === ",") {
-            yield Symbol.for(",")
+            yield SYMBOLS.COMMA
           } else {
             throw new ParsingError("Invalid character", index)
           }
