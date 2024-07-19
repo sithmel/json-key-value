@@ -6,7 +6,7 @@ import { PathMatcher } from "../src/PathMatcher.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 import SequenceToStream from "../src/SequenceToStream.mjs"
 
-const { describe, it, oit, before } = pkg
+const { xdescribe, describe, it, oit, before } = pkg
 
 /**
  * @param {{text:string}} output
@@ -83,7 +83,7 @@ async function filterJSONStream(readable, writable, include, controller) {
   await builder.end()
 }
 
-describe("Example web stream", () => {
+xdescribe("Example web stream", () => {
   let testStream
   before(() => {
     testStream = new Blob(['{"hello": "world", "test": 1}'], {

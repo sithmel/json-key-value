@@ -1,13 +1,9 @@
-import { PathMatcher } from "../src/PathMatcher.mjs"
-import StreamToSequenceTokenizer from "../src/StreamToSequenceTokenizer.mjs"
+import StreamToSequenceTokenizer from "../src/StreamJSONTokenizer.mjs"
 import fs from "fs"
 import path from "path"
 
 async function filterFile(filename) {
-  const readStream = fs.createReadStream(
-    path.join("test", "samples", filename),
-    { encoding: "utf-8" },
-  )
+  const readStream = fs.createReadStream(path.join("test", "samples", filename))
   const parser = new StreamToSequenceTokenizer()
 
   for await (const chunk of readStream) {

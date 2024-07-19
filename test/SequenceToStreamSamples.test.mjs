@@ -1,7 +1,7 @@
 //@ts-check
 import assert from "assert"
 import pkg from "zunit"
-import fs from "fs/promises"
+import fs from "fs"
 import path from "path"
 
 import SequenceToStream from "../src/SequenceToStream.mjs"
@@ -28,11 +28,18 @@ describe("SequenceToStream sample files", () => {
           str += data
         },
       })
-      const json = await fs.readFile(path.join("test", "samples", filename), {
+      const readStream = fs.createReadStream(
+        path.join("test", "samples", filename),
+      )
+
+      const json = fs.readFileSync(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for await (const [k, v] of parser.iter(json)) {
-        builder.add(k, v)
+
+      for await (const chunk of readStream) {
+        for await (const [k, v] of parser.iter(chunk)) {
+          builder.add(k, v)
+        }
       }
       await builder.end()
       const original = JSON.parse(json)
