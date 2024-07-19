@@ -4,7 +4,7 @@ import pkg from "zunit"
 
 import StreamToSequence from "../src/StreamToSequence.mjs"
 
-const { describe, it, oit, beforeEach } = pkg
+const { odescribe, describe, it, oit, beforeEach } = pkg
 
 describe("StreamToSequence", () => {
   let parser, encoder, parserIter
@@ -191,6 +191,62 @@ describe("StreamToSequence", () => {
         [[1, 0], 4],
         [[1, 1], 5],
         [[1, 2], 6],
+      ])
+      assert.equal(parser.isFinished(), true)
+    })
+  })
+  describe("nesting with maxDepth", () => {
+    beforeEach(() => {
+      parser = new StreamToSequence({ maxDepth: 1 })
+      encoder = new TextEncoder()
+      parserIter = (text) => Array.from(parser.iter(encoder.encode(text)))
+    })
+
+    it("works with object nested into object (1)", () => {
+      const seq = parserIter('{"test1":{"test2":1}}')
+      assert.deepEqual(seq, [
+        [[], {}],
+        [["test1"], { test2: 1 }],
+      ])
+      assert.equal(parser.isFinished(), true)
+    })
+
+    it("works with object nested into object (2)", () => {
+      const seq = parserIter('{"test1":{"test2":1}, "test3":2}')
+      assert.deepEqual(seq, [
+        [[], {}],
+        [["test1"], { test2: 1 }],
+        [["test3"], 2],
+      ])
+      assert.equal(parser.isFinished(), true)
+    })
+
+    it("works with object nested into arrays (1)", () => {
+      const seq = parserIter('[{"test1":1}, {"test2":2}]')
+      assert.deepEqual(seq, [
+        [[], []],
+        [[0], { test1: 1 }],
+        [[1], { test2: 2 }],
+      ])
+      assert.equal(parser.isFinished(), true)
+    })
+
+    it("works with object nested into arrays (2)", () => {
+      const seq = parserIter('[{"test1":[1, "xyz"]}, {"test2":2}]')
+      assert.deepEqual(seq, [
+        [[], []],
+        [[0], { test1: [1, "xyz"] }],
+        [[1], { test2: 2 }],
+      ])
+      assert.equal(parser.isFinished(), true)
+    })
+
+    it("works with object nested into arrays (3)", () => {
+      const seq = parserIter("[[1, 2, 3], [4, 5, 6]]")
+      assert.deepEqual(seq, [
+        [[], []],
+        [[0], [1, 2, 3]],
+        [[1], [4, 5, 6]],
       ])
       assert.equal(parser.isFinished(), true)
     })

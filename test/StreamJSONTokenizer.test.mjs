@@ -4,7 +4,7 @@ import pkg from "zunit"
 
 import StreamJSONTokenizer, { TOKEN } from "../src/StreamJSONTokenizer.mjs"
 
-const { describe, it, oit, beforeEach } = pkg
+const { describe, odescribe, it, oit, beforeEach } = pkg
 describe("StreamJSONTokenizer", () => {
   let st, encoder, decoder
   beforeEach(() => {
@@ -106,21 +106,21 @@ describe("StreamJSONTokenizer", () => {
     assert.equal(st.getOutputBufferAsString(), '"hello"')
     assert.equal(s.next().value, TOKEN.COLON)
     assert.equal(s.next().value, TOKEN.NUMBER)
-    assert.equal(st.getOutputBufferAsString(), 1)
+    assert.equal(st.getOutputBufferAsString(), "1")
     assert.equal(s.next().value, TOKEN.COMMA)
     assert.equal(s.next().value, TOKEN.STRING)
     assert.equal(st.getOutputBufferAsString(), '"world"')
     assert.equal(s.next().value, TOKEN.COLON)
     assert.equal(s.next().value, TOKEN.OPEN_BRACKET)
     assert.equal(s.next().value, TOKEN.NUMBER)
-    assert.equal(st.getOutputBufferAsString(), 1)
+    assert.equal(st.getOutputBufferAsString(), "1")
     assert.equal(s.next().value, TOKEN.COMMA)
     assert.equal(s.next().value, TOKEN.OPEN_BRACES)
     assert.equal(s.next().value, TOKEN.STRING)
     assert.equal(st.getOutputBufferAsString(), '"ok"')
     assert.equal(s.next().value, TOKEN.COLON)
     assert.equal(s.next().value, TOKEN.NUMBER)
-    assert.equal(st.getOutputBufferAsString(), 2)
+    assert.equal(st.getOutputBufferAsString(), "2")
     assert.equal(s.next().value, TOKEN.CLOSED_BRACES)
     assert.equal(s.next().value, TOKEN.CLOSED_BRACKET)
     assert.equal(s.next().value, TOKEN.CLOSED_BRACES)
@@ -136,7 +136,7 @@ describe("StreamJSONTokenizer", () => {
     assert.equal(st.getOutputBufferAsString(), '"hello"')
     assert.equal(s.next().value, TOKEN.COLON)
     assert.equal(s.next().value, TOKEN.NUMBER)
-    assert.equal(st.getOutputBufferAsString(), 1)
+    assert.equal(st.getOutputBufferAsString(), "1")
     assert.equal(s.next().value, TOKEN.COMMA)
     assert.equal(s.next().done, true)
     s = st.iter(encoder.encode('rld": [1, {"ok": 2}]}'))

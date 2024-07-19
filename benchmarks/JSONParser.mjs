@@ -6,7 +6,7 @@ import path from "path"
 
 async function filterFile(filename, include) {
   const readStream = fs.createReadStream(path.join("test", "samples", filename))
-  const parser = new StreamToSequence()
+  const parser = new StreamToSequence({ maxDepth: 1 })
   const builder = new SequenceToObject({ compactArrays: true })
   const matcher = new PathMatcher(include)
 

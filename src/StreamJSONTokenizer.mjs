@@ -95,7 +95,7 @@ export default class StreamJSONTokenizer {
    * Convert a stream of bytes (in chunks) to a sequence tokens
    */
   constructor() {
-    this.currentBufferIndex = 0
+    this.totalBufferIndex = 0
     this.state = STATE.IDLE
     /** @type Array<number> */
     this.outputBuffer = [] // this stores strings temporarily
@@ -116,11 +116,12 @@ export default class StreamJSONTokenizer {
    */
   *iter(current_buffer) {
     for (
-      this.currentBufferIndex = 0;
-      this.currentBufferIndex < current_buffer.length;
-      this.currentBufferIndex++
+      let currentBufferIndex = 0;
+      currentBufferIndex < current_buffer.length;
+      currentBufferIndex++
     ) {
-      let byte = current_buffer[this.currentBufferIndex]
+      this.totalBufferIndex++
+      let byte = current_buffer[currentBufferIndex]
       switch (this.state) {
         case STATE.IDLE: // any value
           if (
@@ -158,7 +159,7 @@ export default class StreamJSONTokenizer {
           } else if (byte === charCode.COMMA) {
             yield TOKEN.COMMA
           } else {
-            throw new ParsingError("Invalid character", this.currentBufferIndex)
+            throw new ParsingError("Invalid character", this.totalBufferIndex)
           }
           continue
 
@@ -178,10 +179,7 @@ export default class StreamJSONTokenizer {
               byte === charCode.DC2 ||
               byte === charCode.BACKSPACE
             ) {
-              throw new ParsingError(
-                "Invalid character",
-                this.currentBufferIndex,
-              )
+              throw new ParsingError("Invalid character", this.totalBufferIndex)
             }
             this.outputBuffer.push(byte)
           }
@@ -197,7 +195,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid true started with t",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -206,7 +204,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid true started with tr",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -217,7 +215,7 @@ export default class StreamJSONTokenizer {
           } else
             throw new ParsingError(
               "Invalid true started with tru",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -226,7 +224,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid false started with f",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -235,7 +233,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid false started with fa",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -244,7 +242,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid false started with fal",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -255,7 +253,7 @@ export default class StreamJSONTokenizer {
           } else
             throw new ParsingError(
               "Invalid false started with fals",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -264,7 +262,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid null started with n",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -273,7 +271,7 @@ export default class StreamJSONTokenizer {
           else
             throw new ParsingError(
               "Invalid null started with nu",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -284,7 +282,7 @@ export default class StreamJSONTokenizer {
           } else
             throw new ParsingError(
               "Invalid null started with nul",
-              this.currentBufferIndex,
+              this.totalBufferIndex,
             )
           continue
 
@@ -300,14 +298,14 @@ export default class StreamJSONTokenizer {
           } else {
             yield TOKEN.NUMBER
             this.state = STATE.IDLE
-            this.currentBufferIndex--
+            currentBufferIndex--
           }
           continue
 
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
-            this.currentBufferIndex,
+            this.totalBufferIndex,
           )
       }
     }

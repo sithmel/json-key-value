@@ -17,13 +17,18 @@ const STATE = {
   OPEN_KEY: "OPEN_KEY", // , "a"
   CLOSE_KEY: "CLOSE_KEY", // :
   END: "END", // last state
+  SUB_OBJECT: "SUB_OBJECT", // maxDepth has been reached, storing object/array here
 }
 
 export default class StreamToSequence {
   /**
    * Convert a stream of characters (in chunks) to a sequence of path/value pairs
+   * @param {{ maxDepth?: number }} options
    */
-  constructor() {
+  constructor(options = {}) {
+    const { maxDepth = Infinity } = options
+    this.maxDepth = maxDepth
+    this.currentDepthInObject = 0
     this.tokenizer = new StreamJSONTokenizer()
     this.state = STATE.VALUE
     /** @type {Array<STATE>} */
@@ -32,9 +37,53 @@ export default class StreamToSequence {
     /** @type {import("../types/baseTypes").JSONPathType} */
     this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
     this.stringBuffer = "" // this stores strings temporarily (keys and values)
-    this.pastChunksLength = 0
+    this.objectBuffer = "" // when currentDepth is > maxDepth I store things here
   }
 
+  /**
+   * add another segment to the path
+   * @package
+   * @param {TOKEN} token
+   */
+  _addToObjectBuffer(token) {
+    switch (token) {
+      case TOKEN.OPEN_BRACES:
+        this.currentDepthInObject++
+        this.objectBuffer += "{"
+        return
+      case TOKEN.CLOSED_BRACES:
+        this.currentDepthInObject--
+        this.objectBuffer += "}"
+        return
+      case TOKEN.OPEN_BRACKET:
+        this.currentDepthInObject++
+        this.objectBuffer += "["
+        return
+      case TOKEN.CLOSED_BRACKET:
+        this.currentDepthInObject--
+        this.objectBuffer += "]"
+        return
+      case TOKEN.COMMA:
+        this.objectBuffer += ","
+        return
+      case TOKEN.COLON:
+        this.objectBuffer += ":"
+        return
+      case TOKEN.NUMBER:
+      case TOKEN.STRING:
+        this.objectBuffer += this.tokenizer.getOutputBufferAsString()
+        return
+      case TOKEN.TRUE:
+        this.objectBuffer += "true"
+        return
+      case TOKEN.FALSE:
+        this.objectBuffer += "false"
+        return
+      case TOKEN.NULL:
+        this.objectBuffer += "null"
+        return
+    }
+  }
   /**
    * add another segment to the path
    * @package
@@ -96,7 +145,7 @@ export default class StreamToSequence {
         case STATE.END: // last possible state
           throw new ParsingError(
             "Malformed JSON",
-            this.tokenizer.currentBufferIndex + this.pastChunksLength,
+            this.tokenizer.totalBufferIndex,
           )
 
         case STATE.OPEN_KEY: // after the "," in an object
@@ -108,7 +157,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with " (after ",")',
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
@@ -126,7 +175,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with "',
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
@@ -139,7 +188,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting ':' after object key",
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
@@ -154,7 +203,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting '}' or ',' after object value",
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
@@ -167,9 +216,23 @@ export default class StreamToSequence {
             ]
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
+            if (this.currentPath.length >= this.maxDepth) {
+              this.currentDepthInObject = 0
+              this.objectBuffer = ""
+              this._addToObjectBuffer(token)
+              this.state = STATE.SUB_OBJECT
+              continue
+            }
             yield [this.currentPath, {}]
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
+            if (this.currentPath.length >= this.maxDepth) {
+              this.currentDepthInObject = 0
+              this.objectBuffer = ""
+              this._addToObjectBuffer(token)
+              this.state = STATE.SUB_OBJECT
+              continue
+            }
             yield [this.currentPath, []]
             this._pushPathSegment(0)
             this.state = STATE.VALUE
@@ -196,7 +259,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Invalid value",
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
@@ -216,18 +279,23 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Invalid array: " + this.state,
-              this.tokenizer.currentBufferIndex + this.pastChunksLength,
+              this.tokenizer.totalBufferIndex,
             )
           }
           continue
-
+        case STATE.SUB_OBJECT:
+          this._addToObjectBuffer(token)
+          if (this.currentDepthInObject === 0) {
+            yield [this.currentPath, JSON.parse(this.objectBuffer)]
+            this.state = this._popState()
+          }
+          continue
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
-            this.tokenizer.currentBufferIndex + this.pastChunksLength,
+            this.tokenizer.totalBufferIndex,
           )
       }
     }
-    this.pastChunksLength += chunk.length
   }
 }
