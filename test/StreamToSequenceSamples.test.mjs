@@ -1,7 +1,7 @@
 //@ts-check
 import assert from "assert"
 import pkg from "zunit"
-import fs from "fs/promises"
+import fs from "fs"
 import path from "path"
 
 import SequenceToObject from "../src/SequenceToObject.mjs"
@@ -22,13 +22,17 @@ describe("StreamToSequence sample files", () => {
   ]) {
     it(`works with ${filename}`, async () => {
       const builder = new SequenceToObject()
-      const json = await fs.readFile(path.join("test", "samples", filename), {
+      const readStream = fs.createReadStream(
+        path.join("test", "samples", filename),
+      )
+      const json = fs.readFileSync(path.join("test", "samples", filename), {
         encoding: "utf-8",
       })
-      for (const [k, v] of parser.iter(json)) {
-        builder.add(k, v)
+      for await (const chunk of readStream) {
+        for (const [k, v] of parser.iter(chunk)) {
+          builder.add(k, v)
+        }
       }
-
       assert.equal(parser.isFinished(), true)
       const parsed = JSON.parse(json)
       assert.deepEqual(builder.object, parsed)
