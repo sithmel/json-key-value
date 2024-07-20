@@ -83,4 +83,34 @@ describe("SequenceToObject", () => {
       collection: [{}],
     })
   })
+  describe("chunks", () => {
+    it("works with object nested into object (1)", () => {
+      const builder = new SequenceToObject({ compactArrays: true })
+      builder.add([], {})
+      builder.add(["test1"], { test2: 1 })
+      assert.deepEqual(builder.object, { test1: { test2: 1 } })
+    })
+    it("works with object nested into object (2)", () => {
+      const builder = new SequenceToObject({ compactArrays: true })
+      builder.add([], {})
+      builder.add(["test1"], { test2: 1 })
+      builder.add(["test3"], 2)
+      assert.deepEqual(builder.object, { test1: { test2: 1 }, test3: 2 })
+    })
+    it("works with object nested into arrays (1)", () => {
+      const builder = new SequenceToObject({ compactArrays: true })
+      builder.add([], [])
+      builder.add([0], { test1: 1 })
+      builder.add([1], { test2: 2 })
+      assert.deepEqual(builder.object, [{ test1: 1 }, { test2: 2 }])
+    })
+
+    it("works with object nested into arrays (2)", () => {
+      const builder = new SequenceToObject({ compactArrays: true })
+      builder.add([], [])
+      builder.add([0], { test1: [1, "xyz"] })
+      builder.add([1], { test2: 2 })
+      assert.deepEqual(builder.object, [{ test1: [1, "xyz"] }, { test2: 2 }])
+    })
+  })
 })
