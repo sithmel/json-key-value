@@ -163,4 +163,45 @@ describe("SequenceToStream", () => {
         false,
       ))
   })
+  describe("chunks", () => {
+    it("works with object nested into object (1)", () =>
+      testSequence(
+        [
+          [[], {}],
+          [["test1"], { test2: 1 }],
+        ],
+        { test1: { test2: 1 } },
+        false,
+      ))
+    it("works with object nested into object (2)", () =>
+      testSequence(
+        [
+          [[], {}],
+          [["test1"], { test2: 1 }],
+          [["test3"], 2],
+        ],
+        { test1: { test2: 1 }, test3: 2 },
+        false,
+      ))
+    it("works with object nested into arrays (1)", () =>
+      testSequence(
+        [
+          [[], []],
+          [[0], { test1: 1 }],
+          [[1], { test2: 2 }],
+        ],
+        [{ test1: 1 }, { test2: 2 }],
+        false,
+      ))
+    it("works with object nested into arrays (2)", () =>
+      testSequence(
+        [
+          [[], []],
+          [[0], { test1: [1, "xyz"] }],
+          [[1], { test2: 2 }],
+        ],
+        [{ test1: [1, "xyz"] }, { test2: 2 }],
+        false,
+      ))
+  })
 })
