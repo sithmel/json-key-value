@@ -9,10 +9,11 @@ const { describe, it, oit, odescribe } = pkg
 
 async function testObj(obj) {
   let str = ""
+  const decoder = new TextDecoder()
   const parser = new ObjectToSequence()
   const builder = new SequenceToStream({
     onData: async (data) => {
-      str += data
+      str += decoder.decode(data)
     },
   })
   for (const [path, value] of parser.iter(obj)) {
@@ -23,11 +24,12 @@ async function testObj(obj) {
 }
 
 async function testSequence(sequence, obj, compactArrays = false) {
+  const decoder = new TextDecoder()
   let str = ""
   const builder = new SequenceToStream({
     compactArrays,
     onData: async (data) => {
-      str += data
+      str += decoder.decode(data)
     },
   })
   for (const [path, value] of sequence) {

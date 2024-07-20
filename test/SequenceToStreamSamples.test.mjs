@@ -22,10 +22,11 @@ describe("SequenceToStream sample files", () => {
   ]) {
     it(`works with ${filename}`, async () => {
       let str = ""
+      const decoder = new TextDecoder()
 
       const builder = new SequenceToStream({
         onData: async (data) => {
-          str += data
+          str += decoder.decode(data)
         },
       })
       const readStream = fs.createReadStream(

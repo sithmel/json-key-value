@@ -23,7 +23,7 @@ const CONTEXT = {
 export default class SequenceToStream {
   /**
    * Convert a sequence of path value pairs to a stream of characters
-   * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
+   * @param {{onData: (arg0: Uint8Array) => Promise<void>, compactArrays?: boolean}} onData
    */
   constructor({ onData, compactArrays = false }) {
     /** @type {import("../types/baseTypes").JSONPathType} */
@@ -33,6 +33,7 @@ export default class SequenceToStream {
     this.context = CONTEXT.NULL
     this.lastWritePromise = Promise.resolve()
     this.compactArrays = compactArrays
+    this.encoder = new TextEncoder()
   }
 
   /**
@@ -41,7 +42,7 @@ export default class SequenceToStream {
    */
   async _output(str) {
     await this.lastWritePromise
-    this.lastWritePromise = this.onData(str)
+    this.lastWritePromise = this.onData(this.encoder.encode(str))
   }
   /**
    * add a new path value pair
