@@ -32,24 +32,6 @@ describe("StreamJSONTokenizer", () => {
       assert.equal(st.getOutputBufferAsString(), '"te\\nst"')
       assert.equal(s.next().done, true)
     })
-    // it("breaks with invalid escape", () => {
-    //   const s = st.iter(encoder.encode('"te\\wst"'))
-    //   assert.throws(() => {
-    //     s.next().value
-    //   }, /^Error: Invalid slash code/)
-    // })
-    // it("breaks with invalid unicode 1", () => {
-    //   const s = st.iter(encoder.encode('"\\u849"'))
-    //   assert.throws(() => {
-    //     s.next().value
-    //   }, /^Error: Invalid unicode string/)
-    // })
-    // it("breaks with invalid unicode 2", () => {
-    //   const s = st.iter(encoder.encode('"\\u849g"'))
-    //   assert.throws(() => {
-    //     s.next().value
-    //   }, /^Error: Invalid unicode string/)
-    // })
   })
   it("works with true", () => {
     const s = st.iter(encoder.encode("true"))
@@ -81,12 +63,6 @@ describe("StreamJSONTokenizer", () => {
       assert.equal(st.getOutputBufferAsString(), "-22.3")
       assert.equal(s.next().done, true)
     })
-    // it("breaks with invalid number", () => {
-    //   const s = st.iter(encoder.encode("1.- "))
-    //   assert.throws(() => {
-    //     s.next().value
-    //   }, /^Error: Invalid value is not a number/)
-    // })
   })
 
   it("works with false", () => {

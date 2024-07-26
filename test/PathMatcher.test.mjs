@@ -2,7 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { Matcher, PathMatcher } from "../src/PathMatcher.mjs"
+import { Matcher, PathMatcher } from "../src/pathExp/PathMatcher.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
 describe("pathMatcher", () => {

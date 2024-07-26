@@ -5,7 +5,7 @@ import {
   isWhitespace,
   strToMatchSegment,
   match,
-} from "./utils.mjs"
+} from "../utils.mjs"
 
 /*
 Syntax:
@@ -50,14 +50,14 @@ const NON_STRING_RE = /^[0-9a-zA-Z_:]$/
 /**
  * @package
  * @param {string} pathStr
- * @returns {Array<import("../types/baseTypes").MatchPathType>}
+ * @returns {Array<import("../../types/baseTypes").MatchPathType>}
  */
 function pathExpToMatcherData(pathStr) {
   const tokens = pathStr.split("")
   const stateStack = []
-  /** @type {Array<import("../types/baseTypes").MatchPathType>} */
+  /** @type {Array<import("../../types/baseTypes").MatchPathType>} */
   let matcherPaths = []
-  /** @type {import("../types/baseTypes").MatchPathType} */
+  /** @type {import("../../types/baseTypes").MatchPathType} */
   let currentMatcherPath = []
   let fragmentBuffer = ""
   let state = STATE.START_PATH_EXPRESSION
@@ -191,8 +191,8 @@ function pathExpToMatcherData(pathStr) {
 
 /**
  * Convert a path expression to array
- * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} paths
- * @returns {Array<import("../types/baseTypes").MatchPathType>}
+ * @param {Array<import("../../types/baseTypes").MatchPathType> | string | null} paths
+ * @returns {Array<import("../../types/baseTypes").MatchPathType>}
  */
 export function stringToPathExp(paths) {
   if (paths === null) return []
@@ -202,7 +202,7 @@ export function stringToPathExp(paths) {
 
 /**
  * Convert a path expression to string
- * @param {Array<import("../types/baseTypes").MatchPathType> | string | null} paths
+ * @param {Array<import("../../types/baseTypes").MatchPathType> | string | null} paths
  * @returns {string}
  */
 export function pathExpToString(paths) {

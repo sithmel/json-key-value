@@ -2,7 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { PathMatcher } from "../src/PathMatcher.mjs"
+import { PathMatcher } from "../src/pathExp/PathMatcher.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 import SequenceToStream from "../src/SequenceToStream.mjs"
 
@@ -37,18 +37,6 @@ function getTestWritableStream(output) {
 
 /**
  * @param {ReadableStream} readable
- * @return {AsyncGenerator<string>}
- */
-async function* decodedReadableStream(readable) {
-  const decoder = new TextDecoder()
-  // @ts-ignore
-  for await (const value of readable) {
-    yield decoder.decode(value, { stream: true })
-  }
-}
-
-/**
- * @param {ReadableStream} readable
  * @param {WritableStream} writable
  * @param {string} include
  * @param {AbortController} controller
@@ -59,11 +47,11 @@ async function filterJSONStream(readable, writable, include, controller) {
 
   const parser = new StreamToSequence()
   const builder = new SequenceToStream({
-    onData: async (data) => writer.write(encoder.encode(data)),
+    onData: async (data) => writer.write(data),
   })
   const matcher = new PathMatcher(include)
 
-  for await (const chunk of decodedReadableStream(readable)) {
+  for await (const chunk of readable) {
     if (matcher.isExhausted) {
       break
     }
@@ -83,7 +71,7 @@ async function filterJSONStream(readable, writable, include, controller) {
   await builder.end()
 }
 
-xdescribe("Example web stream", () => {
+describe("Example web stream", () => {
   let testStream
   before(() => {
     testStream = new Blob(['{"hello": "world", "test": 1}'], {

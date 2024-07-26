@@ -1,6 +1,6 @@
 {
   // Change this to match your project
-  "include": ["./src/*.mjs"],
+  "include": ["./src/*.mjs", "src/pathExp/pathExp.mjs", "src/pathExp/PathMatcher.mjs"],
   "compilerOptions": {
     "outDir": "types",
     "lib": ["es2020"],

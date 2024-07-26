@@ -2,7 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { stringToPathExp, pathExpToString } from "../src/pathExp.mjs"
+import { stringToPathExp, pathExpToString } from "../src/pathExp/pathExp.mjs"
 
 const { describe, it, oit } = pkg
 

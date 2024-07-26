@@ -16,7 +16,7 @@ export class Matcher {
    * True values in levelExhausted needs to be adjacent starting with the first.
    * If a segment doesn't match and the corresponding boolean in levelExhausted is true
    * then we consider the match to be exhausted (no further matches are possible)
-   * @param {import("../types/baseTypes").MatchPathType} match
+   * @param {import("../../types/baseTypes.js").MatchPathType} match
    */
   constructor(match) {
     this.match = match
@@ -46,7 +46,7 @@ export class Matcher {
   }
   /**
    * Check for match
-   * @param {import("../types/baseTypes").JSONPathType} path
+   * @param {import("../../types/baseTypes.js").JSONPathType} path
    */
   nextMatch(path) {
     for (let i = 0; i < this.match.length; i++) {
@@ -84,7 +84,7 @@ export class Matcher {
 export class PathMatcher {
   /**
    * Matches multiple patch expressions until they are exhausted
-   * @param {Array<import("../types/baseTypes").MatchPathType>|string} matchersDataOrString
+   * @param {Array<import("../../types/baseTypes.js").MatchPathType>|string} matchersDataOrString
    */
   constructor(matchersDataOrString) {
     const matchersData = stringToPathExp(matchersDataOrString)
@@ -98,7 +98,7 @@ export class PathMatcher {
   /**
    * Check if a path is matching with any path expressions.
    * It updates the attributes "doesMatch" and "IsExhausted"
-   * @param {import("../types/baseTypes").JSONPathType} path
+   * @param {import("../../types/baseTypes.js").JSONPathType} path
    */
   nextMatch(path) {
     if (this.isExhausted) return
@@ -125,7 +125,7 @@ export class PathMatcher {
 
   /**
    * Shorthand to filter an iterable of path/value pairs
-   * @param {Array<import("../types/baseTypes").JSONPathValueType>} iterable
+   * @param {Array<import("../../types/baseTypes.js").JSONPathValueType>} iterable
    */
   *filterSequence(iterable) {
     for (const [path, value] of iterable) {

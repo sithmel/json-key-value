@@ -185,7 +185,7 @@ path === pathConverter.stringToPath(pathString)
 # Work with the sequence
 
 Both StreamToSequence.iter and ObjectToSequence.iter return an iterable of path/value pairs.
-These can be transformed using a for await loop, and then converted to an object (SequenceToObject) or a JSON stream (SequenceToStream):
+These can be transformed using a for loop, and then converted to an object (SequenceToObject) or a JSON stream (SequenceToStream):
 
 ```js
 import { SequenceToObject, ObjectToSequence } from "json-key-value"
@@ -193,7 +193,7 @@ import { SequenceToObject, ObjectToSequence } from "json-key-value"
 function getPricesWithVAT(obj) {
   const builder = new SequenceToObject()
   const parser = new ObjectToSequence()
-  for (const await [path, value] of parser.iter(obj)) {
+  for (const [path, value] of parser.iter(obj)) {
     if (path[0] === "prices") {
       builder.add(path.slice(1), value * 0.2)
     }

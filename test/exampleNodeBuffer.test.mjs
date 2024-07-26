@@ -2,7 +2,7 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { PathMatcher } from "../src/PathMatcher.mjs"
+import { PathMatcher } from "../src/pathExp/PathMatcher.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 import SequenceToObject from "../src/SequenceToObject.mjs"
 import fs from "fs"
@@ -15,10 +15,7 @@ const { xdescribe, describe, it, oit, before } = pkg
  * @param {string} include
  */
 async function filterFile(filename, include) {
-  const readStream = fs.createReadStream(
-    path.join("test", "samples", filename),
-    { encoding: "utf-8" },
-  )
+  const readStream = fs.createReadStream(path.join("test", "samples", filename))
   const parser = new StreamToSequence()
   const builder = new SequenceToObject()
   const matcher = new PathMatcher(include)
@@ -42,7 +39,7 @@ async function filterFile(filename, include) {
   return builder.object
 }
 
-xdescribe("Example Node buffer", () => {
+describe("Example Node buffer", () => {
   it("filters", async () => {
     const obj = await filterFile("wikipedia.json", "firstName, lastName")
     assert.deepEqual(obj, {
