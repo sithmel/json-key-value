@@ -1,12 +1,20 @@
 //@ts-check
 
+/**
+ * create spaces for indentation
+ * @param {number} level
+ * @return string
+ */
+function spaces(level) {
+  return Array(level + 1).join("  ")
+}
 export class MatcherContainer {
   /**
    * This class is used as generic container of matchers
-   * @param {Array<BaseMatcher>} matchers
+   * @param {Array<BaseMatcher>} [matchers]
    */
   constructor(matchers) {
-    this.matchers = matchers
+    this.matchers = matchers ?? []
   }
   /**
    * Check for match
@@ -33,6 +41,17 @@ export class MatcherContainer {
       return false
     }
     return this.matchers.every((m) => m.isExhausted())
+  }
+
+  /**
+   * print as a string
+   * @param {boolean} [pretty]
+   * @return {string}
+   */
+  stringify(pretty = false) {
+    return this.matchers
+      .map((m) => m.stringify(pretty, 0))
+      .join(pretty ? "\n" : " ")
   }
 }
 
@@ -98,6 +117,21 @@ class BaseMatcher {
     }
     return this.matchers.every((m) => m.isExhausted())
   }
+
+  /**
+   * print as a string
+   * @param {boolean} [pretty]
+   * @param {number} [level]
+   * @return {string}
+   */
+  stringify(pretty = false, level = 0) {
+    if (this.matchers.length === 0) return ""
+    return `{${pretty ? "\n" + spaces(level - 1) : ""}${this.matchers
+      .map((m) => m.stringify(pretty, level + 1))
+      .join(pretty ? "\n" + spaces(level - 1) : " ")}${
+      pretty ? "\n" + spaces(level - 2) : ""
+    }}`
+  }
 }
 
 export class AnyMatcher extends BaseMatcher {
@@ -111,31 +145,14 @@ export class AnyMatcher extends BaseMatcher {
     this._isLastPossibleMatch = false
     return true
   }
-}
-
-export class REMatcher extends BaseMatcher {
   /**
-   * check a string by a regexp
-   * @param {Array<BaseMatcher>} [matchers]
-   * @param {RegExp} re
+   * print as a string
+   * @param {boolean} [pretty]
+   * @param {number} [level]
+   * @return {string}
    */
-  constructor(re, matchers) {
-    super(matchers)
-    this.re = re
-  }
-
-  /**
-   * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathType} segment
-   * @param {boolean} _parentLastPossibleMatch
-   * @return {boolean}
-   */
-  doesSegmentMatch(segment, _parentLastPossibleMatch) {
-    this._isLastPossibleMatch = false
-    if (typeof segment !== "string") {
-      return false
-    }
-    return this.re.test(segment)
+  stringify(pretty = false, level = 0) {
+    return `*${super.stringify(pretty, level + 1)}`
   }
 }
 
@@ -169,6 +186,25 @@ export class SegmentMatcher extends BaseMatcher {
       this.hasMatchedForLastTime = doesMatch
     }
     return doesMatch
+  }
+  /**
+   * print as a string
+   * @param {boolean} [pretty]
+   * @param {number} [level]
+   * @return {string}
+   */
+  stringify(pretty = false, level = 0) {
+    let segmentStr
+    if (typeof this.segmentMatch === "string") {
+      if (this.segmentMatch.includes('"')) {
+        segmentStr = `'${this.segmentMatch}'`
+      } else {
+        segmentStr = `"${this.segmentMatch}"`
+      }
+    } else {
+      segmentStr = this.segmentMatch.toString()
+    }
+    return `${segmentStr}${super.stringify(pretty, level + 1)}`
   }
 }
 
@@ -205,5 +241,16 @@ export class SliceMatcher extends BaseMatcher {
       this.hasMatchedForLastTime = doesMatch
     }
     return doesMatch
+  }
+  /**
+   * print as a string
+   * @param {boolean} [pretty]
+   * @param {number} [level]
+   * @return {string}
+   */
+  stringify(pretty = false, level = 0) {
+    const min = this.min === 0 ? "" : this.min.toString()
+    const max = this.max === Infinity ? "" : this.max.toString()
+    return `${min}..${max}${super.stringify(pretty, level + 1)}`
   }
 }

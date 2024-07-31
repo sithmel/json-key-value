@@ -4,7 +4,6 @@ import pkg from "zunit"
 
 import {
   AnyMatcher,
-  REMatcher,
   SegmentMatcher,
   SliceMatcher,
   MatcherContainer,
@@ -26,22 +25,8 @@ describe("Matchers", () => {
       assert.equal(matcher.doesMatch([]), false)
       assert.equal(matcher.isExhausted(), false)
     })
-  })
-  describe("REMatcher", () => {
-    beforeEach(() => {
-      matcher = new REMatcher(/^a.*/, [])
-    })
-    it("does not match if is a number", () => {
-      assert.equal(matcher.doesMatch([1]), false)
-      assert.equal(matcher.isExhausted(), false)
-    })
-    it("does not match", () => {
-      assert.equal(matcher.doesMatch(["test"]), false)
-      assert.equal(matcher.isExhausted(), false)
-    })
-    it("matches", () => {
-      assert.equal(matcher.doesMatch(["al", "pacino"]), true)
-      assert.equal(matcher.isExhausted(), false)
+    it("stringifies", () => {
+      assert.equal(matcher.stringify(), "*")
     })
   })
   describe("SegmentMatcher", () => {
@@ -57,6 +42,19 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), false)
       assert.equal(matcher.doesMatch([2, 2]), false)
       assert.equal(matcher.isExhausted(), true)
+    })
+    it("stringifies numbers", () => {
+      assert.equal(matcher.stringify(), "1")
+    })
+    it("stringifies strings", () => {
+      matcher = new SegmentMatcher("A")
+      assert.equal(matcher.stringify(), '"A"')
+
+      matcher = new SegmentMatcher("hello'world")
+      assert.equal(matcher.stringify(), `"hello'world"`)
+
+      matcher = new SegmentMatcher('hello"world')
+      assert.equal(matcher.stringify(), `'hello"world'`)
     })
   })
   describe("SliceMatcher", () => {
@@ -78,6 +76,15 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), false)
       assert.equal(matcher.doesMatch([3, 2]), false)
       assert.equal(matcher.isExhausted(), true)
+    })
+    it("stringifies slices", () => {
+      assert.equal(matcher.stringify(), "1..3")
+    })
+    it("stringifies slices 2", () => {
+      matcher = new SliceMatcher({ min: 0, max: 3 }, [])
+      assert.equal(matcher.stringify(), "..3")
+      matcher = new SliceMatcher({ min: 1, max: Infinity }, [])
+      assert.equal(matcher.stringify(), "1..")
     })
   })
   describe("Combine matchers 1", () => {
@@ -111,6 +118,13 @@ describe("Matchers", () => {
       assert.equal(matcher.doesMatch(["A", "X", "Y"]), false)
       assert.equal(matcher.isExhausted(), true)
     })
+    it("stringifies", () => {
+      assert.equal(matcher.stringify(), '"A"{"B"{"C" "D"} "E"} "F"')
+    })
+    oit("stringifies pretty", () => {
+      console.log(matcher.stringify(true))
+      assert.equal(matcher.stringify(true), '"A"{"B"{"C" "D"} "E"} "F"')
+    })
   })
   describe("Combine matchers 2", () => {
     beforeEach(() => {
@@ -135,6 +149,9 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), false)
       assert.equal(matcher.doesMatch(["B", "X"]), false)
       assert.equal(matcher.isExhausted(), true)
+    })
+    it("stringifies slices", () => {
+      assert.equal(matcher.stringify(), '"A"{*{"C" "D"}}')
     })
   })
 })
