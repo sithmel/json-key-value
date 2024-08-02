@@ -48,7 +48,7 @@ describe("Matchers", () => {
     })
     it("stringifies strings", () => {
       matcher = new SegmentMatcher("A")
-      assert.equal(matcher.stringify(), '"A"')
+      assert.equal(matcher.stringify(), "'A'")
 
       matcher = new SegmentMatcher("hello'world")
       assert.equal(matcher.stringify(), `"hello'world"`)
@@ -119,11 +119,20 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies", () => {
-      assert.equal(matcher.stringify(), '"A"{"B"{"C" "D"} "E"} "F"')
+      assert.equal(matcher.stringify(), "'A'('B'('C' 'D') 'E') 'F'")
     })
-    oit("stringifies pretty", () => {
-      console.log(matcher.stringify(true))
-      assert.equal(matcher.stringify(true), '"A"{"B"{"C" "D"} "E"} "F"')
+    it("stringifies pretty", () => {
+      assert.equal(
+        matcher.stringify("  "),
+        `'A'(
+  'B'(
+    'C'
+    'D'
+  )
+  'E'
+)
+'F'`,
+      )
     })
   })
   describe("Combine matchers 2", () => {
@@ -151,7 +160,7 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies slices", () => {
-      assert.equal(matcher.stringify(), '"A"{*{"C" "D"}}')
+      assert.equal(matcher.stringify(), "'A'(*('C' 'D'))")
     })
   })
 })

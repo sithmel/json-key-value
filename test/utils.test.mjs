@@ -8,7 +8,6 @@ import {
   valueToString,
   fromEndToIndex,
   fromIndexToEnd,
-  strToMatchSegment,
   isPreviousPathInNewPath,
 } from "../src/utils.mjs"
 
@@ -92,46 +91,6 @@ describe("utils", () => {
       assert.deepEqual(Array.from(fromIndexToEnd(["a", "b", "c"], 3)), []))
   })
 
-  describe("strToMatchSegment", () => {
-    it("match number 0", () =>
-      assert.deepEqual(strToMatchSegment("0"), { type: "match", match: 0 }))
-    it("match number 123", () =>
-      assert.deepEqual(strToMatchSegment("123"), { type: "match", match: 123 }))
-    it("match complete slice", () =>
-      assert.deepEqual(strToMatchSegment("3:5"), {
-        type: "slice",
-        sliceFrom: 3,
-        sliceTo: 5,
-      }))
-    it("match complete partial slice (1)", () =>
-      assert.deepEqual(strToMatchSegment(":5"), {
-        type: "slice",
-        sliceFrom: 0,
-        sliceTo: 5,
-      }))
-    it("match complete partial slice (2)", () =>
-      assert.deepEqual(strToMatchSegment("3:"), {
-        type: "slice",
-        sliceFrom: 3,
-        sliceTo: Infinity,
-      }))
-    it("match complete partial slice (3)", () =>
-      assert.deepEqual(strToMatchSegment(":"), {
-        type: "slice",
-        sliceFrom: 0,
-        sliceTo: Infinity,
-      }))
-    it("match unquoted string", () =>
-      assert.deepEqual(strToMatchSegment("xyz"), {
-        type: "match",
-        match: "xyz",
-      }))
-    it("match unquoted string (2)", () =>
-      assert.deepEqual(strToMatchSegment("xyz12"), {
-        type: "match",
-        match: "xyz12",
-      }))
-  })
   describe("isPreviousPathInNewPath", () => {
     it("works on same path", () =>
       assert.equal(isPreviousPathInNewPath(["x"], ["x"]), true))

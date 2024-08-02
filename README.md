@@ -24,21 +24,94 @@ Alternatively, it also works if the paths are sorted comparing object keys in le
 
 ## StreamToSequence
 
-StreamToSequence converts chunk of strings coming from an iterable in a sequence.
-It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. String decoding from buffer is not provided, leaving that to different buffer implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
+StreamToSequence converts chunk of data coming from an iterable in a sequence.
+It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. It takes a buffer as input, these can come from different implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
+
+Let's assume we have this JSON:
+
+```json
+[
+  {"firstName": "Bruce", "lastName": "Banner"},
+  {"firstName": "Peter", "lastName": "Parker"},
+  ...
+]
+```
 
 ```js
 import { StreamToSequence } from "json-key-value"
 
 const parser = new StreamToSequence()
-for (const chunk of ['{"hello": "wo', '"rld"}']) {
+for async (const chunk of bufferIterable) {
   for (const [path, value] of parser.iter(chunk)) {
-    console.log(path, value) // ["hello"] "world"
+    console.log(path, value)
   }
 }
 ```
 
+This will print:
+
+```
+[] []
+[0] {}
+[0, "firstName"] "Bruce"
+[0, "lastName"] "Banner"
+[1] {}
+[1, "firstName"] "Peter"
+[1, "lastName"] "Parker"
+...
+```
+
 _There is an extremely rare corner case where the parser doesn't work as expected: when a json consists in a **single number and no trailing spaces**. In that case it is necessary to add a trailing space to make it work correctly!_
+
+StreamToSequence takes 2 optional parameters: _maxDepth_ and _includes_.
+
+maxDepth is used to group the data over a certain depth together. It also allows to considerable increase the speed of the parsing when used together with _includes_.
+
+Here is how it works:
+
+Let's assume we use the same JSON used above:
+
+```js
+import { StreamToSequence } from "json-key-value"
+
+const parser = new StreamToSequence({maxDepth: 1})
+for async (const chunk of bufferIterable) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+```
+
+This will print:
+
+```
+[] []
+[0] {"firstName": "Bruce", "lastName": "Banner"}
+[1] {"firstName": "Peter", "lastName": "Parker"}
+...
+```
+
+_includes_ allows to select what paths we want to read and filter the others. It is much faster then filtering the pairs after are emitted because allows stop parsing the stream if no further matches are possible. Here is an example (using the same JSON):
+
+```js
+import { StreamToSequence } from "json-key-value"
+
+const parser = new StreamToSequence({includes: '0 (firstName)'})
+for async (const chunk of bufferIterable) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+```
+
+With this output
+
+```
+[0, "firstName"] "Bruce"
+...
+```
+
+More about [includes](#includes) syntax below!
 
 ## ObjectToSequence
 
@@ -49,9 +122,19 @@ import { ObjectToSequence } from "json-key-value"
 
 const parser = new ObjectToSequence()
 for (const [path, value] of parser.iter({ hello: world })) {
-  console.log(path, value) // ["hello"] "world"
+  console.log(path, value)
 }
 ```
+
+This prints:
+
+```js
+[] {}
+['hello'] 'world'
+```
+
+ObjectToSequence takes 2 optional parameters: _maxDepth_ and _includes_.
+They works exactly the same as for StreamToSequence.
 
 ## SequenceToObject
 
@@ -98,9 +181,12 @@ SequenceToStream allows to reconstruct a JSON stream from a sequence:
 import { SequenceToStream } from "json-key-value"
 
 let str = ""
+const decoder = new TextDecoder()
 const jsonStreamer = new SequenceToStream({
   onData: async (data) => {
-    str += data // this is an async function to allow writing to a buffer
+    // this is normally used for writing to a buffer
+    // but in here we are decoding the buffer as js string
+    str += decoder.decode(data)
   },
 })
 jsonStreamer.add([], {}) // build initial object
@@ -229,160 +315,76 @@ to:
 
 I suggest [iter-tools](https://github.com/iter-tools/iter-tools) to work with iterables and async iterables.
 
-## PathMatcher
+## Includes
 
-A frequent type of filtering of these sequences is based on the "path". This is more complex than a simple filter, because it should be able to figure out when matches are no longer possible so that it is not necessary to parse the rest of the JSON.
+The _includes_ parameter can be used on StreamToSequence and ObjectToSequence and it allows to only emit pairs with a certain path.
+This is more limited than a simple filter, but it is able to figure out when matches are no longer possible so that it is not necessary to parse the rest of the JSON.
+If more complex filtering is required, is easy enough to filter the sequence once is emitted.
+This parameter uses a simple and compact expression to perform matches. Including:
 
-```js
-import { SequenceToObject, ObjectToSequence, PathMatcher } from "json-key-value"
+- direct match of keys. Using a string enclosed in single or double quotes
+- direct match of array indices. Using a number
+- a way to match a slice of an array. Using 2 indices separated by 2 dots: 3..5 (matching index 3 and 4). If the first index is omitted is considered 0, if the last is omitted is considered Infinity
+- a convenient \* operator that matches any index or key as long as there is one
+- '()' to recursively match on multiple levels
 
-function getPricesWithVAT(obj) {
-  const builder = new SequenceToObject()
-  const parser = new ObjectToSequence()
-  const matcher = new PathMatcher([[match("prices")]]) // this is a path expression (see below)
-  for (const [path, value] of matcher.filterSequence(parser.iter(obj))) {
-    builder.add(path.slice(1), value * 1.2)
-  }
-  return builder.object
+It is easier to show. Here's the JSON example:
+
+```json
+{
+  "products": {
+    "123001" : {"productName": "piano catapult", "brand": "ACME"},
+    "456001" : {"productName": "fake tunnel", "brand": "ACME"},
+    ...
+  },
+  "invoices": [
+    {"productCode": "123001", "itemsSold": 40, "unitPrice": 120},
+    {"productCode": "456001", "itemsSold": 12, "unitPrice": 220},
+    ...
+  ]
 }
 ```
 
-`filterSequence` is a shorthand method that allows to filter an iterable by path.
-It is the equivalent of:
+We can use this expression:
 
 ```js
-import { SequenceToObject, ObjectToSequence, PathMatcher } from "json-key-value"
-
-function getPricesWithVAT(obj) {
-  const builder = new SequenceToObject()
-  const parser = new ObjectToSequence()
-
-  const matcher = new PathMatcher([[match("prices")]])
-
-  for (const [path, value] of parser.iter(obj)) {
-    // ingest the path and check
-    // - does it match? (doesMatch)
-    // - are there any other matches possible? (isExhausted)
-    matcher.nextMatch(path)
-    if (matcher.doesMatch) {
-      builder.add(path.slice(1), value * 1.2)
-    }
-    if (matcher.isExhausted) {
-      break
-    }
-  }
-  return builder.object
-}
+const includes = `
+'invoices'(
+  0..2(
+    'itemsSold'
+    'unitPrice'
+  )
+)
+`
 ```
 
-## Path expressions
-
-Path expressions are a concise way to match a JSON fragment by path. It is not a general purpose query language like [json pointer](https://datatracker.ietf.org/doc/rfc6901/) or [json path](https://datatracker.ietf.org/doc/draft-ietf-jsonpath-base/). Because they are designed to work on js objects while streamed. Path expressions are intentionally limited to performant filtering of path/value sequences.
-With path expressions you can match fragments of path by their position, array indices and slices.
-Here are a list of features that were deliberately excluded as they make impossible to terminate the stream as soon as all possible matches are exhausted:
-
-- any type of fragment matching that is not a direct match (negative match, globbing, reg exp )
-- match by value
-- fragment match at any level
-
-These can all be easily implemented using a regular **filter** function, like the one that can be found in [iter-tools](https://github.com/iter-tools/iter-tools).
-Enough with the explanation! Let's have a look at the syntax.
-
-## Path expressions as arrays
-
-A single path expression allows to match a subtree of a JSON by its path.
-For example:
+to get this sequence:
 
 ```
-[{type: "match", match: "universe"}]
+['invoices', 0, 'itemsSold'] 40
+['invoices', 0, 'unitPrice'] 120
+['invoices', 1, 'itemsSold'] 12
+['invoices', 1, 'unitPrice'] 220
 ```
 
-Matches all paths starting with "universe". For example:
+or
 
-```
-["universe"]
-["universe", "earth"]
-etc.
-```
-
-It is possible to specify a subtree like this:
-
-```
-[{type: "match", match: "universe"}, {type: "match", match: "earth"}]
+```js
+const includes = `
+'products'(
+  *(
+    'productName'
+  )
+)
+`
 ```
 
-That matches:
+to get this sequence:
 
 ```
-["universe", "earth"]
-["universe", "earth", "Europe"]
-etc.
+['products', '123001', 'productName'] piano catapult
+['products', '456001', 'productName'] fake tunnel
 ```
-
-And doesn't match
-
-```
-["universe"]
-["universe", "mars"]
-etc.
-```
-
-Path expressions support direct match of object keys and array indexes as well as array slices.
-_match_ is used for direct match of object keys or array index.
-_slice_ is used to match an interval of indexes.
-
-- `{type: "match", match: "universe"}`
-- `{type: "match", match: 2}`
-- `{type: "slice": sliceFrom: 0, sliceTo: 3}`
-
-They are used in an array to allow multiple matches:
-
-```
-[
-  [{type: "match", match: "hello"}, {type: "match", match: 2}],
-  [{type: "match", match: "world"}, {type: "slice": sliceFrom: 0, sliceTo: 3}],
-]
-```
-
-These are matching paths that starts with:
-
-- **["hello", 2]**
-- **["world", 0]**
-- **["world", 1]**
-- **["world", 2]**
-
-It is also possible to use helpers to make it more concise:
-
-```
-[
-  [match("hello"), match(2)],
-  [match("world"), slice(0, 3)],
-]
-```
-
-Using the slice helper, if the first index is omitted, is assumed to be 0, if the last is omitted is assumed to be Infinity.
-
-## Path expressions as strings
-
-This is a shorthand syntax to define Path expressions:
-
-```
-hello[2],world[0:3]
-```
-
-This is the much shorter equivalent of the previous example.
-These are all equivalent expressions:
-
-```
-"hello".2,"world".0:3
-["hello"].2,["world"].0:3
-"hello"[2],"world"[0:3]
-```
-
-Either brackets or dots can be used as separators. Strings can be wrapped in double quotes: in this case any character can be used, but special character needs to be escaped as described in the [JSON specs](https://datatracker.ietf.org/doc/html/rfc8259). Unquoted strings can be used but only letters, numbers and underscores can be used.
-On slices, if the first number is omitted, is considered 0, if the second number is omitted is considered Infinity.
-
-**stringToPathExp and pathExpToString** can be used to convert string to path expressions and vice versa. PathMatcher does the conversion automatically.
 
 # Examples
 
@@ -391,38 +393,20 @@ On slices, if the first number is omitted, is considered 0, if the second number
 In this example shows how to filter a JSON using fetch without loading it into memory.
 
 ```js
-import { StreamToSequence, SequenceToStream, PathMatcher } from "json-key-value"
+import { StreamToSequence, SequenceToStream } from "json-key-value"
 
-// this transform a readable stream into an asyncIterable of chunks
-async function* decodedReadableStream(readable) {
-  const decoder = new TextDecoder()
-  for await (const value of readable) {
-    yield decoder.decode(value, { stream: true })
-  }
-}
-async function filterJSONStream(readable, writable, include, controller) {
+async function filterJSONStream(readable, writable, includes, controller) {
   const encoder = new TextEncoder()
   const writer = writable.getWriter()
 
-  const parser = new StreamToSequence()
+  const parser = new StreamToSequence({ includes })
   const builder = new SequenceToStream({
-    onData: async (data) => writer.write(encoder.encode(data)),
+    onData: async (data) => writer.write(data),
   })
-  const matcher = new PathMatcher(include)
 
-  for await (const chunk of decodedReadableStream(readable)) {
-    if (matcher.isExhausted) {
-      break
-    }
-
+  for await (const chunk of readable) {
     for (const [path, value] of parser.iter(chunk)) {
-      matcher.nextMatch(path)
-      if (matcher.doesMatch) {
-        builder.add(path, value)
-      }
-      if (matcher.isExhausted) {
-        break
-      }
+      builder.add(path, value)
     }
   }
 
@@ -451,27 +435,16 @@ This function read part of a JSON from a file.
 
 ```js
 import fs from "fs"
-import { StreamToSequence, SequenceToObject, PathMatcher } from "json-key-value"
+import { StreamToSequence, SequenceToObject } from "json-key-value"
 
-async function filterFile(filename, include) {
-  const readStream = fs.createReadStream(filename, { encoding: "utf-8" })
+async function filterFile(filename, includes) {
+  const readStream = fs.createReadStream(filename)
   const parser = new StreamToSequence()
   const builder = new SequenceToObject()
-  const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
-    if (matcher.isExhausted) {
-      break
-    }
-
     for (const [path, value] of parser.iter(chunk)) {
-      matcher.nextMatch(path)
-      if (matcher.doesMatch) {
-        builder.add(path, value)
-      }
-      if (matcher.isExhausted) {
-        break
-      }
+      builder.add(path, value)
     }
   }
   readStream.destroy()
@@ -507,7 +480,7 @@ for (const [path, value] of parser.iter(JSON.parse(obj))) {
 How does this differ from StreamToSequence? When should we use one or the other?
 StreamToSequence is a streaming parser, so it doesn't require to load the entire string in memory to work.
 
-From the point of view of raw speed StreamToSequence is approximatively 10 times slower.
+From the point of view of raw speed StreamToSequence is approximatively 8 times slower.
 However, there are 2 specific cases that makes it convenient:
 
 ### Memory footprint
@@ -516,7 +489,7 @@ StreamToSequence is much more memory friendly, not having to load the entire JSO
 
 ### Partial loading
 
-Using PathMatcher, we don't necessarily need to read an entire stream to get the data we need.
+Using _includes_, we don't necessarily need to read an entire stream to get the data we need.
 That means that there are 2 factors to influence the speed:
 
 - How much of the stream do I need to read as average?

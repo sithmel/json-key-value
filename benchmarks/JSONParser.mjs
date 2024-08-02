@@ -1,28 +1,16 @@
-import { PathMatcher } from "../src/PathMatcher.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 import SequenceToObject from "../src/SequenceToObject.mjs"
 import fs from "fs"
 import path from "path"
 
-async function filterFile(filename, include) {
+async function filterFile(filename, includes) {
   const readStream = fs.createReadStream(path.join("test", "samples", filename))
-  const parser = new StreamToSequence({ maxDepth: 1 })
+  const parser = new StreamToSequence({ maxDepth: 1, includes })
   const builder = new SequenceToObject({ compactArrays: true })
-  const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
-    // if (matcher.isExhausted) {
-    //   break
-    // }
-
     for (const [path, value] of parser.iter(chunk)) {
-      // matcher.nextMatch(path)
-      // if (matcher.doesMatch) {
       builder.add(path, value)
-      // }
-      // if (matcher.isExhausted) {
-      //   break
-      // }
     }
   }
   readStream.destroy()
@@ -31,7 +19,7 @@ async function filterFile(filename, include) {
 
 let t0 = performance.now()
 console.profile()
-const obj = await filterFile("twitter.json", "[16000]")
+const obj = await filterFile("twitter.json", "8000")
 console.profileEnd()
 // console.log(obj)
 console.log(performance.now() - t0)

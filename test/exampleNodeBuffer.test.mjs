@@ -2,7 +2,6 @@
 import assert from "assert"
 import pkg from "zunit"
 
-import { PathMatcher } from "../src/pathExp/PathMatcher.mjs"
 import StreamToSequence from "../src/StreamToSequence.mjs"
 import SequenceToObject from "../src/SequenceToObject.mjs"
 import fs from "fs"
@@ -12,27 +11,16 @@ const { xdescribe, describe, it, oit, before } = pkg
 
 /**
  * @param {string} filename
- * @param {string} include
+ * @param {string} includes
  */
-async function filterFile(filename, include) {
+async function filterFile(filename, includes) {
   const readStream = fs.createReadStream(path.join("test", "samples", filename))
-  const parser = new StreamToSequence()
+  const parser = new StreamToSequence({ includes })
   const builder = new SequenceToObject()
-  const matcher = new PathMatcher(include)
 
   for await (const chunk of readStream) {
-    if (matcher.isExhausted) {
-      break
-    }
-
     for (const [path, value] of parser.iter(chunk)) {
-      matcher.nextMatch(path)
-      if (matcher.doesMatch) {
-        builder.add(path, value)
-      }
-      if (matcher.isExhausted) {
-        break
-      }
+      builder.add(path, value)
     }
   }
   readStream.destroy()
@@ -41,7 +29,7 @@ async function filterFile(filename, include) {
 
 describe("Example Node buffer", () => {
   it("filters", async () => {
-    const obj = await filterFile("wikipedia.json", "firstName, lastName")
+    const obj = await filterFile("wikipedia.json", "'firstName' 'lastName'")
     assert.deepEqual(obj, {
       firstName: "John",
       lastName: "Smith",

@@ -82,5 +82,17 @@ describe("ObjParser", () => {
         [[1], [4, 5, 6]],
       ])
     })
+    describe("includes", () => {
+      let parserIter
+      beforeEach(() => {
+        const parser = new ObjectToSequence({ includes: "0 ('test1' (1))" })
+        parserIter = (obj) => Array.from(parser.iter(obj))
+      })
+
+      it("includes", () => {
+        const seq = parserIter([{ test1: [1, "xyz"] }, { test2: 2 }])
+        assert.deepEqual(seq, [[[0, "test1", 1], "xyz"]])
+      })
+    })
   })
 })

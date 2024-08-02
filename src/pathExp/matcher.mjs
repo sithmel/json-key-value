@@ -2,11 +2,12 @@
 
 /**
  * create spaces for indentation
+ * @param {string} spacer
  * @param {number} level
  * @return string
  */
-function spaces(level) {
-  return Array(level + 1).join("  ")
+function indentation(spacer, level) {
+  return "\n" + Array(level + 1).join(spacer)
 }
 export class MatcherContainer {
   /**
@@ -45,13 +46,13 @@ export class MatcherContainer {
 
   /**
    * print as a string
-   * @param {boolean} [pretty]
+   * @param {string?} [spacer]
    * @return {string}
    */
-  stringify(pretty = false) {
+  stringify(spacer = null) {
     return this.matchers
-      .map((m) => m.stringify(pretty, 0))
-      .join(pretty ? "\n" : " ")
+      .map((m) => m.stringify(spacer, 0))
+      .join(spacer == null ? " " : indentation(spacer, 0))
   }
 }
 
@@ -120,17 +121,18 @@ class BaseMatcher {
 
   /**
    * print as a string
-   * @param {boolean} [pretty]
+   * @param {string?} [spacer]
    * @param {number} [level]
    * @return {string}
    */
-  stringify(pretty = false, level = 0) {
+  stringify(spacer = null, level = 0) {
     if (this.matchers.length === 0) return ""
-    return `{${pretty ? "\n" + spaces(level - 1) : ""}${this.matchers
-      .map((m) => m.stringify(pretty, level + 1))
-      .join(pretty ? "\n" + spaces(level - 1) : " ")}${
-      pretty ? "\n" + spaces(level - 2) : ""
-    }}`
+    const spaceBefore = spacer == null ? "" : indentation(spacer, level + 1)
+    const spaceBetween = spacer == null ? " " : indentation(spacer, level + 1)
+    const spaceAfter = spacer == null ? "" : indentation(spacer, level)
+    return `(${spaceBefore}${this.matchers
+      .map((m) => m.stringify(spacer, level + 1))
+      .join(spaceBetween)}${spaceAfter})`
   }
 }
 
@@ -147,12 +149,12 @@ export class AnyMatcher extends BaseMatcher {
   }
   /**
    * print as a string
-   * @param {boolean} [pretty]
+   * @param {string?} [spacer]
    * @param {number} [level]
    * @return {string}
    */
-  stringify(pretty = false, level = 0) {
-    return `*${super.stringify(pretty, level + 1)}`
+  stringify(spacer = null, level = 0) {
+    return `*${super.stringify(spacer, level)}`
   }
 }
 
@@ -189,22 +191,22 @@ export class SegmentMatcher extends BaseMatcher {
   }
   /**
    * print as a string
-   * @param {boolean} [pretty]
+   * @param {string?} [spacer]
    * @param {number} [level]
    * @return {string}
    */
-  stringify(pretty = false, level = 0) {
+  stringify(spacer = null, level = 0) {
     let segmentStr
     if (typeof this.segmentMatch === "string") {
-      if (this.segmentMatch.includes('"')) {
-        segmentStr = `'${this.segmentMatch}'`
-      } else {
+      if (this.segmentMatch.includes("'")) {
         segmentStr = `"${this.segmentMatch}"`
+      } else {
+        segmentStr = `'${this.segmentMatch}'`
       }
     } else {
       segmentStr = this.segmentMatch.toString()
     }
-    return `${segmentStr}${super.stringify(pretty, level + 1)}`
+    return `${segmentStr}${super.stringify(spacer, level)}`
   }
 }
 
@@ -244,13 +246,13 @@ export class SliceMatcher extends BaseMatcher {
   }
   /**
    * print as a string
-   * @param {boolean} [pretty]
+   * @param {string?} [spacer]
    * @param {number} [level]
    * @return {string}
    */
-  stringify(pretty = false, level = 0) {
+  stringify(spacer = null, level = 0) {
     const min = this.min === 0 ? "" : this.min.toString()
     const max = this.max === Infinity ? "" : this.max.toString()
-    return `${min}..${max}${super.stringify(pretty, level + 1)}`
+    return `${min}..${max}${super.stringify(spacer, level)}`
   }
 }

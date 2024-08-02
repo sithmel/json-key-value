@@ -251,4 +251,17 @@ describe("StreamToSequence", () => {
       assert.equal(parser.isFinished(), true)
     })
   })
+  describe("includes", () => {
+    beforeEach(() => {
+      parser = new StreamToSequence({ includes: "'test1'('test2')" })
+      encoder = new TextEncoder()
+      parserIter = (text) => Array.from(parser.iter(encoder.encode(text)))
+    })
+
+    it("works", () => {
+      const seq = parserIter('{"test1":{"test2":1}}')
+      assert.deepEqual(seq, [[["test1", "test2"], 1]])
+      assert.equal(parser.isFinished(), true)
+    })
+  })
 })
