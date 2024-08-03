@@ -1,19 +1,21 @@
+/// <reference types="node" />
 export default class SequenceToStream {
     /**
      * Convert a sequence of path value pairs to a stream of characters
-     * @param {{onData: (arg0: string) => Promise<void>, compactArrays?: boolean}} onData
+     * @param {{onData: (arg0: Uint8Array) => Promise<void>, compactArrays?: boolean}} onData
      */
     constructor({ onData, compactArrays }: {
-        onData: (arg0: string) => Promise<void>;
+        onData: (arg0: Uint8Array) => Promise<void>;
         compactArrays?: boolean | undefined;
     });
     /** @type {import("../types/baseTypes").JSONPathType} */
     currentPath: import("../types/baseTypes").JSONPathType;
-    onData: (arg0: string) => Promise<void>;
+    onData: (arg0: Uint8Array) => Promise<void>;
     /** @type CONTEXT */
     context: CONTEXT;
     lastWritePromise: Promise<void>;
     compactArrays: boolean;
+    encoder: import("util").TextEncoder;
     /**
      * @package
      * @param {string} str

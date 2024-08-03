@@ -21,6 +21,14 @@ export function isArrayOrObject(value: any): boolean;
  */
 export function getCommonPathIndex(oldPath: import("../types/baseTypes").JSONPathType, newPath: import("../types/baseTypes").JSONPathType): number;
 /**
+ * Check if oldPath is contained in the new path
+ * @package
+ * @param {import("../types/baseTypes").JSONPathType} oldPath
+ * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @returns {boolean}
+ */
+export function isPreviousPathInNewPath(oldPath: import("../types/baseTypes").JSONPathType, newPath: import("../types/baseTypes").JSONPathType): boolean;
+/**
  * Transform a value in JSON
  * @package
  * @param {import("../types/baseTypes").JSONValueType} value
@@ -52,27 +60,6 @@ export function fromIndexToEnd<T>(array: T[], index: number): Iterable<[number, 
  * @returns {string}
  */
 export function pathSegmentTerminator(pathSegment: import("../types/baseTypes").JSONSegmentPathType): string;
-/**
- * generate match
- * @param {import("../types/baseTypes").JSONSegmentPathType} match
- * @returns {import("../types/baseTypes").MatchKeyOrIndexType}
- */
-export function match(match: import("../types/baseTypes").JSONSegmentPathType): import("../types/baseTypes").MatchKeyOrIndexType;
-/**
- * generate slice
- * @param {number} sliceFrom
- * @param {number} sliceTo
- * @returns {import("../types/baseTypes").MatchSliceType}
- */
-export function slice(sliceFrom?: number, sliceTo?: number): import("../types/baseTypes").MatchSliceType;
-/**
- * Generate MatchSegmentType from a string
- * @package
- * @param {string} str
- * @param {number} index
- * @returns {import("../types/baseTypes").MatchSegmentType}
- */
-export function strToMatchSegment(str: string, index?: number): import("../types/baseTypes").MatchSegmentType;
 export class ParsingError extends Error {
     /**
      * @param {string} message

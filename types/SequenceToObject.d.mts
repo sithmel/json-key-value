@@ -8,6 +8,8 @@ export default class SequenceToObject {
     });
     object: import("../types/baseTypes").JSONValueType | undefined;
     compactArrays: boolean;
+    lastArray: any[] | [] | undefined;
+    lastArrayIndex: number | undefined;
     /**
      * @package
      * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment

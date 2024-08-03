@@ -1,4 +1,16 @@
 export default class StreamToSequence {
+    /**
+     * Convert a stream of characters (in chunks) to a sequence of path/value pairs
+     * @param {{ maxDepth?: number, includes?: string }} options
+     */
+    constructor(options?: {
+        maxDepth?: number | undefined;
+        includes?: string | undefined;
+    });
+    maxDepth: number;
+    currentDepthInObject: number;
+    matcher: MatcherContainer;
+    tokenizer: StreamJSONTokenizer;
     state: string;
     /** @type {Array<STATE>} */
     stateStack: Array<STATE>;
@@ -6,7 +18,13 @@ export default class StreamToSequence {
     /** @type {import("../types/baseTypes").JSONPathType} */
     currentPath: import("../types/baseTypes").JSONPathType;
     stringBuffer: string;
-    unicodeBuffer: string;
+    objectBuffer: string;
+    /**
+     * add another segment to the path
+     * @package
+     * @param {TOKEN} token
+     */
+    _addToObjectBuffer(token: TOKEN): void;
     /**
      * add another segment to the path
      * @package
@@ -38,11 +56,13 @@ export default class StreamToSequence {
     isFinished(): boolean;
     /**
      * Parse a json or json fragment, return a sequence of path/value pairs
-     * @param {string} chunk
+     * @param {Uint8Array} chunk
      * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
      */
-    iter(chunk: string): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
+    iter(chunk: Uint8Array): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
 }
+import { MatcherContainer } from "./pathExp/matcher.mjs";
+import StreamJSONTokenizer from "./StreamJSONTokenizer.mjs";
 /**
  * Enum for parser state
  */
@@ -51,28 +71,12 @@ declare namespace STATE {
     let VALUE: string;
     let OPEN_OBJECT: string;
     let CLOSE_OBJECT: string;
-    let OPEN_ARRAY: string;
     let CLOSE_ARRAY: string;
     let OPEN_KEY: string;
     let CLOSE_KEY: string;
-    let TRUE: string;
-    let TRUE2: string;
-    let TRUE3: string;
-    let FALSE: string;
-    let FALSE2: string;
-    let FALSE3: string;
-    let FALSE4: string;
-    let NULL: string;
-    let NULL2: string;
-    let NULL3: string;
-    let NUMBER: string;
-    let NUMBER_DECIMAL: string;
-    let NUMBER_EXPONENT_SIGN: string;
-    let NUMBER_EXPONENT_NUMBER: string;
-    let STRING: string;
-    let STRING_SLASH_CHAR: string;
-    let STRING_UNICODE_CHAR: string;
     let END: string;
+    let SUB_OBJECT: string;
 }
+import { TOKEN } from "./StreamJSONTokenizer.mjs";
 export {};
 //# sourceMappingURL=StreamToSequence.d.mts.map
