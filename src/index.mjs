@@ -5,4 +5,4 @@ export { default as SequenceToObject } from "./SequenceToObject.mjs"
 export { default as ObjectToSequence } from "./ObjectToSequence.mjs"
 export { default as PathConverter } from "./PathConverter.mjs"
 
-export { default as reviver } from "./reviver.mjs"
+export { default as parseIncludes } from "./pathExp/parser.mjs"

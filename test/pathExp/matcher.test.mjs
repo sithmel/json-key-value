@@ -17,6 +17,9 @@ describe("Matchers", () => {
     beforeEach(() => {
       matcher = new AnyMatcher([])
     })
+    it("counts maxlength", () => {
+      assert.equal(matcher.maxLength(), 1)
+    })
     it("always matches", () => {
       assert.equal(matcher.doesMatch(["test"]), true)
       assert.equal(matcher.isExhausted(), false)
@@ -100,6 +103,10 @@ describe("Matchers", () => {
         new SegmentMatcher("F"),
       ])
     })
+    it("counts maxlength", () => {
+      assert.equal(matcher.maxLength(), 3)
+    })
+
     it("does not match", () => {
       assert.equal(matcher.doesMatch([1, 2]), false)
       assert.equal(matcher.isExhausted(), false)
@@ -143,6 +150,10 @@ describe("Matchers", () => {
         ]),
       ])
     })
+    it("counts maxlength", () => {
+      assert.equal(matcher.maxLength(), 3)
+    })
+
     it("matches", () => {
       assert.equal(matcher.doesMatch(["Z", 2]), false)
       assert.equal(matcher.isExhausted(), false)

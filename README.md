@@ -1,6 +1,9 @@
 # json-key-value
 
-json-key-value is a toolkit to work with JSON as they are converted to a sequence to path value pairs. It is minimal (no dependencies) but work well with other libraries. It is designed for both server and client.
+json-key-value is a toolkit to work with JSON and JS object as they are converted to a sequence to path value pairs (using iterables).
+It enables using filter, map reduce techniques in a way that is readable, simpler and efficient.
+
+It is minimal (no dependencies) but work well with other libraries. It is designed for both server and client.
 
 ## The idea
 
@@ -242,15 +245,40 @@ str === '["hello world"]'
 
 ## Utilities
 
-### reviver
+### parseIncludes
 
-The native [JSON parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse) has an optional argument "reviver" that allows to transform the js object. This can't work on a sequence, and for this reason is provided as a separate function.
+This utility converts a string in a data structure used to filter paths. This is used internally but is also exposed to be used for debugging, ensure that the include syntax is correct, and reformat the includes expression.
 
 ```js
-import { reviver } from "json-key-value"
+import { parseIncludes } from "json-key-value"
 
-const newObject = reviver(obj)
+const matcher = parseIncludes(
+  `
+"A"(
+  "B"(
+    "C" # test comment 1
+    "D"
+  ) # test comment 2
+  "E" 
+)
+"F"
+`,
+) // this returns a matcher object
+
+matcher.maxLength() // this is the minimum length of the path to be matched. It cannot be greater than the maxDepth parameter (no matches are possible that way)
+matcher.doesMatch(["A", "B"]) // this matches
+matcher.doesMatch(["F", "B"]) // this matches
+matcher.doesMatch(["X"]) // this doesn't match
+matcher.isExhausted() // this is now false
+// As no match is possible since A and F have passed
+
+matcher.stringify() // this returns: "'A'('B'('C' 'D') 'E') 'F'"
+
+matcher.stringify("  ") // this returns an nicely indented version (2 spaces indentation)
 ```
+
+Note: The compact version of the expression (returned by stringify without arguments) has been designed to be passed as query parameter minimising the characters encoded (only the spaces), so that `'A'('B'('C' 'D') 'E') 'F'` becomes:
+`'A'('B'('C'%20'D')%20'E')%20'F'`.
 
 ### pathConverter
 

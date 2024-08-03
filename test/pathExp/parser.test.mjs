@@ -29,4 +29,16 @@ describe("path exp parser", () => {
     const matcher = pathExpParse('"A"("B"("C" "D") "E") "F"')
     assert.equal(matcher.stringify(), "'A'('B'('C' 'D') 'E') 'F'")
   })
+  it("ignore comments", () => {
+    const matcher = pathExpParse(`
+      "A"(
+        "B"(
+          "C" # test comment 1
+          "D"
+        ) # test comment 2
+        "E" 
+      )
+      "F"`)
+    assert.equal(matcher.stringify(), "'A'('B'('C' 'D') 'E') 'F'")
+  })
 })

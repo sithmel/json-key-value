@@ -54,6 +54,15 @@ export class MatcherContainer {
       .map((m) => m.stringify(spacer, 0))
       .join(spacer == null ? " " : indentation(spacer, 0))
   }
+
+  /**
+   * return the length of the longest branch of the tree
+   * @return {number}
+   */
+  maxLength() {
+    const matcherMaxLength = this.matchers.map((m) => m.maxLength())
+    return Math.max(...[0, ...matcherMaxLength])
+  }
 }
 
 class BaseMatcher {
@@ -133,6 +142,15 @@ class BaseMatcher {
     return `(${spaceBefore}${this.matchers
       .map((m) => m.stringify(spacer, level + 1))
       .join(spaceBetween)}${spaceAfter})`
+  }
+
+  /**
+   * return the length of the longest branch of the tree
+   * @return {number}
+   */
+  maxLength() {
+    const matcherMaxLength = this.matchers.map((m) => m.maxLength())
+    return Math.max(...[0, ...matcherMaxLength]) + 1
   }
 }
 
@@ -221,6 +239,11 @@ export class SliceMatcher extends BaseMatcher {
     this.hasMatchedForLastTime = false
     this.min = options.min ?? 0
     this.max = options.max ?? Infinity
+    if (this.min >= this.max) {
+      throw new Error(
+        "in a slice, the min value should be smaller than the max",
+      )
+    }
   }
   /**
    * Check if this specific segment matches, without checking the children

@@ -33,6 +33,11 @@ export default class StreamToSequence {
 
     const { includes = null } = options
     this.matcher = includes ? parser(includes) : new MatcherContainer()
+    if (this.matcher.maxLength() > this.maxDepth) {
+      throw new Error(
+        "The includes expression won't be able to fully match paths as they will be clamped to the chosen maxDepth",
+      )
+    }
 
     this.tokenizer = new StreamJSONTokenizer()
     this.state = STATE.VALUE

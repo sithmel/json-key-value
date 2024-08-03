@@ -14,6 +14,7 @@ const STATE = {
   STRING_SINGLE_QUOTE: "STRING_SINGLE_QUOTE",
   STRING_DOUBLE_QUOTE: "STRING_DOUBLE_QUOTE",
   NUMBER_OR_SLICE: "NUMBER_OR_SLICE",
+  COMMENT: "COMMENT",
 }
 
 /**
@@ -55,8 +56,15 @@ export default function pathExpParse(str) {
         } else if (/[0-9\.]/.test(char)) {
           state = STATE.NUMBER_OR_SLICE
           stringBuffer = char
+        } else if (char === "#") {
+          state = STATE.COMMENT
         } else {
           throw new ParsingError("Unknown token: " + char, index)
+        }
+        continue
+      case STATE.COMMENT:
+        if (char === "\n") {
+          state = STATE.VALUE
         }
         continue
       case STATE.STRING_SINGLE_QUOTE:
