@@ -8,7 +8,7 @@ import { ParsingError } from "./utils.mjs"
  * @readonly
  * @enum {number}
  */
-const charCode = {
+export const CHAR_CODE = {
   N0: "0".charCodeAt(0),
   N9: "9".charCodeAt(0),
   MINUS: "-".charCodeAt(0),
@@ -99,14 +99,14 @@ export default class StreamJSONTokenizer {
     this.state = STATE.IDLE
     /** @type Array<number> */
     this.outputBuffer = [] // this stores strings temporarily
-    this.decoder = new TextDecoder()
   }
+
   /**
-   * decode the string buffer into a string
-   * @returns {string}
+   * returns the outputBuffer
+   * @returns {Array<number>}
    */
-  getOutputBufferAsString() {
-    return this.decoder.decode(new Uint8Array(this.outputBuffer))
+  getOutputBuffer() {
+    return this.outputBuffer
   }
 
   /**
@@ -125,38 +125,41 @@ export default class StreamJSONTokenizer {
       switch (this.state) {
         case STATE.IDLE: // any value
           if (
-            [charCode.SPACE, charCode.TAB, charCode.CR, charCode.LF].includes(
-              byte,
-            )
+            [
+              CHAR_CODE.SPACE,
+              CHAR_CODE.TAB,
+              CHAR_CODE.CR,
+              CHAR_CODE.LF,
+            ].includes(byte)
           )
             continue
-          if (byte === charCode.QUOTE) {
+          if (byte === CHAR_CODE.QUOTE) {
             this.state = STATE.STRING
             this.outputBuffer = [byte]
-          } else if (byte === charCode.T) {
+          } else if (byte === CHAR_CODE.T) {
             this.state = STATE.TRUE
-          } else if (byte === charCode.F) {
+          } else if (byte === CHAR_CODE.F) {
             this.state = STATE.FALSE
-          } else if (byte === charCode.N) {
+          } else if (byte === CHAR_CODE.N) {
             this.state = STATE.NULL
           } else if (
-            byte === charCode.MINUS ||
-            (charCode.N0 <= byte && byte <= charCode.N9)
+            byte === CHAR_CODE.MINUS ||
+            (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9)
           ) {
             // keep and continue
             this.state = STATE.NUMBER
             this.outputBuffer = [byte]
-          } else if (byte === charCode.OPEN_BRACES) {
+          } else if (byte === CHAR_CODE.OPEN_BRACES) {
             yield TOKEN.OPEN_BRACES
-          } else if (byte === charCode.CLOSED_BRACES) {
+          } else if (byte === CHAR_CODE.CLOSED_BRACES) {
             yield TOKEN.CLOSED_BRACES
-          } else if (byte === charCode.OPEN_BRACKETS) {
+          } else if (byte === CHAR_CODE.OPEN_BRACKETS) {
             yield TOKEN.OPEN_BRACKET
-          } else if (byte === charCode.CLOSED_BRACKETS) {
+          } else if (byte === CHAR_CODE.CLOSED_BRACKETS) {
             yield TOKEN.CLOSED_BRACKET
-          } else if (byte === charCode.COLON) {
+          } else if (byte === CHAR_CODE.COLON) {
             yield TOKEN.COLON
-          } else if (byte === charCode.COMMA) {
+          } else if (byte === CHAR_CODE.COMMA) {
             yield TOKEN.COMMA
           } else {
             throw new ParsingError("Invalid character", this.totalBufferIndex)
@@ -164,20 +167,20 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.STRING: // a string
-          if (byte === charCode.QUOTE) {
+          if (byte === CHAR_CODE.QUOTE) {
             this.outputBuffer.push(byte)
             yield TOKEN.STRING
             this.state = STATE.IDLE
-          } else if (byte === charCode.BACKSLASH) {
+          } else if (byte === CHAR_CODE.BACKSLASH) {
             this.outputBuffer.push(byte)
             this.state = STATE.STRING_SLASH_CHAR
           } else {
             if (
-              byte === charCode.LF ||
-              byte === charCode.CR ||
-              byte === charCode.TAB ||
-              byte === charCode.DC2 ||
-              byte === charCode.BACKSPACE
+              byte === CHAR_CODE.LF ||
+              byte === CHAR_CODE.CR ||
+              byte === CHAR_CODE.TAB ||
+              byte === CHAR_CODE.DC2 ||
+              byte === CHAR_CODE.BACKSPACE
             ) {
               throw new ParsingError("Invalid character", this.totalBufferIndex)
             }
@@ -191,7 +194,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.TRUE:
-          if (byte === charCode.R) this.state = STATE.TRUE2
+          if (byte === CHAR_CODE.R) this.state = STATE.TRUE2
           else
             throw new ParsingError(
               "Invalid true started with t",
@@ -200,7 +203,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.TRUE2:
-          if (byte === charCode.U) this.state = STATE.TRUE3
+          if (byte === CHAR_CODE.U) this.state = STATE.TRUE3
           else
             throw new ParsingError(
               "Invalid true started with tr",
@@ -209,7 +212,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.TRUE3:
-          if (byte === charCode.E) {
+          if (byte === CHAR_CODE.E) {
             yield TOKEN.TRUE
             this.state = STATE.IDLE
           } else
@@ -220,7 +223,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.FALSE:
-          if (byte === charCode.A) this.state = STATE.FALSE2
+          if (byte === CHAR_CODE.A) this.state = STATE.FALSE2
           else
             throw new ParsingError(
               "Invalid false started with f",
@@ -229,7 +232,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.FALSE2:
-          if (byte === charCode.L) this.state = STATE.FALSE3
+          if (byte === CHAR_CODE.L) this.state = STATE.FALSE3
           else
             throw new ParsingError(
               "Invalid false started with fa",
@@ -238,7 +241,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.FALSE3:
-          if (byte === charCode.S) this.state = STATE.FALSE4
+          if (byte === CHAR_CODE.S) this.state = STATE.FALSE4
           else
             throw new ParsingError(
               "Invalid false started with fal",
@@ -247,7 +250,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.FALSE4:
-          if (byte === charCode.E) {
+          if (byte === CHAR_CODE.E) {
             yield TOKEN.FALSE
             this.state = STATE.IDLE
           } else
@@ -258,7 +261,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.NULL:
-          if (byte === charCode.U) this.state = STATE.NULL2
+          if (byte === CHAR_CODE.U) this.state = STATE.NULL2
           else
             throw new ParsingError(
               "Invalid null started with n",
@@ -267,7 +270,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.NULL2:
-          if (byte === charCode.L) this.state = STATE.NULL3
+          if (byte === CHAR_CODE.L) this.state = STATE.NULL3
           else
             throw new ParsingError(
               "Invalid null started with nu",
@@ -276,7 +279,7 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.NULL3:
-          if (byte === charCode.L) {
+          if (byte === CHAR_CODE.L) {
             yield TOKEN.NULL
             this.state = STATE.IDLE
           } else
@@ -288,11 +291,11 @@ export default class StreamJSONTokenizer {
 
         case STATE.NUMBER: // a number
           if (
-            (charCode.N0 <= byte && byte <= charCode.N9) ||
-            byte === charCode.MINUS ||
-            byte === charCode.DOT ||
-            byte === charCode.E ||
-            byte === charCode.CAPITAL_E
+            (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9) ||
+            byte === CHAR_CODE.MINUS ||
+            byte === CHAR_CODE.DOT ||
+            byte === CHAR_CODE.E ||
+            byte === CHAR_CODE.CAPITAL_E
           ) {
             this.outputBuffer.push(byte)
           } else {

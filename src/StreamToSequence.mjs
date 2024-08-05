@@ -1,7 +1,10 @@
 //@ts-check
 
 import { ParsingError } from "./utils.mjs"
-import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.mjs"
+import StreamJSONTokenizer, {
+  TOKEN,
+  CHAR_CODE,
+} from "./StreamJSONTokenizer.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 /**
@@ -44,10 +47,12 @@ export default class StreamToSequence {
     /** @type {Array<STATE>} */
     this.stateStack = [STATE.END]
     this.char = ""
-    /** @type {import("../types/baseTypes").JSONPathType} */
+    /** @type {import("../types/baseTypes").JSONPathBufferType} */
     this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
-    this.stringBuffer = "" // this stores strings temporarily (keys and values)
-    this.objectBuffer = "" // when currentDepth is > maxDepth I store things here
+    this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
+    /** @type {Array<number>} */
+    this.objectBuffer = [] // when currentDepth is > maxDepth I store things here
+    this.decoder = new TextDecoder()
   }
 
   /**
@@ -59,45 +64,75 @@ export default class StreamToSequence {
     switch (token) {
       case TOKEN.OPEN_BRACES:
         this.currentDepthInObject++
-        this.objectBuffer += "{"
+        this.objectBuffer.push(CHAR_CODE.OPEN_BRACES)
         return
       case TOKEN.CLOSED_BRACES:
         this.currentDepthInObject--
-        this.objectBuffer += "}"
+        this.objectBuffer.push(CHAR_CODE.CLOSED_BRACES)
         return
       case TOKEN.OPEN_BRACKET:
         this.currentDepthInObject++
-        this.objectBuffer += "["
+        this.objectBuffer.push(CHAR_CODE.OPEN_BRACKETS)
         return
       case TOKEN.CLOSED_BRACKET:
         this.currentDepthInObject--
-        this.objectBuffer += "]"
+        this.objectBuffer.push(CHAR_CODE.CLOSED_BRACKETS)
         return
       case TOKEN.COMMA:
-        this.objectBuffer += ","
+        this.objectBuffer.push(CHAR_CODE.COMMA)
         return
       case TOKEN.COLON:
-        this.objectBuffer += ":"
+        this.objectBuffer.push(CHAR_CODE.COLON)
         return
       case TOKEN.NUMBER:
       case TOKEN.STRING:
-        this.objectBuffer += this.tokenizer.getOutputBufferAsString()
+        this.objectBuffer.push(...this.tokenizer.getOutputBuffer())
         return
       case TOKEN.TRUE:
-        this.objectBuffer += "true"
+        this.objectBuffer.push(
+          CHAR_CODE.T,
+          CHAR_CODE.R,
+          CHAR_CODE.U,
+          CHAR_CODE.E,
+        )
         return
       case TOKEN.FALSE:
-        this.objectBuffer += "false"
+        this.objectBuffer.push(
+          CHAR_CODE.F,
+          CHAR_CODE.A,
+          CHAR_CODE.L,
+          CHAR_CODE.S,
+          CHAR_CODE.E,
+        )
         return
       case TOKEN.NULL:
-        this.objectBuffer += "null"
+        this.objectBuffer.push(
+          CHAR_CODE.N,
+          CHAR_CODE.U,
+          CHAR_CODE.L,
+          CHAR_CODE.L,
+        )
         return
     }
   }
   /**
+   * convert JSONPathBufferType to JSONPathType
+   * @package
+   * @return {import("../types/baseTypes").JSONPathType}
+   */
+  _getEncodedCurrentPath() {
+    return this.currentPath.map((n) => {
+      if (typeof n === "number") {
+        return n
+      }
+      return JSON.parse(this.decoder.decode(n))
+    })
+  }
+
+  /**
    * add another segment to the path
    * @package
-   * @param {string|number} segment
+   * @param {import("../types/baseTypes").JSONSegmentPathBufferType} segment
    */
   _pushPathSegment(segment) {
     this.currentPath = [...this.currentPath, segment]
@@ -106,7 +141,7 @@ export default class StreamToSequence {
   /**
    * remove a segment from the path
    * @package
-   * @returns {string|number}
+   * @returns {import("../types/baseTypes").JSONSegmentPathBufferType}
    */
   _popPathSegment() {
     const lastElement = this.currentPath[this.currentPath.length - 1]
@@ -163,9 +198,7 @@ export default class StreamToSequence {
 
         case STATE.OPEN_KEY: // after the "," in an object
           if (token === TOKEN.STRING) {
-            this.stringBuffer = JSON.parse(
-              this.tokenizer.getOutputBufferAsString(),
-            )
+            this.stringBuffer = new Uint8Array(this.tokenizer.getOutputBuffer())
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
@@ -181,9 +214,7 @@ export default class StreamToSequence {
             break
           }
           if (token === TOKEN.STRING) {
-            this.stringBuffer = JSON.parse(
-              this.tokenizer.getOutputBufferAsString(),
-            )
+            this.stringBuffer = new Uint8Array(this.tokenizer.getOutputBuffer())
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
@@ -225,33 +256,37 @@ export default class StreamToSequence {
           if (token === TOKEN.STRING) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
-                this.currentPath,
-                JSON.parse(this.tokenizer.getOutputBufferAsString()),
+                this._getEncodedCurrentPath(),
+                JSON.parse(
+                  this.decoder.decode(
+                    new Uint8Array(this.tokenizer.getOutputBuffer()),
+                  ),
+                ),
               ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
             if (this.currentPath.length >= this.maxDepth) {
               this.currentDepthInObject = 0
-              this.objectBuffer = ""
+              this.objectBuffer = []
               this._addToObjectBuffer(token)
               this.state = STATE.SUB_OBJECT
               break
             }
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, {}]
+              yield [this._getEncodedCurrentPath(), {}]
             }
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
             if (this.currentPath.length >= this.maxDepth) {
               this.currentDepthInObject = 0
-              this.objectBuffer = ""
+              this.objectBuffer = []
               this._addToObjectBuffer(token)
               this.state = STATE.SUB_OBJECT
               break
             }
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, []]
+              yield [this._getEncodedCurrentPath(), []]
             }
             this._pushPathSegment(0)
             this.state = STATE.VALUE
@@ -262,24 +297,28 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, true]
+              yield [this._getEncodedCurrentPath(), true]
             }
             this.state = this._popState()
           } else if (token === TOKEN.FALSE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, false]
+              yield [this._getEncodedCurrentPath(), false]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NULL) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, null]
+              yield [this._getEncodedCurrentPath(), null]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NUMBER) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
-                this.currentPath,
-                JSON.parse(this.tokenizer.getOutputBufferAsString()),
+                this._getEncodedCurrentPath(),
+                JSON.parse(
+                  this.decoder.decode(
+                    new Uint8Array(this.tokenizer.getOutputBuffer()),
+                  ),
+                ),
               ]
             }
             this.state = this._popState()
@@ -314,7 +353,12 @@ export default class StreamToSequence {
           this._addToObjectBuffer(token)
           if (this.currentDepthInObject === 0) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath, JSON.parse(this.objectBuffer)]
+              yield [
+                this._getEncodedCurrentPath(),
+                JSON.parse(
+                  this.decoder.decode(new Uint8Array(this.objectBuffer)),
+                ),
+              ]
             }
             this.state = this._popState()
           }

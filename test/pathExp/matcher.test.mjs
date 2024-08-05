@@ -91,7 +91,13 @@ describe("Matchers", () => {
     })
   })
   describe("Combine matchers 1", () => {
+    let encodePath
     beforeEach(() => {
+      const encoder = new TextEncoder()
+      encodePath = (path) =>
+        path.map((v) =>
+          typeof v === "string" ? encoder.encode(JSON.stringify(v)) : v,
+        )
       matcher = new MatcherContainer([
         new SegmentMatcher("A", [
           new SegmentMatcher("B", [
@@ -112,17 +118,17 @@ describe("Matchers", () => {
       assert.equal(matcher.isExhausted(), false)
     })
     it("matches", () => {
-      assert.equal(matcher.doesMatch(["F", 2]), true)
+      assert.equal(matcher.doesMatch(encodePath(["F", 2])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", 2]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", 2])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "B"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", "B"])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "D"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", "D"])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "E", "Y"]), true)
+      assert.equal(matcher.doesMatch(encodePath(["A", "E", "Y"])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "X", "Y"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", "X", "Y"])), false)
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies", () => {
@@ -143,7 +149,15 @@ describe("Matchers", () => {
     })
   })
   describe("Combine matchers 2", () => {
+    let encodePath
     beforeEach(() => {
+      const encoder = new TextEncoder()
+
+      encodePath = (path) =>
+        path.map((v) =>
+          typeof v === "string" ? encoder.encode(JSON.stringify(v)) : v,
+        )
+
       matcher = new MatcherContainer([
         new SegmentMatcher("A", [
           new AnyMatcher([new SegmentMatcher("C"), new SegmentMatcher("D")]),
@@ -155,19 +169,19 @@ describe("Matchers", () => {
     })
 
     it("matches", () => {
-      assert.equal(matcher.doesMatch(["Z", 2]), false)
+      assert.equal(matcher.doesMatch(encodePath(["Z", 2])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "B"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", "B"])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "B", "C"]), true)
+      assert.equal(matcher.doesMatch(encodePath(["A", "B", "C"])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "B", "Y"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["A", "B", "Y"])), false)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "B", "D"]), true)
+      assert.equal(matcher.doesMatch(encodePath(["A", "B", "D"])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["A", "X", "C"]), true)
+      assert.equal(matcher.doesMatch(encodePath(["A", "X", "C"])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch(["B", "X"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["B", "X"])), false)
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies slices", () => {
