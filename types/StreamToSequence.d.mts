@@ -1,3 +1,4 @@
+/// <reference types="node" />
 export default class StreamToSequence {
     /**
      * Convert a stream of characters (in chunks) to a sequence of path/value pairs
@@ -15,10 +16,12 @@ export default class StreamToSequence {
     /** @type {Array<STATE>} */
     stateStack: Array<STATE>;
     char: string;
-    /** @type {import("../types/baseTypes").JSONPathType} */
-    currentPath: import("../types/baseTypes").JSONPathType;
-    stringBuffer: string;
-    objectBuffer: string;
+    /** @type {import("../types/baseTypes").JSONPathBufferType} */
+    currentPath: import("../types/baseTypes").JSONPathBufferType;
+    stringBuffer: Uint8Array;
+    /** @type {Array<number>} */
+    objectBuffer: Array<number>;
+    decoder: import("util").TextDecoder;
     /**
      * add another segment to the path
      * @package
@@ -26,17 +29,23 @@ export default class StreamToSequence {
      */
     _addToObjectBuffer(token: TOKEN): void;
     /**
+     * convert JSONPathBufferType to JSONPathType
+     * @package
+     * @return {import("../types/baseTypes").JSONPathType}
+     */
+    _getEncodedCurrentPath(): import("../types/baseTypes").JSONPathType;
+    /**
      * add another segment to the path
      * @package
-     * @param {string|number} segment
+     * @param {import("../types/baseTypes").JSONSegmentPathBufferType} segment
      */
-    _pushPathSegment(segment: string | number): void;
+    _pushPathSegment(segment: import("../types/baseTypes").JSONSegmentPathBufferType): void;
     /**
      * remove a segment from the path
      * @package
-     * @returns {string|number}
+     * @returns {import("../types/baseTypes").JSONSegmentPathBufferType}
      */
-    _popPathSegment(): string | number;
+    _popPathSegment(): import("../types/baseTypes").JSONSegmentPathBufferType;
     /**
      * add another segment to the path
      * @package

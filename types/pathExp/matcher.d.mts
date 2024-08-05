@@ -7,10 +7,10 @@ export class MatcherContainer {
     matchers: BaseMatcher[];
     /**
      * Check for match
-     * @param {import("../../types/baseTypes.js").JSONPathType} path
+     * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
      * @return {boolean}
      */
-    doesMatch(path: import("../../types/baseTypes.js").JSONPathType): boolean;
+    doesMatch(path: import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType): boolean;
     /**
      * Check if matchers are exhausted
      * @return {boolean}
@@ -39,6 +39,13 @@ export class SegmentMatcher extends BaseMatcher {
     constructor(segmentMatch: import("../../types/baseTypes.js").JSONSegmentPathType, matchers?: BaseMatcher[] | undefined);
     hasMatchedForLastTime: boolean;
     segmentMatch: import("../../types/baseTypes.js").JSONSegmentPathType;
+    segmentMatchEncoded: number | Uint8Array;
+    /**
+     * Check if this specific segment matches, without checking the children
+     * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} segment
+     * @return {boolean}
+     */
+    _doesMatch(segment: import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType): boolean;
 }
 export class SliceMatcher extends BaseMatcher {
     /**
@@ -68,18 +75,18 @@ declare class BaseMatcher {
     _isLastPossibleMatch: boolean;
     /**
      * Check if this specific segment matches, without checking the children
-     * @param {import("../../types/baseTypes.js").JSONSegmentPathType} _segment
+     * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} _segment
      * @param {boolean} _parentLastPossibleMatch
      * @return {boolean}
      */
-    doesSegmentMatch(_segment: import("../../types/baseTypes.js").JSONSegmentPathType, _parentLastPossibleMatch: boolean): boolean;
+    doesSegmentMatch(_segment: import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType, _parentLastPossibleMatch: boolean): boolean;
     /**
      * Check for match
-     * @param {import("../../types/baseTypes.js").JSONPathType} path
+     * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
      * @param {boolean} [parentLastPossibleMatch]
      * @return {boolean}
      */
-    doesMatch(path: import("../../types/baseTypes.js").JSONPathType, parentLastPossibleMatch?: boolean | undefined): boolean;
+    doesMatch(path: import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType, parentLastPossibleMatch?: boolean | undefined): boolean;
     /**
      * Check if matcher is exhausted (or children)
      * @return {boolean}
