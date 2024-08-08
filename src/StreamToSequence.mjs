@@ -46,7 +46,6 @@ export default class StreamToSequence {
     this.state = STATE.VALUE
     /** @type {Array<STATE>} */
     this.stateStack = [STATE.END]
-    this.char = ""
     /** @type {import("../types/baseTypes").JSONPathBufferType} */
     this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
@@ -132,26 +131,6 @@ export default class StreamToSequence {
   /**
    * add another segment to the path
    * @package
-   * @param {import("../types/baseTypes").JSONSegmentPathBufferType} segment
-   */
-  _pushPathSegment(segment) {
-    this.currentPath = [...this.currentPath, segment]
-  }
-
-  /**
-   * remove a segment from the path
-   * @package
-   * @returns {import("../types/baseTypes").JSONSegmentPathBufferType}
-   */
-  _popPathSegment() {
-    const lastElement = this.currentPath[this.currentPath.length - 1]
-    this.currentPath = this.currentPath.slice(0, -1)
-    return lastElement
-  }
-
-  /**
-   * add another segment to the path
-   * @package
    * @param {STATE} state
    */
   _pushState(state) {
@@ -226,7 +205,7 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_KEY: // after the key is over
           if (token === TOKEN.COLON) {
-            this._pushPathSegment(this.stringBuffer)
+            this.currentPath.push(this.stringBuffer)
             this._pushState(STATE.CLOSE_OBJECT)
             this.state = STATE.VALUE
           } else {
@@ -239,10 +218,10 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_OBJECT: // after the value is parsed and the object can be closed
           if (token === TOKEN.CLOSED_BRACES) {
-            this._popPathSegment()
+            this.currentPath.pop()
             this.state = this._popState()
           } else if (token === TOKEN.COMMA) {
-            this._popPathSegment()
+            this.currentPath.pop()
             this.state = STATE.OPEN_KEY
           } else {
             throw new ParsingError(
@@ -288,11 +267,11 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [this._getEncodedCurrentPath(), []]
             }
-            this._pushPathSegment(0)
+            this.currentPath.push(0)
             this.state = STATE.VALUE
             this._pushState(STATE.CLOSE_ARRAY)
           } else if (token === TOKEN.CLOSED_BRACKET) {
-            this._popPathSegment()
+            this.currentPath.pop()
             this.state = this._popState()
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
@@ -332,15 +311,15 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_ARRAY: // array ready to end, or restart after the comma
           if (token === TOKEN.COMMA) {
-            const formerIndex = this._popPathSegment()
-            if (typeof formerIndex !== "number") {
+            const previousIndex = this.currentPath[this.currentPath.length - 1]
+            if (typeof previousIndex !== "number") {
               throw new Error("Array index should be a number")
             }
-            this._pushPathSegment(formerIndex + 1) // next item in the array
+            this.currentPath[this.currentPath.length - 1] = previousIndex + 1 // next item in the array
             this._pushState(STATE.CLOSE_ARRAY)
             this.state = STATE.VALUE
           } else if (token === TOKEN.CLOSED_BRACKET) {
-            this._popPathSegment() // array is over
+            this.currentPath.pop() // array is over
             this.state = this._popState()
           } else {
             throw new ParsingError(
