@@ -1,7 +1,7 @@
 export type JSONSegmentPathType = string | number
 export type JSONPathType = Array<JSONSegmentPathType>
 
-export type JSONSegmentPathBufferType = Uint8Array | number
+export type JSONSegmentPathBufferType = Uint8Array
 export type JSONPathBufferType = Array<JSONSegmentPathBufferType>
 
 export type JSONSegmentPathOrJSONSegmentPathBufferType =

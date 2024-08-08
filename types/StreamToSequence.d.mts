@@ -15,13 +15,13 @@ export default class StreamToSequence {
     state: string;
     /** @type {Array<STATE>} */
     stateStack: Array<STATE>;
-    char: string;
     /** @type {import("../types/baseTypes").JSONPathBufferType} */
     currentPath: import("../types/baseTypes").JSONPathBufferType;
     stringBuffer: Uint8Array;
     /** @type {Array<number>} */
     objectBuffer: Array<number>;
     decoder: import("util").TextDecoder;
+    currentArrayIndex: number;
     /**
      * add another segment to the path
      * @package
@@ -34,18 +34,6 @@ export default class StreamToSequence {
      * @return {import("../types/baseTypes").JSONPathType}
      */
     _getEncodedCurrentPath(): import("../types/baseTypes").JSONPathType;
-    /**
-     * add another segment to the path
-     * @package
-     * @param {import("../types/baseTypes").JSONSegmentPathBufferType} segment
-     */
-    _pushPathSegment(segment: import("../types/baseTypes").JSONSegmentPathBufferType): void;
-    /**
-     * remove a segment from the path
-     * @package
-     * @returns {import("../types/baseTypes").JSONSegmentPathBufferType}
-     */
-    _popPathSegment(): import("../types/baseTypes").JSONSegmentPathBufferType;
     /**
      * add another segment to the path
      * @package

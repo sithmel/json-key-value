@@ -130,3 +130,29 @@ export function* fromIndexToEnd(array, index) {
 export function pathSegmentTerminator(pathSegment) {
   return typeof pathSegment === "string" ? "}" : "]"
 }
+
+const zero = 48
+
+/**
+ * Index to Uint8Array
+ * @package
+ * @param {number} number
+ * @returns {Uint8Array}
+ */
+export function indexToUint8Array(number) {
+  new Uint8Array()
+  const ascii_codes = []
+  if (number === 0) {
+    return new Uint8Array([zero])
+  }
+  let num = number
+
+  // Extract digits and insert at the beginning of the vector
+  while (num > 0) {
+    const digit = num % 10
+    ascii_codes.push(zero + digit)
+    num = (num / 10) | 0
+  }
+
+  return new Uint8Array(ascii_codes.reverse())
+}

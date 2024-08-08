@@ -1,5 +1,5 @@
 //@ts-check
-
+import { indexToUint8Array } from "../utils.mjs"
 /**
  * create spaces for indentation
  * @param {string} spacer
@@ -192,7 +192,7 @@ export class SegmentMatcher extends BaseMatcher {
     this.segmentMatchEncoded =
       typeof segmentMatch === "string"
         ? encoder.encode(JSON.stringify(segmentMatch))
-        : segmentMatch
+        : indexToUint8Array(segmentMatch)
   }
   /**
    * Check if this specific segment matches, without checking the children
@@ -200,19 +200,15 @@ export class SegmentMatcher extends BaseMatcher {
    * @return {boolean}
    */
   _doesMatch(segment) {
-    if (
-      typeof this.segmentMatchEncoded === "number" &&
-      typeof segment === "number"
-    ) {
-      return segment === this.segmentMatchEncoded
-    }
-    if (typeof this.segmentMatch === "string" && typeof segment === "string") {
-      return segment === this.segmentMatch
-    }
-    if (
-      this.segmentMatchEncoded instanceof Uint8Array &&
-      segment instanceof Uint8Array
-    ) {
+    if (typeof segment === "string") {
+      return (
+        typeof this.segmentMatch === "string" && segment === this.segmentMatch
+      )
+    } else if (typeof segment === "number") {
+      return (
+        typeof this.segmentMatch === "number" && segment === this.segmentMatch
+      )
+    } else if (segment instanceof Uint8Array) {
       return (
         this.segmentMatchEncoded.byteLength === segment.byteLength &&
         this.segmentMatchEncoded.every(
@@ -249,7 +245,7 @@ export class SegmentMatcher extends BaseMatcher {
    */
   stringify(spacer = null, level = 0) {
     let segmentStr
-    if (typeof this.segmentMatch === "string") {
+    if (this.segmentMatch === "string") {
       if (this.segmentMatch.includes("'")) {
         segmentStr = `"${this.segmentMatch}"`
       } else {

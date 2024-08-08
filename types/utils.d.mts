@@ -60,6 +60,13 @@ export function fromIndexToEnd<T>(array: T[], index: number): Iterable<[number, 
  * @returns {string}
  */
 export function pathSegmentTerminator(pathSegment: import("../types/baseTypes").JSONSegmentPathType): string;
+/**
+ * Index to Uint8Array
+ * @package
+ * @param {number} number
+ * @returns {Uint8Array}
+ */
+export function indexToUint8Array(number: number): Uint8Array;
 export class ParsingError extends Error {
     /**
      * @param {string} message

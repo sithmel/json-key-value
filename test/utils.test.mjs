@@ -9,9 +9,10 @@ import {
   fromEndToIndex,
   fromIndexToEnd,
   isPreviousPathInNewPath,
+  indexToUint8Array,
 } from "../src/utils.mjs"
 
-const { describe, it, oit, beforeEach } = pkg
+const { describe, odescribe, it, oit, beforeEach } = pkg
 describe("utils", () => {
   describe("isArrayOrObject", () => {
     it("works with plain objects", () =>
@@ -109,5 +110,17 @@ describe("utils", () => {
       ))
     it("works with uncommon path (2)", () =>
       assert.equal(isPreviousPathInNewPath(["x", "y"], ["x"]), false))
+  })
+  describe("indexToUint8Array", () => {
+    it("works", () => {
+      assert.deepEqual(indexToUint8Array(0), new Uint8Array([48]))
+      assert.deepEqual(indexToUint8Array(2), new Uint8Array([50]))
+      assert.deepEqual(indexToUint8Array(10), new Uint8Array([49, 48]))
+      assert.deepEqual(indexToUint8Array(21), new Uint8Array([50, 49]))
+      assert.deepEqual(
+        indexToUint8Array(2102),
+        new Uint8Array([50, 49, 48, 50]),
+      )
+    })
   })
 })
