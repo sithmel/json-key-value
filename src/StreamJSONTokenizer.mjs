@@ -64,6 +64,7 @@ export const TOKEN = {
   TRUE: token_enum++,
   FALSE: token_enum++,
   NULL: token_enum++,
+  SUB_OBJECT: token_enum++,
 }
 
 let state_enum = 0
@@ -93,8 +94,13 @@ const STATE = {
 export default class StreamJSONTokenizer {
   /**
    * Convert a stream of bytes (in chunks) to a sequence tokens
+   * @param {{ maxDepth?: number }} options
    */
-  constructor() {
+  constructor(options = {}) {
+    const { maxDepth = Infinity } = options
+    this.maxDepth = maxDepth
+    this.currentDepth = 0
+
     this.totalBufferIndex = 0
     this.state = STATE.IDLE
     /** @type Array<number> */
@@ -107,6 +113,61 @@ export default class StreamJSONTokenizer {
    */
   getOutputBuffer() {
     return this.outputBuffer
+  }
+
+  /**
+   * open an object/array
+   * @param {number} byte
+   * @param {TOKEN} token
+   * @returns {?TOKEN}
+   */
+  _getTokenOpenObjectOrArray(byte, token) {
+    this.currentDepth++
+    if (this.currentDepth < this.maxDepth) {
+      return token
+    }
+
+    if (this.currentDepth === this.maxDepth) {
+      this.outputBuffer = [byte]
+      return null
+    }
+    this.outputBuffer.push(byte)
+    return null
+  }
+
+  /**
+   * close an object/array
+   * @param {number} byte
+   * @param {TOKEN} token
+   * @returns {?TOKEN}
+   */
+  _getTokenCloseObjectOrArray(byte, token) {
+    this.currentDepth--
+    if (this.currentDepth < this.maxDepth) {
+      return token
+    }
+
+    if (this.currentDepth === this.maxDepth) {
+      this.outputBuffer.push(byte)
+      return TOKEN.SUB_OBJECT
+    }
+
+    this.outputBuffer.push(byte)
+    return null
+  }
+
+  /**
+   * close an object/array
+   * @param {number} byte
+   * @param {TOKEN} token
+   * @returns {?TOKEN}
+   */
+  _getTokenOrStore(byte, token) {
+    if (this.currentDepth < this.maxDepth) {
+      return token
+    }
+    this.outputBuffer.push(byte)
+    return null
   }
 
   /**
@@ -150,17 +211,47 @@ export default class StreamJSONTokenizer {
             this.state = STATE.NUMBER
             this.outputBuffer = [byte]
           } else if (byte === CHAR_CODE.OPEN_BRACES) {
-            yield TOKEN.OPEN_BRACES
+            const token = this._getTokenOpenObjectOrArray(
+              byte,
+              TOKEN.OPEN_BRACES,
+            )
+            if (token) {
+              yield token
+            }
           } else if (byte === CHAR_CODE.CLOSED_BRACES) {
-            yield TOKEN.CLOSED_BRACES
+            const token = this._getTokenCloseObjectOrArray(
+              byte,
+              TOKEN.CLOSED_BRACES,
+            )
+            if (token) {
+              yield token
+            }
           } else if (byte === CHAR_CODE.OPEN_BRACKETS) {
-            yield TOKEN.OPEN_BRACKET
+            const token = this._getTokenOpenObjectOrArray(
+              byte,
+              TOKEN.OPEN_BRACKET,
+            )
+            if (token) {
+              yield token
+            }
           } else if (byte === CHAR_CODE.CLOSED_BRACKETS) {
-            yield TOKEN.CLOSED_BRACKET
+            const token = this._getTokenCloseObjectOrArray(
+              byte,
+              TOKEN.CLOSED_BRACKET,
+            )
+            if (token) {
+              yield token
+            }
           } else if (byte === CHAR_CODE.COLON) {
-            yield TOKEN.COLON
+            const token = this._getTokenOrStore(byte, TOKEN.COLON)
+            if (token) {
+              yield token
+            }
           } else if (byte === CHAR_CODE.COMMA) {
-            yield TOKEN.COMMA
+            const token = this._getTokenOrStore(byte, TOKEN.COMMA)
+            if (token) {
+              yield token
+            }
           } else {
             throw new ParsingError("Invalid character", this.totalBufferIndex)
           }
