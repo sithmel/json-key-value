@@ -91,19 +91,6 @@ const STATE = {
   STRING_SLASH_CHAR: state_enum++, // "\"
 }
 
-const WHITESPACE_SET = new Set([
-  CHAR_CODE.SPACE,
-  CHAR_CODE.TAB,
-  CHAR_CODE.CR,
-  CHAR_CODE.LF,
-])
-const NUMBER_ALFA_SET = new Set([
-  CHAR_CODE.MINUS,
-  CHAR_CODE.DOT,
-  CHAR_CODE.E,
-  CHAR_CODE.CAPITAL_E,
-])
-
 export default class StreamJSONTokenizer {
   /**
    * Convert a stream of bytes (in chunks) to a sequence tokens
@@ -228,7 +215,14 @@ export default class StreamJSONTokenizer {
           continue
 
         case STATE.IDLE:
-          if (WHITESPACE_SET.has(byte)) continue
+          if (
+            byte === CHAR_CODE.SPACE ||
+            byte === CHAR_CODE.LF ||
+            byte === CHAR_CODE.CR ||
+            byte === CHAR_CODE.TAB
+          ) {
+            continue
+          }
           if (byte === CHAR_CODE.QUOTE) {
             this.state = STATE.STRING
             if (this.currentDepth <= this.maxDepth)
@@ -399,7 +393,10 @@ export default class StreamJSONTokenizer {
         case STATE.NUMBER:
           if (
             (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9) ||
-            NUMBER_ALFA_SET.has(byte)
+            byte === CHAR_CODE.DOT ||
+            byte === CHAR_CODE.E ||
+            byte === CHAR_CODE.CAPITAL_E ||
+            byte === CHAR_CODE.MINUS
           ) {
             if (this.currentDepth <= this.maxDepth) {
               this.captureOutput(currentBufferIndex)
