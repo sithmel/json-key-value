@@ -64,6 +64,7 @@ export const TOKEN = {
   TRUE: token_enum++,
   FALSE: token_enum++,
   NULL: token_enum++,
+  SUB_OBJECT: token_enum++,
 }
 
 let state_enum = 0
@@ -93,20 +94,89 @@ const STATE = {
 export default class StreamJSONTokenizer {
   /**
    * Convert a stream of bytes (in chunks) to a sequence tokens
+   * @param {{ maxDepth?: number }} options
    */
-  constructor() {
-    this.totalBufferIndex = 0
+  constructor(options = {}) {
+    const { maxDepth = Infinity } = options
+    this.maxDepth = maxDepth
+    this.currentDepth = 0
+
+    this.totalBufferIndex = 0 // used to indicate where an error is
     this.state = STATE.IDLE
-    /** @type Array<number> */
-    this.outputBuffer = [] // this stores strings temporarily
+
+    /** @type Array<number>? */
+    this.savedOutputBuffer = null // this stores strings temporarily
+    /** @type [number, number]? */
+    this.outputBufferIndices = null
+
+    this.currentBuffer = new Uint8Array()
   }
 
   /**
    * returns the outputBuffer
-   * @returns {Array<number>}
+   * @returns {Uint8Array}
    */
   getOutputBuffer() {
-    return this.outputBuffer
+    if (this.outputBufferIndices != null) {
+      const buffer = this.currentBuffer.buffer
+      return new Uint8Array(
+        buffer,
+        this.outputBufferIndices[0],
+        this.outputBufferIndices[1] - this.outputBufferIndices[0] + 1,
+      )
+    }
+    if (this.savedOutputBuffer != null) {
+      const savedOutputBuffer = this.savedOutputBuffer
+      this.savedOutputBuffer = null
+      return new Uint8Array(savedOutputBuffer)
+    }
+    throw new Error("Unexpected error returning the buffer")
+  }
+
+  /**
+   *
+   * @param {number} currentBufferIndex
+   */
+  startCaptureOutput(currentBufferIndex) {
+    this.outputBufferIndices = [currentBufferIndex, currentBufferIndex]
+    this.savedOutputBuffer = null
+  }
+
+  /**
+   *
+   * @param {number} currentBufferIndex
+   */
+  captureOutput(currentBufferIndex) {
+    if (this.outputBufferIndices != null) {
+      this.outputBufferIndices[1] = currentBufferIndex
+    } else if (this.savedOutputBuffer != null) {
+      this.savedOutputBuffer.push(this.currentBuffer[currentBufferIndex])
+    } else {
+      throw new Error("Unexpected error saving the buffer")
+    }
+  }
+
+  /**
+   *
+   */
+  rewindOutput() {
+    if (this.savedOutputBuffer != null) {
+      this.savedOutputBuffer.pop()
+    }
+  }
+
+  /**
+   *
+   */
+  saveLeftOverOutput() {
+    if (this.savedOutputBuffer != null) {
+      return // Already using the buffer
+    }
+    if (this.outputBufferIndices != null) {
+      this.savedOutputBuffer = Array.from(this.getOutputBuffer())
+      this.outputBufferIndices = null
+    }
+    // nothing to save
   }
 
   /**
@@ -115,27 +185,48 @@ export default class StreamJSONTokenizer {
    * @returns {Iterable<TOKEN>}
    */
   *iter(current_buffer) {
+    this.currentBuffer = current_buffer
+    let currentBufferIndex
     for (
-      let currentBufferIndex = 0;
+      currentBufferIndex = 0;
       currentBufferIndex < current_buffer.length;
       currentBufferIndex++
     ) {
       this.totalBufferIndex++
       let byte = current_buffer[currentBufferIndex]
+      // if maxDepth is reached I store bytes in the outputBuffer
+      if (this.currentDepth > this.maxDepth) {
+        this.captureOutput(currentBufferIndex)
+      }
+
       switch (this.state) {
-        case STATE.IDLE: // any value
+        case STATE.STRING:
+          if (this.currentDepth <= this.maxDepth) {
+            this.captureOutput(currentBufferIndex)
+          }
+          if (byte === CHAR_CODE.QUOTE) {
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.STRING
+            }
+            this.state = STATE.IDLE
+          } else if (byte === CHAR_CODE.BACKSLASH) {
+            this.state = STATE.STRING_SLASH_CHAR
+          }
+          continue
+
+        case STATE.IDLE:
           if (
-            [
-              CHAR_CODE.SPACE,
-              CHAR_CODE.TAB,
-              CHAR_CODE.CR,
-              CHAR_CODE.LF,
-            ].includes(byte)
-          )
+            byte === CHAR_CODE.SPACE ||
+            byte === CHAR_CODE.LF ||
+            byte === CHAR_CODE.CR ||
+            byte === CHAR_CODE.TAB
+          ) {
             continue
+          }
           if (byte === CHAR_CODE.QUOTE) {
             this.state = STATE.STRING
-            this.outputBuffer = [byte]
+            if (this.currentDepth <= this.maxDepth)
+              this.startCaptureOutput(currentBufferIndex)
           } else if (byte === CHAR_CODE.T) {
             this.state = STATE.TRUE
           } else if (byte === CHAR_CODE.F) {
@@ -146,51 +237,55 @@ export default class StreamJSONTokenizer {
             byte === CHAR_CODE.MINUS ||
             (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9)
           ) {
-            // keep and continue
             this.state = STATE.NUMBER
-            this.outputBuffer = [byte]
+            if (this.currentDepth <= this.maxDepth)
+              this.startCaptureOutput(currentBufferIndex)
           } else if (byte === CHAR_CODE.OPEN_BRACES) {
-            yield TOKEN.OPEN_BRACES
+            if (this.currentDepth === this.maxDepth) {
+              this.startCaptureOutput(currentBufferIndex)
+            } else if (this.currentDepth < this.maxDepth) {
+              yield TOKEN.OPEN_BRACES
+            }
+            this.currentDepth++
           } else if (byte === CHAR_CODE.CLOSED_BRACES) {
-            yield TOKEN.CLOSED_BRACES
+            this.currentDepth--
+            if (this.currentDepth === this.maxDepth) {
+              yield TOKEN.SUB_OBJECT
+            } else if (this.currentDepth < this.maxDepth) {
+              yield TOKEN.CLOSED_BRACES
+            }
           } else if (byte === CHAR_CODE.OPEN_BRACKETS) {
-            yield TOKEN.OPEN_BRACKET
+            if (this.currentDepth === this.maxDepth) {
+              this.startCaptureOutput(currentBufferIndex)
+            } else if (this.currentDepth < this.maxDepth) {
+              yield TOKEN.OPEN_BRACKET
+            }
+            this.currentDepth++
           } else if (byte === CHAR_CODE.CLOSED_BRACKETS) {
-            yield TOKEN.CLOSED_BRACKET
+            this.currentDepth--
+            if (this.currentDepth === this.maxDepth) {
+              yield TOKEN.SUB_OBJECT
+            } else if (this.currentDepth < this.maxDepth) {
+              yield TOKEN.CLOSED_BRACKET
+            }
           } else if (byte === CHAR_CODE.COLON) {
-            yield TOKEN.COLON
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.COLON
+            }
           } else if (byte === CHAR_CODE.COMMA) {
-            yield TOKEN.COMMA
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.COMMA
+            }
           } else {
             throw new ParsingError("Invalid character", this.totalBufferIndex)
           }
           continue
 
-        case STATE.STRING: // a string
-          if (byte === CHAR_CODE.QUOTE) {
-            this.outputBuffer.push(byte)
-            yield TOKEN.STRING
-            this.state = STATE.IDLE
-          } else if (byte === CHAR_CODE.BACKSLASH) {
-            this.outputBuffer.push(byte)
-            this.state = STATE.STRING_SLASH_CHAR
-          } else {
-            if (
-              byte === CHAR_CODE.LF ||
-              byte === CHAR_CODE.CR ||
-              byte === CHAR_CODE.TAB ||
-              byte === CHAR_CODE.DC2 ||
-              byte === CHAR_CODE.BACKSPACE
-            ) {
-              throw new ParsingError("Invalid character", this.totalBufferIndex)
-            }
-            this.outputBuffer.push(byte)
-          }
-          continue
-
-        case STATE.STRING_SLASH_CHAR: // a string after the "\"
+        case STATE.STRING_SLASH_CHAR:
           this.state = STATE.STRING
-          this.outputBuffer.push(byte)
+          if (this.currentDepth <= this.maxDepth) {
+            this.captureOutput(currentBufferIndex)
+          }
           continue
 
         case STATE.TRUE:
@@ -213,7 +308,9 @@ export default class StreamJSONTokenizer {
 
         case STATE.TRUE3:
           if (byte === CHAR_CODE.E) {
-            yield TOKEN.TRUE
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.TRUE
+            }
             this.state = STATE.IDLE
           } else
             throw new ParsingError(
@@ -251,7 +348,9 @@ export default class StreamJSONTokenizer {
 
         case STATE.FALSE4:
           if (byte === CHAR_CODE.E) {
-            yield TOKEN.FALSE
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.FALSE
+            }
             this.state = STATE.IDLE
           } else
             throw new ParsingError(
@@ -280,7 +379,9 @@ export default class StreamJSONTokenizer {
 
         case STATE.NULL3:
           if (byte === CHAR_CODE.L) {
-            yield TOKEN.NULL
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.NULL
+            }
             this.state = STATE.IDLE
           } else
             throw new ParsingError(
@@ -289,19 +390,25 @@ export default class StreamJSONTokenizer {
             )
           continue
 
-        case STATE.NUMBER: // a number
+        case STATE.NUMBER:
           if (
             (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9) ||
-            byte === CHAR_CODE.MINUS ||
             byte === CHAR_CODE.DOT ||
             byte === CHAR_CODE.E ||
-            byte === CHAR_CODE.CAPITAL_E
+            byte === CHAR_CODE.CAPITAL_E ||
+            byte === CHAR_CODE.MINUS
           ) {
-            this.outputBuffer.push(byte)
+            if (this.currentDepth <= this.maxDepth) {
+              this.captureOutput(currentBufferIndex)
+            }
           } else {
-            yield TOKEN.NUMBER
-            this.state = STATE.IDLE
             currentBufferIndex--
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.NUMBER
+            } else {
+              this.rewindOutput() // unsave last byte in the buffer, it will be parsed again
+            }
+            this.state = STATE.IDLE
           }
           continue
 
@@ -312,5 +419,6 @@ export default class StreamJSONTokenizer {
           )
       }
     }
+    this.saveLeftOverOutput()
   }
 }
