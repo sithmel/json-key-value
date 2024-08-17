@@ -91,6 +91,19 @@ const STATE = {
   STRING_SLASH_CHAR: state_enum++, // "\"
 }
 
+const WHITESPACE_SET = new Set([
+  CHAR_CODE.SPACE,
+  CHAR_CODE.TAB,
+  CHAR_CODE.CR,
+  CHAR_CODE.LF,
+])
+const NUMBER_ALFA_SET = new Set([
+  CHAR_CODE.MINUS,
+  CHAR_CODE.DOT,
+  CHAR_CODE.E,
+  CHAR_CODE.CAPITAL_E,
+])
+
 export default class StreamJSONTokenizer {
   /**
    * Convert a stream of bytes (in chunks) to a sequence tokens
@@ -200,16 +213,22 @@ export default class StreamJSONTokenizer {
       }
 
       switch (this.state) {
-        case STATE.IDLE: // any value
-          if (
-            [
-              CHAR_CODE.SPACE,
-              CHAR_CODE.TAB,
-              CHAR_CODE.CR,
-              CHAR_CODE.LF,
-            ].includes(byte)
-          )
-            continue
+        case STATE.STRING:
+          if (this.currentDepth <= this.maxDepth) {
+            this.captureOutput(currentBufferIndex)
+          }
+          if (byte === CHAR_CODE.QUOTE) {
+            if (this.currentDepth <= this.maxDepth) {
+              yield TOKEN.STRING
+            }
+            this.state = STATE.IDLE
+          } else if (byte === CHAR_CODE.BACKSLASH) {
+            this.state = STATE.STRING_SLASH_CHAR
+          }
+          continue
+
+        case STATE.IDLE:
+          if (WHITESPACE_SET.has(byte)) continue
           if (byte === CHAR_CODE.QUOTE) {
             this.state = STATE.STRING
             if (this.currentDepth <= this.maxDepth)
@@ -268,31 +287,7 @@ export default class StreamJSONTokenizer {
           }
           continue
 
-        case STATE.STRING: // a string
-          if (this.currentDepth <= this.maxDepth) {
-            this.captureOutput(currentBufferIndex)
-          }
-          if (byte === CHAR_CODE.QUOTE) {
-            if (this.currentDepth <= this.maxDepth) {
-              yield TOKEN.STRING
-            }
-            this.state = STATE.IDLE
-          } else if (byte === CHAR_CODE.BACKSLASH) {
-            this.state = STATE.STRING_SLASH_CHAR
-          } else {
-            if (
-              byte === CHAR_CODE.LF ||
-              byte === CHAR_CODE.CR ||
-              byte === CHAR_CODE.TAB ||
-              byte === CHAR_CODE.DC2 ||
-              byte === CHAR_CODE.BACKSPACE
-            ) {
-              throw new ParsingError("Invalid character", this.totalBufferIndex)
-            }
-          }
-          continue
-
-        case STATE.STRING_SLASH_CHAR: // a string after the "\"
+        case STATE.STRING_SLASH_CHAR:
           this.state = STATE.STRING
           if (this.currentDepth <= this.maxDepth) {
             this.captureOutput(currentBufferIndex)
@@ -401,13 +396,10 @@ export default class StreamJSONTokenizer {
             )
           continue
 
-        case STATE.NUMBER: // a number
+        case STATE.NUMBER:
           if (
             (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9) ||
-            byte === CHAR_CODE.MINUS ||
-            byte === CHAR_CODE.DOT ||
-            byte === CHAR_CODE.E ||
-            byte === CHAR_CODE.CAPITAL_E
+            NUMBER_ALFA_SET.has(byte)
           ) {
             if (this.currentDepth <= this.maxDepth) {
               this.captureOutput(currentBufferIndex)
@@ -430,7 +422,6 @@ export default class StreamJSONTokenizer {
           )
       }
     }
-    // save leftOvers in outputbuffer
     this.saveLeftOverOutput()
   }
 }
