@@ -143,7 +143,7 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_KEY: // after the key is over
           if (token === TOKEN.COLON) {
-            this.currentPath.push(this.stringBuffer)
+            this.currentPath.push(this.stringBuffer.slice())
             this._pushState(STATE.CLOSE_OBJECT)
             this.state = STATE.VALUE
           } else {

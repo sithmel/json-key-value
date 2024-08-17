@@ -101,10 +101,15 @@ export default class StreamJSONTokenizer {
     this.maxDepth = maxDepth
     this.currentDepth = 0
 
-    this.totalBufferIndex = 0
+    this.totalBufferIndex = 0 // used to indicate where an error is
     this.state = STATE.IDLE
-    /** @type Array<number> */
-    this.outputBuffer = [] // this stores strings temporarily
+
+    /** @type Array<number>? */
+    this.savedOutputBuffer = null // this stores strings temporarily
+    /** @type [number, number]? */
+    this.outputBufferIndices = null
+
+    this.currentBuffer = new Uint8Array()
   }
 
   /**
@@ -112,7 +117,66 @@ export default class StreamJSONTokenizer {
    * @returns {Uint8Array}
    */
   getOutputBuffer() {
-    return new Uint8Array(this.outputBuffer)
+    if (this.outputBufferIndices != null) {
+      const buffer = this.currentBuffer.buffer
+      return new Uint8Array(
+        buffer,
+        this.outputBufferIndices[0],
+        this.outputBufferIndices[1] - this.outputBufferIndices[0] + 1,
+      )
+    }
+    if (this.savedOutputBuffer != null) {
+      const savedOutputBuffer = this.savedOutputBuffer
+      this.savedOutputBuffer = null
+      return new Uint8Array(savedOutputBuffer)
+    }
+    throw new Error("Unexpected error returning the buffer")
+  }
+
+  /**
+   *
+   * @param {number} currentBufferIndex
+   */
+  startCaptureOutput(currentBufferIndex) {
+    this.outputBufferIndices = [currentBufferIndex, currentBufferIndex]
+    this.savedOutputBuffer = null
+  }
+
+  /**
+   *
+   * @param {number} currentBufferIndex
+   */
+  captureOutput(currentBufferIndex) {
+    if (this.outputBufferIndices != null) {
+      this.outputBufferIndices[1] = currentBufferIndex
+    } else if (this.savedOutputBuffer != null) {
+      this.savedOutputBuffer.push(this.currentBuffer[currentBufferIndex])
+    } else {
+      throw new Error("Unexpected error saving the buffer")
+    }
+  }
+
+  /**
+   *
+   */
+  rewindOutput() {
+    if (this.savedOutputBuffer != null) {
+      this.savedOutputBuffer.pop()
+    }
+  }
+
+  /**
+   *
+   */
+  saveLeftOverOutput() {
+    if (this.savedOutputBuffer != null) {
+      return // Already using the buffer
+    }
+    if (this.outputBufferIndices != null) {
+      this.savedOutputBuffer = Array.from(this.getOutputBuffer())
+      this.outputBufferIndices = null
+    }
+    // nothing to save
   }
 
   /**
@@ -121,8 +185,10 @@ export default class StreamJSONTokenizer {
    * @returns {Iterable<TOKEN>}
    */
   *iter(current_buffer) {
+    this.currentBuffer = current_buffer
+    let currentBufferIndex
     for (
-      let currentBufferIndex = 0;
+      currentBufferIndex = 0;
       currentBufferIndex < current_buffer.length;
       currentBufferIndex++
     ) {
@@ -130,7 +196,7 @@ export default class StreamJSONTokenizer {
       let byte = current_buffer[currentBufferIndex]
       // if maxDepth is reached I store bytes in the outputBuffer
       if (this.currentDepth > this.maxDepth) {
-        this.outputBuffer.push(byte)
+        this.captureOutput(currentBufferIndex)
       }
 
       switch (this.state) {
@@ -146,7 +212,8 @@ export default class StreamJSONTokenizer {
             continue
           if (byte === CHAR_CODE.QUOTE) {
             this.state = STATE.STRING
-            if (this.currentDepth <= this.maxDepth) this.outputBuffer = [byte]
+            if (this.currentDepth <= this.maxDepth)
+              this.startCaptureOutput(currentBufferIndex)
           } else if (byte === CHAR_CODE.T) {
             this.state = STATE.TRUE
           } else if (byte === CHAR_CODE.F) {
@@ -158,10 +225,11 @@ export default class StreamJSONTokenizer {
             (CHAR_CODE.N0 <= byte && byte <= CHAR_CODE.N9)
           ) {
             this.state = STATE.NUMBER
-            if (this.currentDepth <= this.maxDepth) this.outputBuffer = [byte]
+            if (this.currentDepth <= this.maxDepth)
+              this.startCaptureOutput(currentBufferIndex)
           } else if (byte === CHAR_CODE.OPEN_BRACES) {
             if (this.currentDepth === this.maxDepth) {
-              this.outputBuffer = [byte]
+              this.startCaptureOutput(currentBufferIndex)
             } else if (this.currentDepth < this.maxDepth) {
               yield TOKEN.OPEN_BRACES
             }
@@ -175,7 +243,7 @@ export default class StreamJSONTokenizer {
             }
           } else if (byte === CHAR_CODE.OPEN_BRACKETS) {
             if (this.currentDepth === this.maxDepth) {
-              this.outputBuffer = [byte]
+              this.startCaptureOutput(currentBufferIndex)
             } else if (this.currentDepth < this.maxDepth) {
               yield TOKEN.OPEN_BRACKET
             }
@@ -202,7 +270,7 @@ export default class StreamJSONTokenizer {
 
         case STATE.STRING: // a string
           if (this.currentDepth <= this.maxDepth) {
-            this.outputBuffer.push(byte)
+            this.captureOutput(currentBufferIndex)
           }
           if (byte === CHAR_CODE.QUOTE) {
             if (this.currentDepth <= this.maxDepth) {
@@ -227,7 +295,7 @@ export default class StreamJSONTokenizer {
         case STATE.STRING_SLASH_CHAR: // a string after the "\"
           this.state = STATE.STRING
           if (this.currentDepth <= this.maxDepth) {
-            this.outputBuffer.push(byte)
+            this.captureOutput(currentBufferIndex)
           }
           continue
 
@@ -342,14 +410,14 @@ export default class StreamJSONTokenizer {
             byte === CHAR_CODE.CAPITAL_E
           ) {
             if (this.currentDepth <= this.maxDepth) {
-              this.outputBuffer.push(byte)
+              this.captureOutput(currentBufferIndex)
             }
           } else {
             currentBufferIndex--
             if (this.currentDepth <= this.maxDepth) {
               yield TOKEN.NUMBER
             } else {
-              this.outputBuffer.pop()
+              this.rewindOutput() // unsave last byte in the buffer, it will be parsed again
             }
             this.state = STATE.IDLE
           }
@@ -362,5 +430,7 @@ export default class StreamJSONTokenizer {
           )
       }
     }
+    // save leftOvers in outputbuffer
+    this.saveLeftOverOutput()
   }
 }
