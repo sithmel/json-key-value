@@ -7,7 +7,7 @@
  * @return string
  */
 function indentation(spacer, level) {
-  return "\n" + Array(level + 1).join(spacer)
+  return "\n" + spacer.repeat(level)
 }
 export class MatcherContainer {
   /**

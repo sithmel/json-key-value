@@ -1,10 +1,7 @@
 //@ts-check
 
 import { ParsingError } from "./utils.mjs"
-import StreamJSONTokenizer, {
-  TOKEN,
-  CHAR_CODE,
-} from "./StreamJSONTokenizer.mjs"
+import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 /**
@@ -107,68 +104,6 @@ export default class StreamToSequence {
     }
     for (const token of this.tokenizer.iter(chunk)) {
       switch (this.state) {
-        case STATE.END: // last possible state
-          throw new ParsingError(
-            "Malformed JSON",
-            this.tokenizer.totalBufferIndex,
-          )
-
-        case STATE.OPEN_KEY: // after the "," in an object
-          if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
-            this.state = STATE.CLOSE_KEY
-          } else {
-            throw new ParsingError(
-              'Malformed object. Key should start with " (after ",")',
-              this.tokenizer.totalBufferIndex,
-            )
-          }
-          break
-
-        case STATE.OPEN_OBJECT: // after the "{" in an object
-          if (token === TOKEN.CLOSED_BRACES) {
-            this.state = this._popState()
-            break
-          }
-          if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
-            this.state = STATE.CLOSE_KEY
-          } else {
-            throw new ParsingError(
-              'Malformed object. Key should start with "',
-              this.tokenizer.totalBufferIndex,
-            )
-          }
-          break
-
-        case STATE.CLOSE_KEY: // after the key is over
-          if (token === TOKEN.COLON) {
-            this.currentPath.push(this.stringBuffer.slice())
-            this._pushState(STATE.CLOSE_OBJECT)
-            this.state = STATE.VALUE
-          } else {
-            throw new ParsingError(
-              "Malformed object. Expecting ':' after object key",
-              this.tokenizer.totalBufferIndex,
-            )
-          }
-          break
-
-        case STATE.CLOSE_OBJECT: // after the value is parsed and the object can be closed
-          if (token === TOKEN.CLOSED_BRACES) {
-            this.currentPath.pop()
-            this.state = this._popState()
-          } else if (token === TOKEN.COMMA) {
-            this.currentPath.pop()
-            this.state = STATE.OPEN_KEY
-          } else {
-            throw new ParsingError(
-              "Malformed object. Expecting '}' or ',' after object value",
-              this.tokenizer.totalBufferIndex,
-            )
-          }
-          break
-
         case STATE.VALUE: // any value
           if (token === TOKEN.STRING) {
             if (this.matcher.doesMatch(this.currentPath)) {
@@ -239,6 +174,62 @@ export default class StreamToSequence {
           }
           break
 
+        case STATE.OPEN_KEY: // after the "," in an object
+          if (token === TOKEN.STRING) {
+            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.state = STATE.CLOSE_KEY
+          } else {
+            throw new ParsingError(
+              'Malformed object. Key should start with " (after ",")',
+              this.tokenizer.totalBufferIndex,
+            )
+          }
+          break
+
+        case STATE.OPEN_OBJECT: // after the "{" in an object
+          if (token === TOKEN.CLOSED_BRACES) {
+            this.state = this._popState()
+            break
+          }
+          if (token === TOKEN.STRING) {
+            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.state = STATE.CLOSE_KEY
+          } else {
+            throw new ParsingError(
+              'Malformed object. Key should start with "',
+              this.tokenizer.totalBufferIndex,
+            )
+          }
+          break
+
+        case STATE.CLOSE_KEY: // after the key is over
+          if (token === TOKEN.COLON) {
+            this.currentPath.push(this.stringBuffer.slice())
+            this._pushState(STATE.CLOSE_OBJECT)
+            this.state = STATE.VALUE
+          } else {
+            throw new ParsingError(
+              "Malformed object. Expecting ':' after object key",
+              this.tokenizer.totalBufferIndex,
+            )
+          }
+          break
+
+        case STATE.CLOSE_OBJECT: // after the value is parsed and the object can be closed
+          if (token === TOKEN.CLOSED_BRACES) {
+            this.currentPath.pop()
+            this.state = this._popState()
+          } else if (token === TOKEN.COMMA) {
+            this.currentPath.pop()
+            this.state = STATE.OPEN_KEY
+          } else {
+            throw new ParsingError(
+              "Malformed object. Expecting '}' or ',' after object value",
+              this.tokenizer.totalBufferIndex,
+            )
+          }
+          break
+
         case STATE.CLOSE_ARRAY: // array ready to end, or restart after the comma
           if (token === TOKEN.COMMA) {
             const previousIndex = this.currentPath[this.currentPath.length - 1]
@@ -258,6 +249,11 @@ export default class StreamToSequence {
             )
           }
           break
+        case STATE.END: // last possible state
+          throw new ParsingError(
+            "Malformed JSON",
+            this.tokenizer.totalBufferIndex,
+          )
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
