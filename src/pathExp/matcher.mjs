@@ -1,5 +1,7 @@
 //@ts-check
 
+import { Path, CachedStringBuffer } from "./path.mjs"
+
 /**
  * create spaces for indentation
  * @param {string} spacer
@@ -19,7 +21,7 @@ export class MatcherContainer {
   }
   /**
    * Check for match
-   * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
+   * @param {Path} path
    * @return {boolean}
    */
   doesMatch(path) {
@@ -81,7 +83,7 @@ class BaseMatcher {
 
   /**
    * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} _segment
+   * @param {?CachedStringBuffer|number|string} _segment
    * @param {boolean} _parentLastPossibleMatch
    * @return {boolean}
    */
@@ -91,7 +93,7 @@ class BaseMatcher {
 
   /**
    * Check for match
-   * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
+   * @param {Path} path
    * @param {boolean} [parentLastPossibleMatch]
    * @return {boolean}
    */
@@ -99,14 +101,14 @@ class BaseMatcher {
     if (
       path.length === 0 ||
       this.isExhausted() ||
-      !this.doesSegmentMatch(path[0], parentLastPossibleMatch)
+      !this.doesSegmentMatch(path.get(0), parentLastPossibleMatch)
     ) {
       return false
     }
     if (this.matchers.length == 0) {
       return true
     }
-    const newPath = path.slice(1)
+    const newPath = path.rest()
     for (const matcher of this.matchers) {
       if (matcher.doesMatch(newPath, this._isLastPossibleMatch)) {
         return true
@@ -157,7 +159,7 @@ class BaseMatcher {
 export class AnyMatcher extends BaseMatcher {
   /**
    * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} _segment
+   * @param {CachedStringBuffer|number|string} _segment
    * @param {boolean} _parentLastPossibleMatch
    * @return {boolean}
    */
@@ -196,7 +198,7 @@ export class SegmentMatcher extends BaseMatcher {
   }
   /**
    * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} segment
+   * @param {CachedStringBuffer|number|string} segment
    * @return {boolean}
    */
   _doesMatch(segment) {
@@ -211,12 +213,13 @@ export class SegmentMatcher extends BaseMatcher {
     }
     if (
       this.segmentMatchEncoded instanceof Uint8Array &&
-      segment instanceof Uint8Array
+      segment instanceof CachedStringBuffer
     ) {
+      const buffer = segment.get()
       return (
-        this.segmentMatchEncoded.byteLength === segment.byteLength &&
+        this.segmentMatchEncoded.byteLength === buffer.byteLength &&
         this.segmentMatchEncoded.every(
-          (value, index) => value === segment[index],
+          (value, index) => value === buffer[index],
         )
       )
     }
@@ -224,7 +227,7 @@ export class SegmentMatcher extends BaseMatcher {
   }
   /**
    * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} segment
+   * @param {CachedStringBuffer|number|string} segment
    * @param {boolean} parentLastPossibleMatch
    * @return {boolean}
    */
@@ -281,7 +284,7 @@ export class SliceMatcher extends BaseMatcher {
   }
   /**
    * Check if this specific segment matches, without checking the children
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} segment
+   * @param {CachedStringBuffer|number|string} segment
    * @param {boolean} parentLastPossibleMatch
    * @return {boolean}
    */

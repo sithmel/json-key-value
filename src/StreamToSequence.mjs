@@ -4,6 +4,7 @@ import { ParsingError } from "./utils.mjs"
 import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
+import { Path, CachedStringBuffer } from "./pathExp/path.mjs"
 /**
  * Enum for parser state
  * @package
@@ -41,26 +42,11 @@ export default class StreamToSequence {
     this.state = STATE.VALUE
     /** @type {Array<STATE>} */
     this.stateStack = [STATE.END]
-    /** @type {import("../types/baseTypes").JSONPathBufferType} */
-    this.currentPath = [] // a combination of strings (object keys) and numbers (array index)
+    this.currentPath = new Path() // a combination of strings (object keys) and numbers (array index)
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
     /** @type {Array<number>} */
     this.objectBuffer = [] // when currentDepth is > maxDepth I store things here
     this.decoder = new TextDecoder()
-  }
-
-  /**
-   * convert JSONPathBufferType to JSONPathType
-   * @package
-   * @return {import("../types/baseTypes").JSONPathType}
-   */
-  _getEncodedCurrentPath() {
-    return this.currentPath.map((n) => {
-      if (typeof n === "number") {
-        return n
-      }
-      return JSON.parse(this.decoder.decode(n))
-    })
   }
 
   /**
@@ -108,7 +94,7 @@ export default class StreamToSequence {
           if (token === TOKEN.STRING) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
-                this._getEncodedCurrentPath(),
+                this.currentPath.toDecoded(),
                 JSON.parse(
                   this.decoder.decode(this.tokenizer.getOutputBuffer()),
                 ),
@@ -117,12 +103,12 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this._getEncodedCurrentPath(), {}]
+              yield [this.currentPath.toDecoded(), {}]
             }
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this._getEncodedCurrentPath(), []]
+              yield [this.currentPath.toDecoded(), []]
             }
             this.currentPath.push(0)
             this.state = STATE.VALUE
@@ -133,23 +119,23 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this._getEncodedCurrentPath(), true]
+              yield [this.currentPath.toDecoded(), true]
             }
             this.state = this._popState()
           } else if (token === TOKEN.FALSE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this._getEncodedCurrentPath(), false]
+              yield [this.currentPath.toDecoded(), false]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NULL) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this._getEncodedCurrentPath(), null]
+              yield [this.currentPath.toDecoded(), null]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NUMBER) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
-                this._getEncodedCurrentPath(),
+                this.currentPath.toDecoded(),
                 JSON.parse(
                   this.decoder.decode(this.tokenizer.getOutputBuffer()),
                 ),
@@ -159,7 +145,7 @@ export default class StreamToSequence {
           } else if (token === TOKEN.SUB_OBJECT) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
-                this._getEncodedCurrentPath(),
+                this.currentPath.toDecoded(),
                 JSON.parse(
                   this.decoder.decode(this.tokenizer.getOutputBuffer()),
                 ),
@@ -204,7 +190,7 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_KEY: // after the key is over
           if (token === TOKEN.COLON) {
-            this.currentPath.push(this.stringBuffer.slice())
+            this.currentPath.push(new CachedStringBuffer(this.stringBuffer))
             this._pushState(STATE.CLOSE_OBJECT)
             this.state = STATE.VALUE
           } else {
@@ -232,11 +218,11 @@ export default class StreamToSequence {
 
         case STATE.CLOSE_ARRAY: // array ready to end, or restart after the comma
           if (token === TOKEN.COMMA) {
-            const previousIndex = this.currentPath[this.currentPath.length - 1]
+            const previousIndex = this.currentPath.pop()
             if (typeof previousIndex !== "number") {
               throw new Error("Array index should be a number")
             }
-            this.currentPath[this.currentPath.length - 1] = previousIndex + 1 // next item in the array
+            this.currentPath.push(previousIndex + 1) // next item in the array
             this._pushState(STATE.CLOSE_ARRAY)
             this.state = STATE.VALUE
           } else if (token === TOKEN.CLOSED_BRACKET) {

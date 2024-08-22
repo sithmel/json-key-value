@@ -9,7 +9,20 @@ import {
   MatcherContainer,
 } from "../../src/pathExp/matcher.mjs"
 
+import { CachedStringBuffer, Path } from "../../src/pathExp/path.mjs"
+
 const { describe, odescribe, it, oit, beforeEach } = pkg
+
+const encoder = new TextEncoder()
+const encodePath = (path) => {
+  const obj = new Path()
+  obj.array = path.map((v) =>
+    typeof v === "string"
+      ? new CachedStringBuffer(encoder.encode(JSON.stringify(v)))
+      : v,
+  )
+  return obj
+}
 
 describe("Matchers", () => {
   let matcher
@@ -21,11 +34,11 @@ describe("Matchers", () => {
       assert.equal(matcher.maxLength(), 1)
     })
     it("always matches", () => {
-      assert.equal(matcher.doesMatch(["test"]), true)
+      assert.equal(matcher.doesMatch(encodePath(["test"])), true)
       assert.equal(matcher.isExhausted(), false)
     })
     it("does not matches empty path", () => {
-      assert.equal(matcher.doesMatch([]), false)
+      assert.equal(matcher.doesMatch(encodePath([])), false)
       assert.equal(matcher.isExhausted(), false)
     })
     it("stringifies", () => {
@@ -37,13 +50,13 @@ describe("Matchers", () => {
       matcher = new SegmentMatcher(1, [])
     })
     it("does not match", () => {
-      assert.equal(matcher.doesMatch([2]), false)
+      assert.equal(matcher.doesMatch(encodePath([2])), false)
       assert.equal(matcher.isExhausted(), false)
     })
     it("does match", () => {
-      assert.equal(matcher.doesMatch([1, 2]), true)
+      assert.equal(matcher.doesMatch(encodePath([1, 2])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch([2, 2]), false)
+      assert.equal(matcher.doesMatch(encodePath([2, 2])), false)
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies numbers", () => {
@@ -65,19 +78,19 @@ describe("Matchers", () => {
       matcher = new SliceMatcher({ min: 1, max: 3 }, [])
     })
     it("does not match with strings", () => {
-      assert.equal(matcher.doesMatch(["hello"]), false)
+      assert.equal(matcher.doesMatch(encodePath(["hello"])), false)
       assert.equal(matcher.isExhausted(), false)
     })
     it("does not match", () => {
-      assert.equal(matcher.doesMatch([0]), false)
+      assert.equal(matcher.doesMatch(encodePath([0])), false)
       assert.equal(matcher.isExhausted(), false)
     })
     it("does match", () => {
-      assert.equal(matcher.doesMatch([1, 2]), true)
+      assert.equal(matcher.doesMatch(encodePath([1, 2])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch([2, 2]), true)
+      assert.equal(matcher.doesMatch(encodePath([2, 2])), true)
       assert.equal(matcher.isExhausted(), false)
-      assert.equal(matcher.doesMatch([3, 2]), false)
+      assert.equal(matcher.doesMatch(encodePath([3, 2])), false)
       assert.equal(matcher.isExhausted(), true)
     })
     it("stringifies slices", () => {
@@ -91,13 +104,7 @@ describe("Matchers", () => {
     })
   })
   describe("Combine matchers 1", () => {
-    let encodePath
     beforeEach(() => {
-      const encoder = new TextEncoder()
-      encodePath = (path) =>
-        path.map((v) =>
-          typeof v === "string" ? encoder.encode(JSON.stringify(v)) : v,
-        )
       matcher = new MatcherContainer([
         new SegmentMatcher("A", [
           new SegmentMatcher("B", [
@@ -114,7 +121,7 @@ describe("Matchers", () => {
     })
 
     it("does not match", () => {
-      assert.equal(matcher.doesMatch([1, 2]), false)
+      assert.equal(matcher.doesMatch(encodePath([1, 2])), false)
       assert.equal(matcher.isExhausted(), false)
     })
     it("matches", () => {
@@ -149,15 +156,7 @@ describe("Matchers", () => {
     })
   })
   describe("Combine matchers 2", () => {
-    let encodePath
     beforeEach(() => {
-      const encoder = new TextEncoder()
-
-      encodePath = (path) =>
-        path.map((v) =>
-          typeof v === "string" ? encoder.encode(JSON.stringify(v)) : v,
-        )
-
       matcher = new MatcherContainer([
         new SegmentMatcher("A", [
           new AnyMatcher([new SegmentMatcher("C"), new SegmentMatcher("D")]),

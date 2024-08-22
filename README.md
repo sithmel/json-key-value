@@ -25,6 +25,22 @@ An example of a sequence is:
 Streaming out JSON requires the "path, value" pairs to be emitted in **depth first** order of paths otherwise the resulting JSON will be malformed. This is the normal order in which data are stored in JSON.
 Alternatively, it also works if the paths are sorted comparing object keys in lexicographic order and array indexes from the smallest to the biggest. In this case, the structure will be respected, but not necessarily the order the keys presents in the original JSON (ES2015 standard introduced the concept of key ordering, but it is not respected here).
 
+## Example use cases
+
+### Rendering partial state
+
+Fetching a big JSON on the browser and render the data in the UI while being downloaded (no need to wait for the entire file to be downloaded).
+
+### Filter data
+
+Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The `include` expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching.
+
+### Easy Data manipulation
+
+Transforming a tree data structure (like a Javascript object) is not super convenient. With json-key-value you can simply iterate over the sequence and use familiar filter/map/reduce.
+
+# API
+
 ## StreamToSequence
 
 StreamToSequence converts chunk of data coming from an iterable in a sequence.
@@ -508,19 +524,14 @@ for (const [path, value] of parser.iter(JSON.parse(obj))) {
 How does this differ from StreamToSequence? When should we use one or the other?
 StreamToSequence is a streaming parser, so it doesn't require to load the entire string in memory to work.
 
-From the point of view of raw speed StreamToSequence is approximatively 8 times slower.
-However, there are 2 specific cases that makes it convenient:
+From the point of view of raw speed StreamToSequence can be slower _if used to transform the entire JSON_ into a sequence especially _if the stream has low latency and high bandwidth_.
 
-### Memory footprint
+However, using **include** and **maxDepth** to filter the JSON can be considerably faster and memory efficient.
+In doubt I suggest to benchmark specific cases.
 
-StreamToSequence is much more memory friendly, not having to load the entire JSON as a string in memory. In my experience this doesn't necessarily reflect in a speed penalty, as the garbage collector is very fast. However, loading huge file can cause to run out of memory.
+### How StreamToSequence is optimized
 
-### Partial loading
+StreamToSequence reaches very good performance thanks to 2 optimizations:
 
-Using _includes_, we don't necessarily need to read an entire stream to get the data we need.
-That means that there are 2 factors to influence the speed:
-
-- How much of the stream do I need to read as average?
-- How fast is the stream? (is it a file on a local SSD? a network resource? etc.)
-
-This is often something worth testing before picking the right tool.
+- **No need to read the entire stream**: once the data specified by **include** are found, the stream can be aborted. The performance improvement increases with the latency of the stream.
+- **Minimize encoding and parsing**: Encoding the buffer from UTF8 to a JS strings and parsing JSON values can take a considerable amount of resources. StreamToSequence works with buffers, encoding and parsing only the path and values that needs to be yielded. **maxDepth** and **include** both helps minimizing those.
