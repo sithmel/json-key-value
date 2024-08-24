@@ -1,6 +1,5 @@
 //@ts-check
-
-const decoder = new TextDecoder()
+import { decodeAndParse } from "../utils.mjs"
 
 export class CachedStringBuffer {
   /** @param {Uint8Array} data */
@@ -14,7 +13,7 @@ export class CachedStringBuffer {
     if (this.cache != null) {
       return this.cache
     }
-    const cache = JSON.parse(decoder.decode(this.data))
+    const cache = decodeAndParse(this.data)
     this.cache = cache
     return cache
   }

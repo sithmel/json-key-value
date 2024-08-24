@@ -1,6 +1,5 @@
 //@ts-check
-
-import { ParsingError } from "./utils.mjs"
+import { ParsingError, decodeAndParse } from "./utils.mjs"
 import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
@@ -46,7 +45,6 @@ export default class StreamToSequence {
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
     /** @type {Array<number>} */
     this.objectBuffer = [] // when currentDepth is > maxDepth I store things here
-    this.decoder = new TextDecoder()
   }
 
   /**
@@ -95,9 +93,7 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                JSON.parse(
-                  this.decoder.decode(this.tokenizer.getOutputBuffer()),
-                ),
+                decodeAndParse(this.tokenizer.getOutputBuffer()),
               ]
             }
             this.state = this._popState()
@@ -136,9 +132,7 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                JSON.parse(
-                  this.decoder.decode(this.tokenizer.getOutputBuffer()),
-                ),
+                decodeAndParse(this.tokenizer.getOutputBuffer()),
               ]
             }
             this.state = this._popState()
@@ -146,9 +140,7 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                JSON.parse(
-                  this.decoder.decode(this.tokenizer.getOutputBuffer()),
-                ),
+                decodeAndParse(this.tokenizer.getOutputBuffer()),
               ]
             }
             this.state = this._popState()

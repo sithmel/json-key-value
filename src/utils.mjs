@@ -130,3 +130,13 @@ export function* fromIndexToEnd(array, index) {
 export function pathSegmentTerminator(pathSegment) {
   return typeof pathSegment === "string" ? "}" : "]"
 }
+
+const decoder = new TextDecoder("utf8", { fatal: true, ignoreBOM: true })
+/**
+ * @package
+ * @param {Uint8Array} buffer
+ * @returns {any}
+ */
+export function decodeAndParse(buffer) {
+  return JSON.parse(decoder.decode(buffer))
+}

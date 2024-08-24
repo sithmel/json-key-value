@@ -4,6 +4,7 @@ import path from "path"
 
 async function filterFile2(filename) {
   const readStream = fs.createReadStream(
+    // path.join("/", "home", "sithmel", "Downloads", filename),
     path.join("test", "samples", filename),
     { encoding: "utf-8" },
   )
