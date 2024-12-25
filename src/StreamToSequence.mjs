@@ -147,7 +147,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               `Invalid value ${token}`,
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
@@ -159,7 +159,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with " (after ",")',
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
@@ -175,7 +175,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with "',
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
@@ -188,7 +188,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting ':' after object key",
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
@@ -203,7 +203,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting '}' or ',' after object value",
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
@@ -223,19 +223,19 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Invalid array: " + this.state,
-              this.tokenizer.totalBufferIndex,
+              this.tokenizer.getCurrentTokenIndex(),
             )
           }
           break
         case STATE.END: // last possible state
           throw new ParsingError(
             "Malformed JSON",
-            this.tokenizer.totalBufferIndex,
+            this.tokenizer.getCurrentTokenIndex(),
           )
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
-            this.tokenizer.totalBufferIndex,
+            this.tokenizer.getCurrentTokenIndex(),
           )
       }
       if (this.matcher.isExhausted()) {
