@@ -1,4 +1,3 @@
-/// <reference types="node" />
 export default class StreamToSequence {
     /**
      * Convert a stream of characters (in chunks) to a sequence of path/value pairs
@@ -8,44 +7,16 @@ export default class StreamToSequence {
         maxDepth?: number | undefined;
         includes?: string | undefined;
     });
-    maxDepth: number;
     currentDepthInObject: number;
     matcher: MatcherContainer;
     tokenizer: StreamJSONTokenizer;
     state: string;
     /** @type {Array<STATE>} */
     stateStack: Array<STATE>;
-    char: string;
-    /** @type {import("../types/baseTypes").JSONPathBufferType} */
-    currentPath: import("../types/baseTypes").JSONPathBufferType;
+    currentPath: Path;
     stringBuffer: Uint8Array;
     /** @type {Array<number>} */
     objectBuffer: Array<number>;
-    decoder: import("util").TextDecoder;
-    /**
-     * add another segment to the path
-     * @package
-     * @param {TOKEN} token
-     */
-    _addToObjectBuffer(token: TOKEN): void;
-    /**
-     * convert JSONPathBufferType to JSONPathType
-     * @package
-     * @return {import("../types/baseTypes").JSONPathType}
-     */
-    _getEncodedCurrentPath(): import("../types/baseTypes").JSONPathType;
-    /**
-     * add another segment to the path
-     * @package
-     * @param {import("../types/baseTypes").JSONSegmentPathBufferType} segment
-     */
-    _pushPathSegment(segment: import("../types/baseTypes").JSONSegmentPathBufferType): void;
-    /**
-     * remove a segment from the path
-     * @package
-     * @returns {import("../types/baseTypes").JSONSegmentPathBufferType}
-     */
-    _popPathSegment(): import("../types/baseTypes").JSONSegmentPathBufferType;
     /**
      * add another segment to the path
      * @package
@@ -84,8 +55,7 @@ declare namespace STATE {
     let OPEN_KEY: string;
     let CLOSE_KEY: string;
     let END: string;
-    let SUB_OBJECT: string;
 }
-import { TOKEN } from "./StreamJSONTokenizer.mjs";
+import { Path } from "./pathExp/path.mjs";
 export {};
 //# sourceMappingURL=StreamToSequence.d.mts.map

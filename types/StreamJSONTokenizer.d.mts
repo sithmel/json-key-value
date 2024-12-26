@@ -53,22 +53,50 @@ export namespace TOKEN {
     export let TRUE: number;
     export let FALSE: number;
     export let NULL: number;
+    export let SUB_OBJECT: number;
 }
 export default class StreamJSONTokenizer {
-    totalBufferIndex: number;
+    /**
+     * Convert a stream of bytes (in chunks) to a sequence tokens
+     * @param {{ maxDepth?: number }} options
+     */
+    constructor(options?: {
+        maxDepth?: number | undefined;
+    });
+    maxDepth: number;
+    currentDepth: number;
+    offsetIndexFromBeginning: number;
     state: number;
-    /** @type Array<number> */
-    outputBuffer: Array<number>;
+    /** @type number? */
+    outputTokenStart: number | null;
+    currentBuffer: Uint8Array;
     /**
      * returns the outputBuffer
-     * @returns {Array<number>}
+     * @param {number?} outputTokenStart
+     * @param {number?} outputTokenEnd
+     * @returns {Uint8Array}
      */
-    getOutputBuffer(): Array<number>;
+    getOutputBuffer(outputTokenStart: number | null, outputTokenEnd: number | null): Uint8Array;
+    /**
+     * save the buffer for the next call
+     * @param {number} outputTokenEnd
+     */
+    saveBufferForNextCall(outputTokenEnd: number): void;
+    /**
+     *
+     * @param {number} currentBufferIndex
+     */
+    startCaptureOutput(currentBufferIndex: number): void;
+    /**
+     *
+     * @returns {number}
+     */
+    getOutputTokenStart(): number;
     /**
      * Parse a json or json fragment, return a sequence of path/value pairs
-     * @param {Uint8Array} current_buffer
-     * @returns {Iterable<TOKEN>}
+     * @param {Uint8Array} new_buffer
+     * @returns {Iterable<[TOKEN, number, number]>}
      */
-    iter(current_buffer: Uint8Array): Iterable<TOKEN>;
+    iter(new_buffer: Uint8Array): Iterable<[TOKEN, number, number]>;
 }
 //# sourceMappingURL=StreamJSONTokenizer.d.mts.map

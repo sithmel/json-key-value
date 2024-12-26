@@ -86,14 +86,14 @@ export default class StreamToSequence {
     if (this.matcher.isExhausted()) {
       return
     }
-    for (const token of this.tokenizer.iter(chunk)) {
+    for (const [token, startToken, endToken] of this.tokenizer.iter(chunk)) {
       switch (this.state) {
         case STATE.VALUE: // any value
           if (token === TOKEN.STRING) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
               ]
             }
             this.state = this._popState()
@@ -132,7 +132,7 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
               ]
             }
             this.state = this._popState()
@@ -140,26 +140,26 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
               ]
             }
             this.state = this._popState()
           } else {
             throw new ParsingError(
               `Invalid value ${token}`,
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning
             )
           }
           break
 
         case STATE.OPEN_KEY: // after the "," in an object
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.stringBuffer = this.tokenizer.getOutputBuffer(startToken, endToken)
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with " (after ",")',
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -170,12 +170,12 @@ export default class StreamToSequence {
             break
           }
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.stringBuffer = this.tokenizer.getOutputBuffer(startToken, endToken)
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with "',
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -188,7 +188,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting ':' after object key",
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -203,7 +203,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting '}' or ',' after object value",
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -223,19 +223,19 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Invalid array: " + this.state,
-              this.tokenizer.getCurrentTokenIndex(),
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
         case STATE.END: // last possible state
           throw new ParsingError(
             "Malformed JSON",
-            this.tokenizer.getCurrentTokenIndex(),
+            startToken + this.tokenizer.offsetIndexFromBeginning,
           )
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
-            this.tokenizer.getCurrentTokenIndex(),
+            startToken + this.tokenizer.offsetIndexFromBeginning,
           )
       }
       if (this.matcher.isExhausted()) {

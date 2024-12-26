@@ -7,10 +7,10 @@ export class MatcherContainer {
     matchers: BaseMatcher[];
     /**
      * Check for match
-     * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
+     * @param {Path} path
      * @return {boolean}
      */
-    doesMatch(path: import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType): boolean;
+    doesMatch(path: Path): boolean;
     /**
      * Check if matchers are exhausted
      * @return {boolean}
@@ -29,6 +29,13 @@ export class MatcherContainer {
     maxLength(): number;
 }
 export class AnyMatcher extends BaseMatcher {
+    /**
+     * Check if this specific segment matches, without checking the children
+     * @param {CachedStringBuffer|number|string} _segment
+     * @param {boolean} _parentLastPossibleMatch
+     * @return {boolean}
+     */
+    doesSegmentMatch(_segment: CachedStringBuffer | number | string, _parentLastPossibleMatch: boolean): boolean;
 }
 export class SegmentMatcher extends BaseMatcher {
     /**
@@ -42,10 +49,17 @@ export class SegmentMatcher extends BaseMatcher {
     segmentMatchEncoded: number | Uint8Array;
     /**
      * Check if this specific segment matches, without checking the children
-     * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} segment
+     * @param {CachedStringBuffer|number|string} segment
      * @return {boolean}
      */
-    _doesMatch(segment: import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType): boolean;
+    _doesMatch(segment: CachedStringBuffer | number | string): boolean;
+    /**
+     * Check if this specific segment matches, without checking the children
+     * @param {CachedStringBuffer|number|string} segment
+     * @param {boolean} parentLastPossibleMatch
+     * @return {boolean}
+     */
+    doesSegmentMatch(segment: CachedStringBuffer | number | string, parentLastPossibleMatch: boolean): boolean;
 }
 export class SliceMatcher extends BaseMatcher {
     /**
@@ -60,6 +74,13 @@ export class SliceMatcher extends BaseMatcher {
     hasMatchedForLastTime: boolean;
     min: number;
     max: number;
+    /**
+     * Check if this specific segment matches, without checking the children
+     * @param {CachedStringBuffer|number|string} segment
+     * @param {boolean} parentLastPossibleMatch
+     * @return {boolean}
+     */
+    doesSegmentMatch(segment: CachedStringBuffer | number | string, parentLastPossibleMatch: boolean): boolean;
 }
 declare class BaseMatcher {
     /**
@@ -75,18 +96,18 @@ declare class BaseMatcher {
     _isLastPossibleMatch: boolean;
     /**
      * Check if this specific segment matches, without checking the children
-     * @param {import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType} _segment
+     * @param {?CachedStringBuffer|number|string} _segment
      * @param {boolean} _parentLastPossibleMatch
      * @return {boolean}
      */
-    doesSegmentMatch(_segment: import("../../types/baseTypes.js").JSONSegmentPathOrJSONSegmentPathBufferType, _parentLastPossibleMatch: boolean): boolean;
+    doesSegmentMatch(_segment: (CachedStringBuffer | number | string) | null, _parentLastPossibleMatch: boolean): boolean;
     /**
      * Check for match
-     * @param {import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType} path
+     * @param {Path} path
      * @param {boolean} [parentLastPossibleMatch]
      * @return {boolean}
      */
-    doesMatch(path: import("../../types/baseTypes.js").JSONPathOrJSONPathBufferType, parentLastPossibleMatch?: boolean | undefined): boolean;
+    doesMatch(path: Path, parentLastPossibleMatch?: boolean | undefined): boolean;
     /**
      * Check if matcher is exhausted (or children)
      * @return {boolean}
@@ -105,5 +126,7 @@ declare class BaseMatcher {
      */
     maxLength(): number;
 }
+import { Path } from "./path.mjs";
+import { CachedStringBuffer } from "./path.mjs";
 export {};
 //# sourceMappingURL=matcher.d.mts.map

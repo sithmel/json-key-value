@@ -12,10 +12,11 @@ export default class ObjectToSequence {
     /**
      * parse a json or json fragment
      * @param {any} obj
-     * @param {import("../types/baseTypes").JSONPathType} currentPath
+     * @param {Path} [currentPath]
      * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
      */
-    iter(obj: any, currentPath?: import("../types/baseTypes").JSONPathType): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
+    iter(obj: any, currentPath?: Path | undefined): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
 }
 import { MatcherContainer } from "./pathExp/matcher.mjs";
+import { Path } from "./pathExp/path.mjs";
 //# sourceMappingURL=ObjectToSequence.d.mts.map
