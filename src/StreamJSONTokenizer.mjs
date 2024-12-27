@@ -112,19 +112,16 @@ export default class StreamJSONTokenizer {
 
   /**
    * returns the outputBuffer
-   * @param {number?} outputTokenStart
-   * @param {number?} outputTokenEnd
+   * @param {number} outputTokenStart
+   * @param {number} outputTokenEnd
    * @returns {Uint8Array}
    */
   getOutputBuffer(outputTokenStart, outputTokenEnd) {
-    if (outputTokenStart != null && outputTokenEnd != null) {
-      const subarray = this.currentBuffer.subarray(
-        outputTokenStart,
-        outputTokenEnd,
-      )
-      return subarray
-    }
-    return new Uint8Array()
+    const subarray = this.currentBuffer.subarray(
+      outputTokenStart,
+      outputTokenEnd,
+    )
+    return subarray
   }
 
   /**

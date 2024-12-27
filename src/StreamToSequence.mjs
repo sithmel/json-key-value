@@ -80,7 +80,7 @@ export default class StreamToSequence {
   /**
    * Parse a json or json fragment, return a sequence of path/value pairs
    * @param {Uint8Array} chunk
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>}
    */
   *iter(chunk) {
     if (this.matcher.isExhausted()) {
@@ -94,17 +94,19 @@ export default class StreamToSequence {
               yield [
                 this.currentPath.toDecoded(),
                 decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning
               ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), {}]
+              yield [this.currentPath.toDecoded(), {}, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
             }
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), []]
+              yield [this.currentPath.toDecoded(), [], startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
             }
             this.currentPath.push(0)
             this.state = STATE.VALUE
@@ -115,17 +117,17 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), true]
+              yield [this.currentPath.toDecoded(), true, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
             }
             this.state = this._popState()
           } else if (token === TOKEN.FALSE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), false]
+              yield [this.currentPath.toDecoded(), false, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NULL) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), null]
+              yield [this.currentPath.toDecoded(), null, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NUMBER) {
@@ -133,6 +135,8 @@ export default class StreamToSequence {
               yield [
                 this.currentPath.toDecoded(),
                 decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning
               ]
             }
             this.state = this._popState()
@@ -141,6 +145,8 @@ export default class StreamToSequence {
               yield [
                 this.currentPath.toDecoded(),
                 decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning
               ]
             }
             this.state = this._popState()

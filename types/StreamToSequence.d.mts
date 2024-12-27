@@ -37,9 +37,9 @@ export default class StreamToSequence {
     /**
      * Parse a json or json fragment, return a sequence of path/value pairs
      * @param {Uint8Array} chunk
-     * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+     * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>}
      */
-    iter(chunk: Uint8Array): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>;
+    iter(chunk: Uint8Array): Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>;
 }
 import { MatcherContainer } from "./pathExp/matcher.mjs";
 import StreamJSONTokenizer from "./StreamJSONTokenizer.mjs";

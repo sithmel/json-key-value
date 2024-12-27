@@ -72,11 +72,11 @@ export default class StreamJSONTokenizer {
     currentBuffer: Uint8Array;
     /**
      * returns the outputBuffer
-     * @param {number?} outputTokenStart
-     * @param {number?} outputTokenEnd
+     * @param {number} outputTokenStart
+     * @param {number} outputTokenEnd
      * @returns {Uint8Array}
      */
-    getOutputBuffer(outputTokenStart: number | null, outputTokenEnd: number | null): Uint8Array;
+    getOutputBuffer(outputTokenStart: number, outputTokenEnd: number): Uint8Array;
     /**
      * save the buffer for the next call
      * @param {number} outputTokenEnd

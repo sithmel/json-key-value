@@ -18,15 +18,15 @@ async function filterFile(filepath, options) {
 }
 
 const filepath = path.join("test", "samples", "twitter.json")
-// const includes = "16000"
-// const maxDepth = 1
+const includes = "16000"
+const maxDepth = 1
 // const filepath = path.join("/", "home", "sithmel", "Downloads", "2024-04-08T19_26_09.287Z.json")
-const includes = `
-* (
-  'packageId'
-  'contentType'
-)`
-const maxDepth = 2
+// const includes = `
+// * (
+//   'packageId'
+//   'contentType'
+// )`
+// const maxDepth = 2
 let t0 = performance.now()
 console.profile()
 const obj = await filterFile(filepath, {
@@ -35,4 +35,4 @@ const obj = await filterFile(filepath, {
 })
 console.profileEnd()
 console.log(performance.now() - t0)
-console.log(obj)
+// console.log(obj)
