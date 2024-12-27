@@ -23,7 +23,7 @@ const STATE = {
 export default class StreamToSequence {
   /**
    * Convert a stream of characters (in chunks) to a sequence of path/value pairs
-   * @param {{ maxDepth?: number, includes?: string }} options
+   * @param {{ maxDepth?: number, includes?: string, startingPath?: import("../types/baseTypes").JSONPathType }} options
    */
   constructor(options = {}) {
     const { maxDepth = Infinity } = options
@@ -36,15 +36,49 @@ export default class StreamToSequence {
         "The includes expression won't be able to fully match paths as they will be clamped to the chosen maxDepth",
       )
     }
+    const { startingPath = [] } = options
 
     this.tokenizer = new StreamJSONTokenizer({ maxDepth })
     this.state = STATE.VALUE
     /** @type {Array<STATE>} */
-    this.stateStack = [STATE.END]
-    this.currentPath = new Path() // a combination of strings (object keys) and numbers (array index)
+    this.stateStack = this._initStateStack(startingPath)
+    this.currentPath = this._initCurrentPath(startingPath) // a combination of buffers (object keys) and numbers (array index)
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
-    /** @type {Array<number>} */
-    this.objectBuffer = [] // when currentDepth is > maxDepth I store things here
+  }
+
+  /**
+   * Generate currentPath from a path
+   * @package
+   * @param {import("../types/baseTypes").JSONPathType} path
+   * @returns {Path}
+   */
+  _initCurrentPath(path) {
+    const encoder = new TextEncoder()
+    const currentPath = new Path()
+    for (const segment of path) {
+      currentPath.push(
+        typeof segment === "string"
+          ? new CachedStringBuffer(encoder.encode(`"${segment}"`))
+          : segment,
+      )
+    }
+    return currentPath
+  }
+
+  /**
+   * generate statestack from a path
+   * @package
+   * @param {import("../types/baseTypes").JSONPathType} path
+   * @returns {Array<STATE>}
+   */
+  _initStateStack(path) {
+    const stateStack = [STATE.END]
+    for (const segment of path.reverse()) {
+      stateStack.push(
+        typeof segment === "string" ? STATE.CLOSE_OBJECT : STATE.CLOSE_ARRAY,
+      )
+    }
+    return stateStack
   }
 
   /**
