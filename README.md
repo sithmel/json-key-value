@@ -582,7 +582,7 @@ From the point of view of raw speed StreamToSequence can be slower _if used to t
 However, using **include** and **maxDepth** to filter the JSON can be considerably faster and memory efficient.
 In doubt I suggest to benchmark specific cases.
 
-### Benchmarks
+# Benchmarks
 
 I have included benchmarks to show how this library can speed up extracting data from a JSON.
 In the examples I am extracting a single random record from a JSON with more than 16000 records (15MB).
@@ -640,7 +640,7 @@ Median: 8,434.977 KB
 
 Which is 28 times faster than the out-of-the-box JSON.parse!
 
-### How StreamToSequence is optimized
+# How StreamToSequence is optimized
 
 StreamToSequence reaches very good performance thanks to 2 optimizations:
 
