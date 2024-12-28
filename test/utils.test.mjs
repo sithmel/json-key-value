@@ -9,6 +9,8 @@ import {
   fromEndToIndex,
   fromIndexToEnd,
   isPreviousPathInNewPath,
+  decodeAndParse,
+  stringifyAndEncode,
 } from "../src/utils.mjs"
 
 const { describe, it, oit, beforeEach } = pkg
@@ -109,5 +111,17 @@ describe("utils", () => {
       ))
     it("works with uncommon path (2)", () =>
       assert.equal(isPreviousPathInNewPath(["x", "y"], ["x"]), false))
+  })
+  describe("decodeAndParse stringifyAndEncode", () => {
+    it("encodes", () =>
+      assert.deepEqual(
+        stringifyAndEncode("hello"),
+        new Uint8Array([34, 104, 101, 108, 108, 111, 34]),
+      ))
+    it("decodes", () =>
+      assert.deepEqual(
+        "hello",
+        decodeAndParse(new Uint8Array([34, 104, 101, 108, 108, 111, 34])),
+      ))
   })
 })

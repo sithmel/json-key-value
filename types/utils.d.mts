@@ -82,6 +82,12 @@ export function pathSegmentTerminator(
  * @returns {any}
  */
 export function decodeAndParse(buffer: Uint8Array): any
+/**
+ * @package
+ * @param {any} value
+ * @returns {Uint8Array}
+ */
+export function stringifyAndEncode(value: any): Uint8Array
 export class ParsingError extends Error {
   /**
    * @param {string} message

@@ -6,7 +6,7 @@ export class CachedStringBuffer {
   cache: string | null
   /** @return {import("../../types/baseTypes").JSONSegmentPathType} */
   toDecoded(): import("../../types/baseTypes").JSONSegmentPathType
-  /** @return {Uint8Array} data */
+  /** @return {Uint8Array} */
   get(): Uint8Array
 }
 export class Path {

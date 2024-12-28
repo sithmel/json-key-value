@@ -5,8 +5,8 @@ export function stats(results) {
   const mean = sum / length
   const median =
     length % 2 === 0
-      ? (results[length / 2 - 1] + results[length / 2]) / 2
-      : results[length / 2]
+      ? (sortedResults[length / 2 - 1] + sortedResults[length / 2]) / 2
+      : sortedResults[length / 2]
 
   return {
     mean,
@@ -16,7 +16,7 @@ export function stats(results) {
 
 export default async function perform(title, func, options = {}) {
   const formatter = new Intl.NumberFormat()
-  const { times = 100 } = options
+  const { times = 400 } = options
   console.log(`\x1b[43m* ${title} \x1b[0m\n`)
   console.log(`The benchmarks will be executed ${times} times.`)
   const timings = []
