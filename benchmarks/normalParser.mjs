@@ -1,25 +1,25 @@
 //@ts-check
 import fs from "fs"
 import path from "path"
+import perform from "./utils/index.mjs"
 
-async function filterFile2(filename) {
-  const readStream = fs.createReadStream(
-    // path.join("/", "home", "sithmel", "Downloads", filename),
-    path.join("test", "samples", filename),
-    { encoding: "utf-8" },
-  )
+async function filterFile2(JSONPath, lineNumber) {
+  const readStream = fs.createReadStream(JSONPath, { encoding: "utf-8" })
 
   let str = ""
   for await (const s of readStream) {
     str += s
   }
 
-  return JSON.parse(str)
+  return JSON.parse(str)[lineNumber]
 }
 
-let t0 = performance.now()
-// console.profile()
-const obj2 = await filterFile2("twitter.json")
-// console.profileEnd()
-// global.gc()
-console.log(performance.now() - t0)
+const JSON_PATH = path.join("test", "samples", "twitter.json")
+
+perform(
+  "Extracting 1 random tweet from a twitter file, using JSON.parse",
+  async () => {
+    const lineNumber = Math.floor(Math.random() * 16000)
+    const obj = await filterFile2(JSON_PATH, lineNumber)
+  },
+)

@@ -129,7 +129,8 @@ export default class StreamJSONTokenizer {
    * @param {number} outputTokenEnd
    */
   saveBufferForNextCall(outputTokenEnd) {
-    this.offsetIndexFromBeginning = this.offsetIndexFromBeginning + this.currentBuffer.byteLength;
+    this.offsetIndexFromBeginning =
+      this.offsetIndexFromBeginning + this.currentBuffer.byteLength
     if (this.outputTokenStart != null) {
       this.currentBuffer = this.currentBuffer.subarray(
         this.outputTokenStart,
@@ -139,7 +140,7 @@ export default class StreamJSONTokenizer {
     } else {
       this.currentBuffer = new Uint8Array()
     }
-    this.offsetIndexFromBeginning -= this.currentBuffer.byteLength;
+    this.offsetIndexFromBeginning -= this.currentBuffer.byteLength
   }
 
   /**
@@ -196,7 +197,11 @@ export default class StreamJSONTokenizer {
         case STATE.STRING:
           if (byte === CHAR_CODE.QUOTE) {
             if (this.currentDepth <= this.maxDepth) {
-              yield [TOKEN.STRING, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.STRING,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             }
             this.state = STATE.IDLE
           } else if (byte === CHAR_CODE.BACKSLASH) {
@@ -240,29 +245,53 @@ export default class StreamJSONTokenizer {
             if (this.currentDepth === this.maxDepth) {
               this.startCaptureOutput(currentBufferIndex)
             } else if (this.currentDepth < this.maxDepth) {
-              yield [TOKEN.OPEN_BRACES, currentBufferIndex, currentBufferIndex + 1]
+              yield [
+                TOKEN.OPEN_BRACES,
+                currentBufferIndex,
+                currentBufferIndex + 1,
+              ]
             }
             this.currentDepth++
           } else if (byte === CHAR_CODE.CLOSED_BRACES) {
             this.currentDepth--
             if (this.currentDepth === this.maxDepth) {
-              yield [TOKEN.SUB_OBJECT, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.SUB_OBJECT,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             } else if (this.currentDepth < this.maxDepth) {
-              yield [TOKEN.CLOSED_BRACES, currentBufferIndex, currentBufferIndex + 1]
+              yield [
+                TOKEN.CLOSED_BRACES,
+                currentBufferIndex,
+                currentBufferIndex + 1,
+              ]
             }
           } else if (byte === CHAR_CODE.OPEN_BRACKETS) {
             if (this.currentDepth === this.maxDepth) {
               this.startCaptureOutput(currentBufferIndex)
             } else if (this.currentDepth < this.maxDepth) {
-              yield [TOKEN.OPEN_BRACKET, currentBufferIndex, currentBufferIndex + 1]
+              yield [
+                TOKEN.OPEN_BRACKET,
+                currentBufferIndex,
+                currentBufferIndex + 1,
+              ]
             }
             this.currentDepth++
           } else if (byte === CHAR_CODE.CLOSED_BRACKETS) {
             this.currentDepth--
             if (this.currentDepth === this.maxDepth) {
-              yield [TOKEN.SUB_OBJECT, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.SUB_OBJECT,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             } else if (this.currentDepth < this.maxDepth) {
-              yield [TOKEN.CLOSED_BRACKET, currentBufferIndex, currentBufferIndex + 1]
+              yield [
+                TOKEN.CLOSED_BRACKET,
+                currentBufferIndex,
+                currentBufferIndex + 1,
+              ]
             }
           } else if (byte === CHAR_CODE.COLON) {
             if (this.currentDepth <= this.maxDepth) {
@@ -273,7 +302,10 @@ export default class StreamJSONTokenizer {
               yield [TOKEN.COMMA, currentBufferIndex, currentBufferIndex + 1]
             }
           } else {
-            throw new ParsingError("Invalid character", this.offsetIndexFromBeginning + currentBufferIndex)
+            throw new ParsingError(
+              "Invalid character",
+              this.offsetIndexFromBeginning + currentBufferIndex,
+            )
           }
           continue
 
@@ -302,7 +334,11 @@ export default class StreamJSONTokenizer {
         case STATE.TRUE3:
           if (byte === CHAR_CODE.E) {
             if (this.currentDepth <= this.maxDepth) {
-              yield [TOKEN.TRUE, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.TRUE,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             }
             this.state = STATE.IDLE
           } else
@@ -342,7 +378,11 @@ export default class StreamJSONTokenizer {
         case STATE.FALSE4:
           if (byte === CHAR_CODE.E) {
             if (this.currentDepth <= this.maxDepth) {
-              yield [TOKEN.FALSE, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.FALSE,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             }
             this.state = STATE.IDLE
           } else
@@ -373,7 +413,11 @@ export default class StreamJSONTokenizer {
         case STATE.NULL3:
           if (byte === CHAR_CODE.L) {
             if (this.currentDepth <= this.maxDepth) {
-              yield [TOKEN.NULL, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.NULL,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             }
             this.state = STATE.IDLE
           } else
@@ -394,7 +438,11 @@ export default class StreamJSONTokenizer {
           } else {
             currentBufferIndex--
             if (this.currentDepth <= this.maxDepth) {
-              yield [TOKEN.NUMBER, this.getOutputTokenStart(), currentBufferIndex + 1]
+              yield [
+                TOKEN.NUMBER,
+                this.getOutputTokenStart(),
+                currentBufferIndex + 1,
+              ]
             }
             this.state = STATE.IDLE
           }

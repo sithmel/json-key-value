@@ -127,20 +127,32 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
                 startToken + this.tokenizer.offsetIndexFromBeginning,
-                endToken + this.tokenizer.offsetIndexFromBeginning
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), {}, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
+              yield [
+                this.currentPath.toDecoded(),
+                {},
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), [], startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
+              yield [
+                this.currentPath.toDecoded(),
+                [],
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.currentPath.push(0)
             this.state = STATE.VALUE
@@ -151,26 +163,43 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), true, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
+              yield [
+                this.currentPath.toDecoded(),
+                true,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.FALSE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), false, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
+              yield [
+                this.currentPath.toDecoded(),
+                false,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NULL) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), null, startToken + this.tokenizer.offsetIndexFromBeginning, endToken + this.tokenizer.offsetIndexFromBeginning]
+              yield [
+                this.currentPath.toDecoded(),
+                null,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NUMBER) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
                 startToken + this.tokenizer.offsetIndexFromBeginning,
-                endToken + this.tokenizer.offsetIndexFromBeginning
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
@@ -178,23 +207,28 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer(startToken, endToken)),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
                 startToken + this.tokenizer.offsetIndexFromBeginning,
-                endToken + this.tokenizer.offsetIndexFromBeginning
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
           } else {
             throw new ParsingError(
               `Invalid value ${token}`,
-              startToken + this.tokenizer.offsetIndexFromBeginning
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
 
         case STATE.OPEN_KEY: // after the "," in an object
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer(startToken, endToken)
+            this.stringBuffer = this.tokenizer.getOutputBuffer(
+              startToken,
+              endToken,
+            )
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
@@ -210,7 +244,10 @@ export default class StreamToSequence {
             break
           }
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer(startToken, endToken)
+            this.stringBuffer = this.tokenizer.getOutputBuffer(
+              startToken,
+              endToken,
+            )
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(

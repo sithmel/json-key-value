@@ -267,7 +267,7 @@ describe("StreamToSequence", () => {
 
   describe("startingPath", () => {
     it("works", () => {
-      const parser = new StreamToSequence({ startingPath: ['test1'] })
+      const parser = new StreamToSequence({ startingPath: ["test1"] })
       const seq = []
       for (const kv of parser.iter(encoder.encode('{"test2":1}}'))) {
         seq.push(kv)
@@ -280,7 +280,7 @@ describe("StreamToSequence", () => {
     })
 
     it("works with multiple chunks", () => {
-      const parser = new StreamToSequence({ startingPath: ['test1'] })
+      const parser = new StreamToSequence({ startingPath: ["test1"] })
       const seq = []
       for (const kv of parser.iter(encoder.encode('{"tes'))) {
         seq.push(kv)
@@ -299,13 +299,13 @@ describe("StreamToSequence", () => {
     it("works with longer path", () => {
       const parser = new StreamToSequence({ startingPath: [1, 1] })
       const seq = []
-      for (const kv of parser.iter(encoder.encode('5, 6]]'))) {
+      for (const kv of parser.iter(encoder.encode("5, 6]]"))) {
         seq.push(kv)
       }
 
       assert.deepEqual(seq, [
         [[1, 1], 5, 0, 1],
-        [[1, 2], 6, 3, 4]
+        [[1, 2], 6, 3, 4],
       ])
       assert.equal(parser.isFinished(), true)
     })
