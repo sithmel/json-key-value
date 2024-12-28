@@ -1,21 +1,22 @@
 import StreamToSequenceTokenizer from "../src/StreamJSONTokenizer.mjs"
 import fs from "fs"
 import path from "path"
+import perform from "./utils/index.mjs"
 
-async function filterFile(filename) {
-  const readStream = fs.createReadStream(path.join("test", "samples", filename))
+async function tokenize(JSONPath) {
+  const readStream = fs.createReadStream(JSONPath)
   const parser = new StreamToSequenceTokenizer()
-
+  const tokens = []
   for await (const chunk of readStream) {
     for (const token of parser.iter(chunk)) {
+      tokens.push(token)
     }
   }
   readStream.destroy()
+  return tokens
 }
+const JSON_PATH = path.join("test", "samples", "twitter.json")
 
-let t0 = performance.now()
-// console.profile()
-const obj = await filterFile("twitter.json")
-// console.profileEnd()
-// console.log(obj)
-console.log(performance.now() - t0)
+perform("Tokenizing a sample file", async () => {
+  const tokens = await tokenize(JSON_PATH)
+})

@@ -4,14 +4,14 @@
  * @param {string} c
  * @returns {boolean}
  */
-export function isWhitespace(c: string): boolean;
+export function isWhitespace(c: string): boolean
 /**
  * Return true if value is an array or object
  * @package
  * @param {any} value
  * @returns {boolean}
  */
-export function isArrayOrObject(value: any): boolean;
+export function isArrayOrObject(value: any): boolean
 /**
  * Return oldPath and newPath excluding the common part
  * @package
@@ -19,7 +19,10 @@ export function isArrayOrObject(value: any): boolean;
  * @param {import("../types/baseTypes").JSONPathType} newPath
  * @returns {number}
  */
-export function getCommonPathIndex(oldPath: import("../types/baseTypes").JSONPathType, newPath: import("../types/baseTypes").JSONPathType): number;
+export function getCommonPathIndex(
+  oldPath: import("../types/baseTypes").JSONPathType,
+  newPath: import("../types/baseTypes").JSONPathType,
+): number
 /**
  * Check if oldPath is contained in the new path
  * @package
@@ -27,14 +30,19 @@ export function getCommonPathIndex(oldPath: import("../types/baseTypes").JSONPat
  * @param {import("../types/baseTypes").JSONPathType} newPath
  * @returns {boolean}
  */
-export function isPreviousPathInNewPath(oldPath: import("../types/baseTypes").JSONPathType, newPath: import("../types/baseTypes").JSONPathType): boolean;
+export function isPreviousPathInNewPath(
+  oldPath: import("../types/baseTypes").JSONPathType,
+  newPath: import("../types/baseTypes").JSONPathType,
+): boolean
 /**
  * Transform a value in JSON
  * @package
  * @param {import("../types/baseTypes").JSONValueType} value
  * @returns {string}
  */
-export function valueToString(value: import("../types/baseTypes").JSONValueType): string;
+export function valueToString(
+  value: import("../types/baseTypes").JSONValueType,
+): string
 /**
  * Yields item arrays from end back to index, yield true on last
  * @package
@@ -43,7 +51,10 @@ export function valueToString(value: import("../types/baseTypes").JSONValueType)
  * @param {number} index
  * @returns {Iterable<[number, T]>}
  */
-export function fromEndToIndex<T>(array: T[], index: number): Iterable<[number, T]>;
+export function fromEndToIndex<T>(
+  array: T[],
+  index: number,
+): Iterable<[number, T]>
 /**
  * Yields item arrays from index to end, yield true on first
  * @package
@@ -52,20 +63,37 @@ export function fromEndToIndex<T>(array: T[], index: number): Iterable<[number, 
  * @param {number} index
  * @returns {Iterable<[number, T]>}
  */
-export function fromIndexToEnd<T>(array: T[], index: number): Iterable<[number, T]>;
+export function fromIndexToEnd<T>(
+  array: T[],
+  index: number,
+): Iterable<[number, T]>
 /**
  * "}" or "]"
  * @package
  * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
  * @returns {string}
  */
-export function pathSegmentTerminator(pathSegment: import("../types/baseTypes").JSONSegmentPathType): string;
+export function pathSegmentTerminator(
+  pathSegment: import("../types/baseTypes").JSONSegmentPathType,
+): string
+/**
+ * @package
+ * @param {Uint8Array} buffer
+ * @returns {any}
+ */
+export function decodeAndParse(buffer: Uint8Array): any
+/**
+ * @package
+ * @param {any} value
+ * @returns {Uint8Array}
+ */
+export function stringifyAndEncode(value: any): Uint8Array
 export class ParsingError extends Error {
-    /**
-     * @param {string} message
-     * @param {number} charNumber
-     */
-    constructor(message: string, charNumber: number);
-    charNumber: number;
+  /**
+   * @param {string} message
+   * @param {number} charNumber
+   */
+  constructor(message: string, charNumber: number)
+  charNumber: number
 }
 //# sourceMappingURL=utils.d.mts.map

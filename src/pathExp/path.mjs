@@ -17,7 +17,7 @@ export class CachedStringBuffer {
     this.cache = cache
     return cache
   }
-  /** @return {Uint8Array} data */
+  /** @return {Uint8Array} */
   get() {
     return this.data
   }

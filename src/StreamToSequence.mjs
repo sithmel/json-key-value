@@ -23,7 +23,7 @@ const STATE = {
 export default class StreamToSequence {
   /**
    * Convert a stream of characters (in chunks) to a sequence of path/value pairs
-   * @param {{ maxDepth?: number, includes?: string }} options
+   * @param {{ maxDepth?: number, includes?: string, startingPath?: import("../types/baseTypes").JSONPathType }} options
    */
   constructor(options = {}) {
     const { maxDepth = Infinity } = options
@@ -36,15 +36,49 @@ export default class StreamToSequence {
         "The includes expression won't be able to fully match paths as they will be clamped to the chosen maxDepth",
       )
     }
+    const { startingPath = [] } = options
 
     this.tokenizer = new StreamJSONTokenizer({ maxDepth })
     this.state = STATE.VALUE
     /** @type {Array<STATE>} */
-    this.stateStack = [STATE.END]
-    this.currentPath = new Path() // a combination of strings (object keys) and numbers (array index)
+    this.stateStack = this._initStateStack(startingPath)
+    this.currentPath = this._initCurrentPath(startingPath) // a combination of buffers (object keys) and numbers (array index)
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
-    /** @type {Array<number>} */
-    this.objectBuffer = [] // when currentDepth is > maxDepth I store things here
+  }
+
+  /**
+   * Generate currentPath from a path
+   * @package
+   * @param {import("../types/baseTypes").JSONPathType} path
+   * @returns {Path}
+   */
+  _initCurrentPath(path) {
+    const encoder = new TextEncoder()
+    const currentPath = new Path()
+    for (const segment of path) {
+      currentPath.push(
+        typeof segment === "string"
+          ? new CachedStringBuffer(encoder.encode(`"${segment}"`))
+          : segment,
+      )
+    }
+    return currentPath
+  }
+
+  /**
+   * generate statestack from a path
+   * @package
+   * @param {import("../types/baseTypes").JSONPathType} path
+   * @returns {Array<STATE>}
+   */
+  _initStateStack(path) {
+    const stateStack = [STATE.END]
+    for (const segment of path.reverse()) {
+      stateStack.push(
+        typeof segment === "string" ? STATE.CLOSE_OBJECT : STATE.CLOSE_ARRAY,
+      )
+    }
+    return stateStack
   }
 
   /**
@@ -80,31 +114,45 @@ export default class StreamToSequence {
   /**
    * Parse a json or json fragment, return a sequence of path/value pairs
    * @param {Uint8Array} chunk
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>}
    */
   *iter(chunk) {
     if (this.matcher.isExhausted()) {
       return
     }
-    for (const token of this.tokenizer.iter(chunk)) {
+    for (const [token, startToken, endToken] of this.tokenizer.iter(chunk)) {
       switch (this.state) {
         case STATE.VALUE: // any value
           if (token === TOKEN.STRING) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.OPEN_BRACES) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), {}]
+              yield [
+                this.currentPath.toDecoded(),
+                {},
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = STATE.OPEN_OBJECT
           } else if (token === TOKEN.OPEN_BRACKET) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), []]
+              yield [
+                this.currentPath.toDecoded(),
+                [],
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.currentPath.push(0)
             this.state = STATE.VALUE
@@ -115,24 +163,43 @@ export default class StreamToSequence {
             this.state = this._popState()
           } else if (token === TOKEN.TRUE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), true]
+              yield [
+                this.currentPath.toDecoded(),
+                true,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.FALSE) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), false]
+              yield [
+                this.currentPath.toDecoded(),
+                false,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NULL) {
             if (this.matcher.doesMatch(this.currentPath)) {
-              yield [this.currentPath.toDecoded(), null]
+              yield [
+                this.currentPath.toDecoded(),
+                null,
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
+              ]
             }
             this.state = this._popState()
           } else if (token === TOKEN.NUMBER) {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
@@ -140,26 +207,33 @@ export default class StreamToSequence {
             if (this.matcher.doesMatch(this.currentPath)) {
               yield [
                 this.currentPath.toDecoded(),
-                decodeAndParse(this.tokenizer.getOutputBuffer()),
+                decodeAndParse(
+                  this.tokenizer.getOutputBuffer(startToken, endToken),
+                ),
+                startToken + this.tokenizer.offsetIndexFromBeginning,
+                endToken + this.tokenizer.offsetIndexFromBeginning,
               ]
             }
             this.state = this._popState()
           } else {
             throw new ParsingError(
               `Invalid value ${token}`,
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
 
         case STATE.OPEN_KEY: // after the "," in an object
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.stringBuffer = this.tokenizer.getOutputBuffer(
+              startToken,
+              endToken,
+            )
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with " (after ",")',
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -170,12 +244,15 @@ export default class StreamToSequence {
             break
           }
           if (token === TOKEN.STRING) {
-            this.stringBuffer = this.tokenizer.getOutputBuffer()
+            this.stringBuffer = this.tokenizer.getOutputBuffer(
+              startToken,
+              endToken,
+            )
             this.state = STATE.CLOSE_KEY
           } else {
             throw new ParsingError(
               'Malformed object. Key should start with "',
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -188,7 +265,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting ':' after object key",
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -203,7 +280,7 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Malformed object. Expecting '}' or ',' after object value",
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
@@ -223,19 +300,19 @@ export default class StreamToSequence {
           } else {
             throw new ParsingError(
               "Invalid array: " + this.state,
-              this.tokenizer.totalBufferIndex,
+              startToken + this.tokenizer.offsetIndexFromBeginning,
             )
           }
           break
         case STATE.END: // last possible state
           throw new ParsingError(
             "Malformed JSON",
-            this.tokenizer.totalBufferIndex,
+            startToken + this.tokenizer.offsetIndexFromBeginning,
           )
         default:
           throw new ParsingError(
             "Unknown state: " + this.state,
-            this.tokenizer.totalBufferIndex,
+            startToken + this.tokenizer.offsetIndexFromBeginning,
           )
       }
       if (this.matcher.isExhausted()) {

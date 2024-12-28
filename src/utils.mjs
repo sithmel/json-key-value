@@ -140,3 +140,13 @@ const decoder = new TextDecoder("utf8", { fatal: true, ignoreBOM: true })
 export function decodeAndParse(buffer) {
   return JSON.parse(decoder.decode(buffer))
 }
+
+const encoder = new TextEncoder()
+/**
+ * @package
+ * @param {any} value
+ * @returns {Uint8Array}
+ */
+export function stringifyAndEncode(value) {
+  return encoder.encode(JSON.stringify(value))
+}

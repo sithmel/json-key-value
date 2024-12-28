@@ -33,7 +33,7 @@ Fetching a big JSON on the browser and render the data in the UI while being dow
 
 ### Filter data
 
-Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The `include` expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching.
+Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The `include` expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching. See the [benchmarks](#benchmarks).
 
 ### Easy Data manipulation
 
@@ -131,6 +131,59 @@ With this output
 ```
 
 More about [includes](#includes) syntax below!
+
+The iter method yields 2 extra numbers. They are the starting and ending position of the buffer, corresponding to the value that is emitting.
+So for example, with the JSON we used so far:
+
+```js
+import { StreamToSequence } from "json-key-value"
+
+const parser = new StreamToSequence({maxDepth: 1})
+for async (const chunk of bufferIterable) {
+  for (const [path, value, startPosition, endPosition] of parser.iter(chunk)) {
+    console.log(path, value, startPosition, endPosition)
+  }
+}
+```
+
+This will print:
+
+```
+[] [] 0 1
+[0] {"firstName": "Bruce", "lastName": "Banner"} 4 49
+[1] {"firstName": "Peter", "lastName": "Parker"} 53 98
+...
+```
+
+Once the position of a value is known, is possible for example:
+
+- to index where the data is in the buffer and access them directly
+- to pause and resume the parsing from that position in the buffer
+
+It is possible to resume the parsing using the option `startingPath`.
+So for example, let's say we want to resume reading from "Peter Parker":
+
+```js
+import { StreamToSequence } from "json-key-value"
+
+const parser = new StreamToSequence({maxDepth: 1, startingPath: [1]})
+// bufferIterable MUST start from the byte number 53
+
+for async (const chunk of bufferIterable) {
+  for (const [path, value, startPosition, endPosition] of parser.iter(chunk)) {
+    console.log(path, value, startPosition, endPosition)
+  }
+}
+```
+
+This will print:
+
+```
+[1] {"firstName": "Peter", "lastName": "Parker"} 0 45
+...
+```
+
+In this case startPosition and endPosition will be relative to the buffer starting on byte 53.
 
 ## ObjectToSequence
 
@@ -528,6 +581,64 @@ From the point of view of raw speed StreamToSequence can be slower _if used to t
 
 However, using **include** and **maxDepth** to filter the JSON can be considerably faster and memory efficient.
 In doubt I suggest to benchmark specific cases.
+
+### Benchmarks
+
+I have included benchmarks to show how this library can speed up extracting data from a JSON.
+In the examples I am extracting a single random record from a JSON with more than 16000 records (15MB).
+As a reference I am comparing to reading the entire file and parsing with JSON.parse:
+
+```
+$ node benchmarks/standardFetch.mjs
+
+Timings
+=======
+Mean:   43.39 ms
+Median: 41.757 ms
+
+Heap
+====
+Mean:   65,447.201 KB
+Median: 65,295.816 KB
+```
+
+JSON.parse is really fast! But reading the entire file is really problematic from the point of view of memory management.
+
+Here's how it works using StreamToSequence streaming parser with maxDepth and includes:
+
+```
+$ node benchmarks/efficientFetch.mjs
+
+Timings
+=======
+Mean:   37.53 ms
+Median: 38.145 ms
+
+Heap
+====
+Mean:   6,216.219 KB
+Median: 6,093.633 KB
+```
+
+It is a little bit faster (not having to read the entire file every time). But also much more memory efficient.
+
+I have created a version that creates an index of the JSON file. So that it can be stored and records can be accessed directly:
+
+```
+$ node benchmarks/indexedFetch.mjs
+
+Timings
+=======
+Mean:   1.669 ms
+Median: 1.589 ms
+
+Heap
+====
+Mean:   8,486.226 KB
+Median: 8,434.977 KB
+```
+
+Which is 28 times faster than the out-of-the-box JSON.parse!
 
 ### How StreamToSequence is optimized
 
