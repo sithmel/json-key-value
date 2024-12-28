@@ -33,7 +33,7 @@ Fetching a big JSON on the browser and render the data in the UI while being dow
 
 ### Filter data
 
-Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The `include` expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching. See the benchmarks[#benchmarks].
+Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The `include` expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching. See the [benchmarks](#benchmarks).
 
 ### Easy Data manipulation
 
@@ -604,7 +604,7 @@ Median: 65,295.816 KB
 
 JSON.parse is really fast! But reading the entire file is really problematic from the point of view of memory management.
 
-Here's how it works using
+Here's how it works using StreamToSequence streaming parser with maxDepth and includes:
 
 ```
 $ node benchmarks/efficientFetch.mjs
@@ -620,9 +620,9 @@ Mean:   6,216.219 KB
 Median: 6,093.633 KB
 ```
 
-It is a little fast (not having to read the entire file every time). But also much more memory efficient.
+It is a little bit faster (not having to read the entire file every time). But also much more memory efficient.
 
-I have created a version that creates an index of the JSON file so that I know where the records are and I can fetch them directly:
+I have created a version that creates an index of the JSON file. So that it can be stored and records can be accessed directly:
 
 ```
 $ node benchmarks/indexedFetch.mjs
