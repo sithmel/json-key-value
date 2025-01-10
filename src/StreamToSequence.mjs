@@ -112,6 +112,14 @@ export default class StreamToSequence {
   }
 
   /**
+   * Check if the JSON data have been extracted
+   * @returns {boolean}
+   */
+  isExhausted() {
+    return this.matcher.isExhausted()
+  }
+
+  /**
    * Parse a json or json fragment, return a sequence of path/value pairs
    * @param {Uint8Array} chunk
    * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>}

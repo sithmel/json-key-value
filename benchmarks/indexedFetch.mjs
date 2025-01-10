@@ -31,6 +31,7 @@ async function filterFile(JSONPath, indexPath, lineNumber) {
   const builder = new SequenceToObject({ compactArrays: true })
 
   for await (const chunk of indexReadStream) {
+    if (parser.isExhausted()) break
     for (const [path, value] of parser.iter(chunk)) {
       builder.add(path, value)
     }

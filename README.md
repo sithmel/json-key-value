@@ -44,7 +44,7 @@ Transforming a tree data structure (like a Javascript object) is not super conve
 ## StreamToSequence
 
 StreamToSequence converts chunk of data coming from an iterable in a sequence.
-It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. It takes a buffer as input, these can come from different implementations ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
+It is implemented as a [rfc8259](https://datatracker.ietf.org/doc/html/rfc8259) compliant parser. It takes an [array buffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) as input (as [Uint8Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)), this can come from different implementations of buffers: ([node buffers](https://nodejs.org/api/buffer.html) of [web streams](https://nodejs.org/api/webstreams.html)). See the [examples](#examples) below!
 
 Let's assume we have this JSON:
 
@@ -81,6 +81,10 @@ This will print:
 ```
 
 _There is an extremely rare corner case where the parser doesn't work as expected: when a json consists in a **single number and no trailing spaces**. In that case it is necessary to add a trailing space to make it work correctly!_
+
+The parser ha a method to check if the JSON was parsed in its entirety `isFinished`. This can be used to verify is the JSON file is well formed, after the buffer has been entirely consumed.
+
+### Partial parsing
 
 StreamToSequence takes 2 optional parameters: _maxDepth_ and _includes_.
 
@@ -123,14 +127,32 @@ for async (const chunk of bufferIterable) {
 }
 ```
 
-With this output
+With this output:
 
 ```
 [0, "firstName"] "Bruce"
 ...
 ```
 
+`includes` is able to figure out whether there are still data to extract of we can stop reading from the buffer.
+
+```js
+import { StreamToSequence } from "json-key-value"
+
+const parser = new StreamToSequence({includes: '0 (firstName)'})
+for async (const chunk of bufferIterable) {
+  if (parser.isExhausted()) break // no further data to read
+
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+// stop the stream here!
+```
+
 More about [includes](#includes) syntax below!
+
+### Buffer position
 
 The iter method yields 2 extra numbers. They are the starting and ending position of the buffer, corresponding to the value that is emitting.
 So for example, with the JSON we used so far:
@@ -502,6 +524,8 @@ async function filterJSONStream(readable, writable, includes, controller) {
   })
 
   for await (const chunk of readable) {
+    if (parser.isExhausted()) break
+
     for (const [path, value] of parser.iter(chunk)) {
       builder.add(path, value)
     }
@@ -540,6 +564,8 @@ async function filterFile(filename, includes) {
   const builder = new SequenceToObject()
 
   for await (const chunk of readStream) {
+    if (parser.isExhausted()) break
+
     for (const [path, value] of parser.iter(chunk)) {
       builder.add(path, value)
     }
@@ -611,13 +637,13 @@ $ node benchmarks/efficientFetch.mjs
 
 Timings
 =======
-Mean:   37.53 ms
-Median: 38.145 ms
+Mean:   29.934 ms
+Median: 28.89 ms
 
 Heap
 ====
-Mean:   6,216.219 KB
-Median: 6,093.633 KB
+Mean:   6,138.229 KB
+Median: 5,955.203 KB
 ```
 
 It is a little bit faster (not having to read the entire file every time). But also much more memory efficient.
@@ -629,13 +655,13 @@ $ node benchmarks/indexedFetch.mjs
 
 Timings
 =======
-Mean:   1.669 ms
-Median: 1.589 ms
+Mean:   1.609 ms
+Median: 1.484 ms
 
 Heap
 ====
-Mean:   8,486.226 KB
-Median: 8,434.977 KB
+Mean:   8,400.1 KB
+Median: 8,351.094 KB
 ```
 
 Which is 28 times faster than the out-of-the-box JSON.parse!
