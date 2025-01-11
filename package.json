@@ -11,7 +11,6 @@
     "format": "prettier --ignore-unknown --write .",
     "build-doc": "jsdoc -c jsdoc.json",
     "build-demo": "npx rollup demo-src/index.js --file demo-src/demo/bundle.js --format iife && cp -r demo-src/demo docs",
-    "prepare": "npm run types && npm run format && npm run build-doc && npm run build-demo",
     "serve-doc": "npx http-server docs"
   },
   "repository": {
