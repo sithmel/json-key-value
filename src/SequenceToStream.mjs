@@ -107,7 +107,7 @@ class SequenceToStream {
         this._output(`${index === commonPathIndex ? "" : "["}`)
 
         const previousIndex =
-          index === commonPathIndex ? previousPath[commonPathIndex] ?? -1 : -1
+          index === commonPathIndex ? (previousPath[commonPathIndex] ?? -1) : -1
         if (typeof previousIndex === "string") {
           throw new Error(
             `Mixing up array index and object keys is not allowed: before ${previousIndex} then ${pathSegment} in [${path}]`,

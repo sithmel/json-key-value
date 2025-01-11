@@ -10,7 +10,9 @@
     "types": "tsc",
     "format": "prettier --ignore-unknown --write .",
     "build-doc": "jsdoc -c jsdoc.json",
-    "prepare": "npm run types && npm run format && npm run build-doc"
+    "build-demo": "npx rollup demo-src/index.js --file demo-src/demo/bundle.js --format iife && cp -r demo-src/demo docs",
+    "prepare": "npm run types && npm run format && npm run build-doc && npm run build-demo",
+    "serve-doc": "npx http-server docs"
   },
   "repository": {
     "type": "git",
@@ -27,11 +29,11 @@
   },
   "homepage": "https://github.com/sithmel/json-key-value#readme",
   "devDependencies": {
-    "@types/node": "^20.9.0",
-    "@types/web": "^0.0.119",
+    "@types/node": "^22.10.5",
+    "@types/web": "^0.0.192",
     "jsdoc": "^4.0.4",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3",
     "zunit": "^4.0.2"
   },
   "prettier": {

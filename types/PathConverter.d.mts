@@ -14,7 +14,7 @@ declare class PathConverter {
    * @param {string} [separator] - Character sequence to use as a separator between path segments
    * @param {string} [numberPrefix] - prefix to put in front of numeric path segments
    */
-  constructor(separator?: string | undefined, numberPrefix?: string | undefined)
+  constructor(separator?: string, numberPrefix?: string)
   separator: string
   numberPrefix: string
   /**
@@ -39,12 +39,12 @@ declare class PathConverter {
    * @param {JSONPathType} path - an array of path segments to convert into string
    * @returns {string}
    */
-  pathToString(path: import("../types/baseTypes").JSONPathType): string
+  pathToString(path: JSONPathType): string
   /**
    * Convert a path from string to a array
    * @param {string} str - a string to convert into an array of path segments
    * @returns {JSONPathType}
    */
-  stringToPath(str: string): import("../types/baseTypes").JSONPathType
+  stringToPath(str: string): JSONPathType
 }
 //# sourceMappingURL=PathConverter.d.mts.map

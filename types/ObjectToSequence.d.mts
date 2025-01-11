@@ -11,14 +11,10 @@ declare class ObjectToSequence {
    * @param {number} [options.maxDepth=Infinity] - Max parsing depth
    * @param {string} [options.includes=null] - Expression using the includes syntax
    */
-  constructor(
-    options?:
-      | {
-          maxDepth?: number | undefined
-          includes?: string | undefined
-        }
-      | undefined,
-  )
+  constructor(options?: {
+    maxDepth?: number | undefined
+    includes?: string | undefined
+  })
   maxDepth: number
   matcher: MatcherContainer
   /**
@@ -27,10 +23,7 @@ declare class ObjectToSequence {
    * @param {Path} [currentPath] - Only for internal use
    * @returns {Iterable<[JSONPathType, JSONValueType]>}
    */
-  iter(
-    obj: any,
-    currentPath?: Path | undefined,
-  ): Iterable<[import("../types/baseTypes").JSONPathType, JSONValueType]>
+  iter(obj: any, currentPath?: Path): Iterable<[JSONPathType, JSONValueType]>
 }
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 import { Path } from "./pathExp/path.mjs"

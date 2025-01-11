@@ -6,7 +6,7 @@ export class MatcherContainer {
    * This class is used as generic container of matchers
    * @param {Array<BaseMatcher>} [matchers]
    */
-  constructor(matchers?: BaseMatcher[] | undefined)
+  constructor(matchers?: Array<BaseMatcher>)
   matchers: BaseMatcher[]
   /**
    * Check for match
@@ -24,7 +24,7 @@ export class MatcherContainer {
    * @param {string?} [spacer]
    * @return {string}
    */
-  stringify(spacer?: string | null | undefined): string
+  stringify(spacer?: string | null): string
   /**
    * return the length of the longest branch of the tree
    * @return {number}
@@ -55,13 +55,10 @@ export class SegmentMatcher extends BaseMatcher {
    * @param {Array<BaseMatcher>} [matchers]
    * @param {JSONSegmentPathType} segmentMatch
    */
-  constructor(
-    segmentMatch: JSONSegmentPathType,
-    matchers?: BaseMatcher[] | undefined,
-  )
+  constructor(segmentMatch: JSONSegmentPathType, matchers?: Array<BaseMatcher>)
   hasMatchedForLastTime: boolean
   segmentMatch: import("../../types/baseTypes").JSONSegmentPathType
-  segmentMatchEncoded: number | Uint8Array
+  segmentMatchEncoded: number | Uint8Array<ArrayBufferLike>
   /**
    * Check if this specific segment matches, without checking the children
    * @param {CachedStringBuffer|number|string} segment
@@ -93,7 +90,7 @@ export class SliceMatcher extends BaseMatcher {
       min: number
       max: number
     },
-    matchers?: BaseMatcher[] | undefined,
+    matchers?: Array<BaseMatcher>,
   )
   hasMatchedForLastTime: boolean
   min: number
@@ -122,7 +119,7 @@ declare class BaseMatcher {
    * - match *
    * @param {Array<BaseMatcher>} [matchers]
    */
-  constructor(matchers?: BaseMatcher[] | undefined)
+  constructor(matchers?: Array<BaseMatcher>)
   matchers: BaseMatcher[]
   _isExhausted: boolean
   _isLastPossibleMatch: boolean
@@ -142,7 +139,7 @@ declare class BaseMatcher {
    * @param {boolean} [parentLastPossibleMatch]
    * @return {boolean}
    */
-  doesMatch(path: Path, parentLastPossibleMatch?: boolean | undefined): boolean
+  doesMatch(path: Path, parentLastPossibleMatch?: boolean): boolean
   /**
    * Check if matcher is exhausted (or children)
    * @return {boolean}
@@ -154,10 +151,7 @@ declare class BaseMatcher {
    * @param {number} [level]
    * @return {string}
    */
-  stringify(
-    spacer?: string | null | undefined,
-    level?: number | undefined,
-  ): string
+  stringify(spacer?: string | null, level?: number): string
   /**
    * return the length of the longest branch of the tree
    * @return {number}

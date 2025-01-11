@@ -12,15 +12,11 @@ declare class StreamToSequence {
    * @param {string} [options.includes=null] - Expression using the includes syntax
    * @param {JSONPathType} [options.startingPath] - The parser will consider this path as it is initial (useful to resume)
    */
-  constructor(
-    options?:
-      | {
-          maxDepth?: number | undefined
-          includes?: string | undefined
-          startingPath?: import("../types/baseTypes").JSONPathType | undefined
-        }
-      | undefined,
-  )
+  constructor(options?: {
+    maxDepth?: number | undefined
+    includes?: string | undefined
+    startingPath?: import("../types/baseTypes").JSONPathType | undefined
+  })
   currentDepthInObject: number
   matcher: MatcherContainer
   tokenizer: StreamJSONTokenizer
@@ -30,7 +26,7 @@ declare class StreamToSequence {
    */
   private stateStack
   currentPath: Path
-  stringBuffer: Uint8Array
+  stringBuffer: Uint8Array<ArrayBuffer>
   /**
    * Generate currentPath from a path
    * @package
@@ -80,9 +76,7 @@ declare class StreamToSequence {
    */
   iter(
     chunk: Uint8Array,
-  ): Iterable<
-    [import("../types/baseTypes").JSONPathType, JSONValueType, number, number]
-  >
+  ): Iterable<[JSONPathType, JSONValueType, number, number]>
 }
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 import StreamJSONTokenizer from "./StreamJSONTokenizer.mjs"

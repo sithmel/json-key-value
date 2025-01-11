@@ -37,9 +37,6 @@ declare class SequenceToObject {
    * @param {JSONValueType} value - the value corresponding to the path
    * @returns {void}
    */
-  add(
-    path: import("../types/baseTypes").JSONPathType,
-    value: JSONValueType,
-  ): void
+  add(path: JSONPathType, value: JSONValueType): void
 }
 //# sourceMappingURL=SequenceToObject.d.mts.map

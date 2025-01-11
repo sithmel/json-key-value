@@ -4,7 +4,7 @@
 export class CachedStringBuffer {
   /** @param {Uint8Array} data */
   constructor(data: Uint8Array)
-  data: Uint8Array
+  data: Uint8Array<ArrayBufferLike>
   /** @type {?string} */
   cache: string | null
   /** @return {JSONSegmentPathType} */
@@ -21,8 +21,8 @@ export class Path {
    * @param {number} [offset]
    */
   constructor(
-    array?: (string | number | CachedStringBuffer)[] | undefined,
-    offset?: number | undefined,
+    array?: Array<CachedStringBuffer | number | string>,
+    offset?: number,
   )
   array: (string | number | CachedStringBuffer)[]
   offset: number
@@ -47,7 +47,7 @@ export class Path {
    * */
   rest(): Path
   /** @return {JSONPathType} */
-  toDecoded(): import("../../types/baseTypes").JSONPathType
+  toDecoded(): JSONPathType
 }
 export type JSONSegmentPathType =
   import("../../types/baseTypes").JSONSegmentPathType

@@ -26,14 +26,14 @@ declare class StreamJSONTokenizer {
    * Convert a stream of bytes (in chunks of ArrayBuffers) to a sequence tokens
    * @param {{ maxDepth?: number }} options
    */
-  constructor(options?: { maxDepth?: number | undefined })
+  constructor(options?: { maxDepth?: number })
   maxDepth: number
   currentDepth: number
   offsetIndexFromBeginning: number
   state: number
   /** @type number? */
   outputTokenStart: number | null
-  currentBuffer: Uint8Array
+  currentBuffer: Uint8Array<ArrayBuffer>
   /**
    * returns the outputBuffer
    * @param {number} outputTokenStart

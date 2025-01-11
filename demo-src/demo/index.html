@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Download part of a file</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background-color: #f4f4f9;
+      }
+      form {
+        max-width: 400px;
+        margin: auto;
+        padding: 20px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #4cae4c;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 style="text-align: center">Form Page</h2>
+    <form action="/submit" method="post">
+      <label for="filename">Filename:</label>
+      <input
+        type="text"
+        id="filename"
+        name="filename"
+        placeholder="Enter the filename"
+        required
+        value="twitter.json"
+      />
+
+      <label for="index">Index:</label>
+      <input
+        type="number"
+        id="index"
+        name="index"
+        placeholder="Enter the index 1-16000"
+        required
+      />
+
+      <label for="query">Query:</label>
+      <textarea
+        id="query"
+        name="query"
+        placeholder="Enter the query"
+      ></textarea>
+
+      <button type="submit">Submit</button>
+
+      <textarea id="data" name="data" disabled></textarea>
+
+      <script src="bundle.js"></script>
+    </form>
+  </body>
+</html>

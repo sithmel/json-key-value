@@ -23,8 +23,8 @@ export function isArrayOrObject(value: any): boolean
  * @returns {number}
  */
 export function getCommonPathIndex(
-  oldPath: import("../types/baseTypes").JSONPathType,
-  newPath: import("../types/baseTypes").JSONPathType,
+  oldPath: JSONPathType,
+  newPath: JSONPathType,
 ): number
 /**
  * Check if oldPath is contained in the new path
@@ -35,8 +35,8 @@ export function getCommonPathIndex(
  * @returns {boolean}
  */
 export function isPreviousPathInNewPath(
-  oldPath: import("../types/baseTypes").JSONPathType,
-  newPath: import("../types/baseTypes").JSONPathType,
+  oldPath: JSONPathType,
+  newPath: JSONPathType,
 ): boolean
 /**
  * Transform a value in JSON
@@ -56,7 +56,7 @@ export function valueToString(value: JSONValueType): string
  * @returns {Iterable<[number, T]>}
  */
 export function fromEndToIndex<T>(
-  array: T[],
+  array: Array<T>,
   index: number,
 ): Iterable<[number, T]>
 /**
@@ -69,7 +69,7 @@ export function fromEndToIndex<T>(
  * @returns {Iterable<[number, T]>}
  */
 export function fromIndexToEnd<T>(
-  array: T[],
+  array: Array<T>,
   index: number,
 ): Iterable<[number, T]>
 /**

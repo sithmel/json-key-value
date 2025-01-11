@@ -1,4 +1,3 @@
-/// <reference types="node" />
 export default SequenceToStream
 export type JSONValueType = import("../types/baseTypes").JSONValueType
 export type JSONPathType = import("../types/baseTypes").JSONPathType
@@ -20,7 +19,7 @@ declare class SequenceToStream {
     onData: (arg0: Uint8Array) => Promise<void>
   })
   /** @type {JSONPathType} */
-  currentPath: import("../types/baseTypes").JSONPathType
+  currentPath: JSONPathType
   onData: (arg0: Uint8Array) => Promise<void>
   /** @type CONTEXT */
   context: CONTEXT
@@ -39,10 +38,7 @@ declare class SequenceToStream {
    * @param {JSONValueType} value - the value at the corresponding path
    * @returns {void}
    */
-  add(
-    path: import("../types/baseTypes").JSONPathType,
-    value: JSONValueType,
-  ): void
+  add(path: JSONPathType, value: JSONValueType): void
   /**
    * The input stream is completed
    * @returns {Promise<void>}
