@@ -1,4 +1,4 @@
-![JSON key value logo](https://github.com/sithmel/json-key-value/blob/main/logo/logo.png)
+![JSON key value logo](https://raw.githubusercontent.com/sithmel/json-key-value/main/logo/logo.png)
 
 # json-key-value
 
