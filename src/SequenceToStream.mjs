@@ -1,4 +1,8 @@
 //@ts-check
+/**
+ * @typedef {import("../types/baseTypes").JSONValueType} JSONValueType
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ */
 
 import {
   getCommonPathIndex,
@@ -11,6 +15,8 @@ import {
 
 /**
  * Enum for CONTEXT
+ * @package
+ * @private
  * @readonly
  * @enum {string}
  */
@@ -20,13 +26,18 @@ const CONTEXT = {
   NULL: "NULL",
 }
 
-export default class SequenceToStream {
+/**
+ * Convert a sequence of path value pairs to a stream of bytes
+ */
+class SequenceToStream {
   /**
-   * Convert a sequence of path value pairs to a stream of characters
-   * @param {{onData: (arg0: Uint8Array) => Promise<void>, compactArrays?: boolean}} onData
+   * Convert a sequence of path value pairs to a stream of bytes
+   * @param {Object} options
+   * @param {boolean} [options.compactArrays=false] - if true ignore array index and generates arrays without gaps
+   * @param {(arg0: Uint8Array) => Promise<void>} options.onData - function called when a new sequence of bytes is returned
    */
   constructor({ onData, compactArrays = false }) {
-    /** @type {import("../types/baseTypes").JSONPathType} */
+    /** @type {JSONPathType} */
     this.currentPath = []
     this.onData = onData
     /** @type CONTEXT */
@@ -38,6 +49,7 @@ export default class SequenceToStream {
 
   /**
    * @package
+   * @private
    * @param {string} str
    */
   async _output(str) {
@@ -46,8 +58,8 @@ export default class SequenceToStream {
   }
   /**
    * add a new path value pair
-   * @param {import("../types/baseTypes").JSONPathType} path
-   * @param {import("../types/baseTypes").JSONValueType} value
+   * @param {JSONPathType} path - an array of path segments
+   * @param {JSONValueType} value - the value at the corresponding path
    * @returns {void}
    */
   add(path, value) {
@@ -143,3 +155,5 @@ export default class SequenceToStream {
     await this.lastWritePromise
   }
 }
+
+export default SequenceToStream

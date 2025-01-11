@@ -1,8 +1,9 @@
+export default parseIncludes
 /**
- * direct match of a number of a string
- * @param {string} str
+ * parse and include expression and return a Matcher
+ * @param {string} str - the include expression
  * @return {MatcherContainer}
  */
-export default function pathExpParse(str: string): MatcherContainer
+declare function parseIncludes(str: string): MatcherContainer
 import { MatcherContainer } from "./matcher.mjs"
 //# sourceMappingURL=parser.d.mts.map

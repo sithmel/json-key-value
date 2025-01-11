@@ -1,12 +1,19 @@
 //@ts-check
+/**
+ * @typedef {import("../types/baseTypes").JSONValueType} JSONValueType
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ */
+
 import { ParsingError, decodeAndParse } from "./utils.mjs"
 import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 import { Path, CachedStringBuffer } from "./pathExp/path.mjs"
+
 /**
  * Enum for parser state
  * @package
+ * @private
  * @readonly
  * @enum {string}
  */
@@ -20,10 +27,16 @@ const STATE = {
   END: "END", // last state
 }
 
-export default class StreamToSequence {
+/**
+ * Convert a stream of characters (in chunks) to a sequence of path/value pairs
+ */
+class StreamToSequence {
   /**
-   * Convert a stream of characters (in chunks) to a sequence of path/value pairs
-   * @param {{ maxDepth?: number, includes?: string, startingPath?: import("../types/baseTypes").JSONPathType }} options
+   * Convert a stream of bytes (in chunks) into a sequence of path/value pairs
+   * @param {Object} [options]
+   * @param {number} [options.maxDepth=Infinity] - Max parsing depth
+   * @param {string} [options.includes=null] - Expression using the includes syntax
+   * @param {JSONPathType} [options.startingPath] - The parser will consider this path as it is initial (useful to resume)
    */
   constructor(options = {}) {
     const { maxDepth = Infinity } = options
@@ -40,7 +53,9 @@ export default class StreamToSequence {
 
     this.tokenizer = new StreamJSONTokenizer({ maxDepth })
     this.state = STATE.VALUE
-    /** @type {Array<STATE>} */
+    /** @type {Array<STATE>}
+     * @private
+     */
     this.stateStack = this._initStateStack(startingPath)
     this.currentPath = this._initCurrentPath(startingPath) // a combination of buffers (object keys) and numbers (array index)
     this.stringBuffer = new Uint8Array() // this stores strings temporarily (keys and values)
@@ -49,7 +64,8 @@ export default class StreamToSequence {
   /**
    * Generate currentPath from a path
    * @package
-   * @param {import("../types/baseTypes").JSONPathType} path
+   * @private
+   * @param {JSONPathType} path
    * @returns {Path}
    */
   _initCurrentPath(path) {
@@ -68,7 +84,8 @@ export default class StreamToSequence {
   /**
    * generate statestack from a path
    * @package
-   * @param {import("../types/baseTypes").JSONPathType} path
+   * @private
+   * @param {JSONPathType} path
    * @returns {Array<STATE>}
    */
   _initStateStack(path) {
@@ -84,6 +101,7 @@ export default class StreamToSequence {
   /**
    * add another segment to the path
    * @package
+   * @private
    * @param {STATE} state
    */
   _pushState(state) {
@@ -93,6 +111,7 @@ export default class StreamToSequence {
   /**
    * pops the parser state
    * @package
+   * @private
    * @returns {string}
    */
   _popState() {
@@ -112,7 +131,7 @@ export default class StreamToSequence {
   }
 
   /**
-   * Check if the JSON data have been extracted
+   * Check if there are no data to extract left considering the "includes" parameter
    * @returns {boolean}
    */
   isExhausted() {
@@ -120,9 +139,11 @@ export default class StreamToSequence {
   }
 
   /**
-   * Parse a json or json fragment, return a sequence of path/value pairs
-   * @param {Uint8Array} chunk
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType, number, number]>}
+   * Parse a json or json fragment from a buffer, split in chunks (ArrayBuffers)
+   * and yields a sequence of path/value pairs
+   * It also yields the starting and ending byte of each value
+   * @param {Uint8Array} chunk - an arraybuffer that is a chunk of a stream
+   * @returns {Iterable<[JSONPathType, JSONValueType, number, number]>} - path, value, byte start, and byte end when the value is in the buffer
    */
   *iter(chunk) {
     if (this.matcher.isExhausted()) {
@@ -329,3 +350,4 @@ export default class StreamToSequence {
     }
   }
 }
+export default StreamToSequence

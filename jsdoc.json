@@ -1,0 +1,11 @@
+{
+  "plugins": ["plugins/markdown"],
+  "source": {
+    "include": ["README.md", "src", "src/pathExp"],
+    "includePattern": ".(jsx|js|ts|tsx|mjs)$"
+  },
+  "opts": {
+    "destination": "./docs/"
+  },
+  "access": "public"
+}

@@ -1,17 +1,25 @@
 /// <reference types="node" />
-export default class SequenceToStream {
+export default SequenceToStream
+export type JSONValueType = import("../types/baseTypes").JSONValueType
+export type JSONPathType = import("../types/baseTypes").JSONPathType
+/**
+ * Convert a sequence of path value pairs to a stream of bytes
+ */
+declare class SequenceToStream {
   /**
-   * Convert a sequence of path value pairs to a stream of characters
-   * @param {{onData: (arg0: Uint8Array) => Promise<void>, compactArrays?: boolean}} onData
+   * Convert a sequence of path value pairs to a stream of bytes
+   * @param {Object} options
+   * @param {boolean} [options.compactArrays=false] - if true ignore array index and generates arrays without gaps
+   * @param {(arg0: Uint8Array) => Promise<void>} options.onData - function called when a new sequence of bytes is returned
    */
   constructor({
     onData,
     compactArrays,
   }: {
-    onData: (arg0: Uint8Array) => Promise<void>
     compactArrays?: boolean | undefined
+    onData: (arg0: Uint8Array) => Promise<void>
   })
-  /** @type {import("../types/baseTypes").JSONPathType} */
+  /** @type {JSONPathType} */
   currentPath: import("../types/baseTypes").JSONPathType
   onData: (arg0: Uint8Array) => Promise<void>
   /** @type CONTEXT */
@@ -21,18 +29,19 @@ export default class SequenceToStream {
   encoder: import("util").TextEncoder
   /**
    * @package
+   * @private
    * @param {string} str
    */
-  _output(str: string): Promise<void>
+  private _output
   /**
    * add a new path value pair
-   * @param {import("../types/baseTypes").JSONPathType} path
-   * @param {import("../types/baseTypes").JSONValueType} value
+   * @param {JSONPathType} path - an array of path segments
+   * @param {JSONValueType} value - the value at the corresponding path
    * @returns {void}
    */
   add(
     path: import("../types/baseTypes").JSONPathType,
-    value: import("../types/baseTypes").JSONValueType,
+    value: JSONValueType,
   ): void
   /**
    * The input stream is completed
@@ -49,5 +58,4 @@ declare namespace CONTEXT {
   let ARRAY: string
   let NULL: string
 }
-export {}
 //# sourceMappingURL=SequenceToStream.d.mts.map

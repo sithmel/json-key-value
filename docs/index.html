@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><p><img src="./logo/logo.png" alt="JSON key value logo"></p>
+<h1>json-key-value</h1>
+<p>json-key-value is a toolkit to work with JSON and JS object as they are converted to a sequence to path value pairs (using iterables).
+It enables using filter, map reduce techniques in a way that is readable, simpler and efficient.</p>
+<p>It is minimal (no dependencies) but work well with other libraries. It is designed for both server and client.</p>
+<h2>The idea</h2>
+<p>The main idea behind this library is that a JSON can be converted into a sequence of &quot;path, value&quot; pairs and can be reconstructed from this sequence.
+This allows to filter and transform a big JSON as a stream, without having to load it in memory. It also make it easier to work with JSON and JS objects using filter/map/reduce.</p>
+<p>An example of a sequence is:</p>
+<table>
+<thead>
+<tr>
+<th>Path, Value</th>
+<th>Resulting object</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[], {}</td>
+<td>{}</td>
+</tr>
+<tr>
+<td>[&quot;name&quot;], &quot;json-key-value&quot;</td>
+<td>{&quot;name&quot;: &quot;json-key-value&quot;}</td>
+</tr>
+<tr>
+<td>[&quot;keywords&quot;], []</td>
+<td>{&quot;name&quot;: &quot;json-key-value&quot;, keywords: []}</td>
+</tr>
+<tr>
+<td>[&quot;keywords&quot;, 0], &quot;json&quot;</td>
+<td>{&quot;name&quot;: &quot;json-key-value&quot;, keywords: [&quot;json&quot;]}</td>
+</tr>
+<tr>
+<td>[&quot;keywords&quot;, 1], &quot;stream&quot;</td>
+<td>{&quot;name&quot;: &quot;json-key-value&quot;, keywords: [&quot;json&quot;, &quot;stream&quot;]}</td>
+</tr>
+</tbody>
+</table>
+<h2>About the ordering</h2>
+<p>Streaming out JSON requires the &quot;path, value&quot; pairs to be emitted in <strong>depth first</strong> order of paths otherwise the resulting JSON will be malformed. This is the normal order in which data are stored in JSON.
+Alternatively, it also works if the paths are sorted comparing object keys in lexicographic order and array indexes from the smallest to the biggest. In this case, the structure will be respected, but not necessarily the order the keys presents in the original JSON (ES2015 standard introduced the concept of key ordering, but it is not respected here).</p>
+<h2>Example use cases</h2>
+<h3>Rendering partial state</h3>
+<p>Fetching a big JSON on the browser and render the data in the UI while being downloaded (no need to wait for the entire file to be downloaded).</p>
+<h3>Filter data</h3>
+<p>Using json-key-value in the backend to fetch a JSON from some source (db, file system, network) and filter the data needed. The <code>include</code> expression can be passed as query parameter or in the body, so that a browser can use a graphql like syntax to avoid overfetching. See the <a href="#benchmarks">benchmarks</a>.</p>
+<h3>Easy Data manipulation</h3>
+<p>Transforming a tree data structure (like a Javascript object) is not super convenient. With json-key-value you can simply iterate over the sequence and use familiar filter/map/reduce.</p>
+<h1>API</h1>
+<h2>StreamToSequence</h2>
+<p>StreamToSequence converts chunk of data coming from an iterable in a sequence.
+It is implemented as a <a href="https://datatracker.ietf.org/doc/html/rfc8259">rfc8259</a> compliant parser. It takes an <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">array buffer</a> as input (as <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>), this can come from different implementations of buffers: (<a href="https://nodejs.org/api/buffer.html">node buffers</a> of <a href="https://nodejs.org/api/webstreams.html">web streams</a>). See the <a href="#examples">examples</a> below!</p>
+<p>Let's assume we have this JSON:</p>
+<pre class="prettyprint source lang-json"><code>[
+  {&quot;firstName&quot;: &quot;Bruce&quot;, &quot;lastName&quot;: &quot;Banner&quot;},
+  {&quot;firstName&quot;: &quot;Peter&quot;, &quot;lastName&quot;: &quot;Parker&quot;},
+  ...
+]
+</code></pre>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence()
+for async (const chunk of bufferIterable) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+</code></pre>
+<p>This will print:</p>
+<pre class="prettyprint source"><code>[] []
+[0] {}
+[0, &quot;firstName&quot;] &quot;Bruce&quot;
+[0, &quot;lastName&quot;] &quot;Banner&quot;
+[1] {}
+[1, &quot;firstName&quot;] &quot;Peter&quot;
+[1, &quot;lastName&quot;] &quot;Parker&quot;
+...
+</code></pre>
+<p><em>There is an extremely rare corner case where the parser doesn't work as expected: when a json consists in a <strong>single number and no trailing spaces</strong>. In that case it is necessary to add a trailing space to make it work correctly!</em></p>
+<p>The parser ha a method to check if the JSON was parsed in its entirety <code>isFinished</code>. This can be used to verify is the JSON file is well formed, after the buffer has been entirely consumed.</p>
+<h3>Partial parsing</h3>
+<p>StreamToSequence takes 2 optional parameters: <em>maxDepth</em> and <em>includes</em>.</p>
+<p>maxDepth is used to group the data over a certain depth together. It also allows to considerable increase the speed of the parsing when used together with <em>includes</em>.</p>
+<p>Here is how it works:</p>
+<p>Let's assume we use the same JSON used above:</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence({maxDepth: 1})
+for async (const chunk of bufferIterable) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+</code></pre>
+<p>This will print:</p>
+<pre class="prettyprint source"><code>[] []
+[0] {&quot;firstName&quot;: &quot;Bruce&quot;, &quot;lastName&quot;: &quot;Banner&quot;}
+[1] {&quot;firstName&quot;: &quot;Peter&quot;, &quot;lastName&quot;: &quot;Parker&quot;}
+...
+</code></pre>
+<p><em>includes</em> allows to select what paths we want to read and filter the others. It is much faster then filtering the pairs after are emitted because allows stop parsing the stream if no further matches are possible. Here is an example (using the same JSON):</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence({includes: '0 (firstName)'})
+for async (const chunk of bufferIterable) {
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+</code></pre>
+<p>With this output:</p>
+<pre class="prettyprint source"><code>[0, &quot;firstName&quot;] &quot;Bruce&quot;
+...
+</code></pre>
+<p><code>includes</code> is able to figure out whether there are still data to extract of we can stop reading from the buffer.</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence({includes: '0 (firstName)'})
+for async (const chunk of bufferIterable) {
+  if (parser.isExhausted()) break // no further data to read
+
+  for (const [path, value] of parser.iter(chunk)) {
+    console.log(path, value)
+  }
+}
+// stop the stream here!
+</code></pre>
+<p>More about <a href="#includes">includes</a> syntax below!</p>
+<h3>Buffer position</h3>
+<p>The iter method yields 2 extra numbers. They are the starting and ending position of the buffer, corresponding to the value that is emitting.
+So for example, with the JSON we used so far:</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence({maxDepth: 1})
+for async (const chunk of bufferIterable) {
+  for (const [path, value, startPosition, endPosition] of parser.iter(chunk)) {
+    console.log(path, value, startPosition, endPosition)
+  }
+}
+</code></pre>
+<p>This will print:</p>
+<pre class="prettyprint source"><code>[] [] 0 1
+[0] {&quot;firstName&quot;: &quot;Bruce&quot;, &quot;lastName&quot;: &quot;Banner&quot;} 4 49
+[1] {&quot;firstName&quot;: &quot;Peter&quot;, &quot;lastName&quot;: &quot;Parker&quot;} 53 98
+...
+</code></pre>
+<p>Once the position of a value is known, is possible for example:</p>
+<ul>
+<li>to index where the data is in the buffer and access them directly</li>
+<li>to pause and resume the parsing from that position in the buffer</li>
+</ul>
+<p>It is possible to resume the parsing using the option <code>startingPath</code>.
+So for example, let's say we want to resume reading from &quot;Peter Parker&quot;:</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence } from &quot;json-key-value&quot;
+
+const parser = new StreamToSequence({maxDepth: 1, startingPath: [1]})
+// bufferIterable MUST start from the byte number 53
+
+for async (const chunk of bufferIterable) {
+  for (const [path, value, startPosition, endPosition] of parser.iter(chunk)) {
+    console.log(path, value, startPosition, endPosition)
+  }
+}
+</code></pre>
+<p>This will print:</p>
+<pre class="prettyprint source"><code>[1] {&quot;firstName&quot;: &quot;Peter&quot;, &quot;lastName&quot;: &quot;Parker&quot;} 0 45
+...
+</code></pre>
+<p>In this case startPosition and endPosition will be relative to the buffer starting on byte 53.</p>
+<h2>ObjectToSequence</h2>
+<p>ObjectToSequence transforms a js object into a sequence:</p>
+<pre class="prettyprint source lang-js"><code>import { ObjectToSequence } from &quot;json-key-value&quot;
+
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter({ hello: world })) {
+  console.log(path, value)
+}
+</code></pre>
+<p>This prints:</p>
+<pre class="prettyprint source lang-js"><code>[] {}
+['hello'] 'world'
+</code></pre>
+<p>ObjectToSequence takes 2 optional parameters: <em>maxDepth</em> and <em>includes</em>.
+They works exactly the same as for StreamToSequence.</p>
+<h2>SequenceToObject</h2>
+<p>SequenceToObject reconstructs an object from a sequence:</p>
+<pre class="prettyprint source lang-js"><code>import { SequenceToObject } from &quot;json-key-value&quot;
+
+const objBuilder = new SequenceToObject()
+objBuilder.add([], {}) // build initial object
+objBuilder.add([&quot;hello&quot;], &quot;world&quot;)
+objBuilder.object === { hello: &quot;world&quot; }
+</code></pre>
+<p>The implementation forgives if &quot;containers&quot; (arrays and objects) are omitted</p>
+<pre class="prettyprint source lang-js"><code>const objBuilder = new SequenceToObject()
+objBuilder.add([&quot;hello&quot;], &quot;world&quot;)
+objBuilder.object === { hello: &quot;world&quot; }
+</code></pre>
+<p>It also fills empty array positions with nulls:</p>
+<pre class="prettyprint source lang-js"><code>const objBuilder = new SequenceToObject()
+objBuilder.add([2], &quot;hello world&quot;)
+objBuilder.object === [null, null, &quot;hello world&quot;]
+</code></pre>
+<p>Unless the options <code>compactArrays</code> is true:</p>
+<pre class="prettyprint source lang-js"><code>const objBuilder = new SequenceToObject({ compactArrays: true })
+objBuilder.add([2], &quot;hello world&quot;)
+objBuilder.object === [&quot;hello world&quot;]
+</code></pre>
+<h2>SequenceToStream</h2>
+<p>SequenceToStream allows to reconstruct a JSON stream from a sequence:</p>
+<pre class="prettyprint source lang-js"><code>import { SequenceToStream } from &quot;json-key-value&quot;
+
+let str = &quot;&quot;
+const decoder = new TextDecoder()
+const jsonStreamer = new SequenceToStream({
+  onData: async (data) => {
+    // this is normally used for writing to a buffer
+    // but in here we are decoding the buffer as js string
+    str += decoder.decode(data)
+  },
+})
+jsonStreamer.add([], {}) // build initial object
+jsonStreamer.add([&quot;hello&quot;], &quot;world&quot;)
+await jsonStreamer.end() // wait that all pairs are emitted
+str === '{&quot;hello&quot;:&quot;world&quot;}'
+</code></pre>
+<p><em>The sequence must be in &quot;depth first&quot; order (with ordered indices), otherwise it won't work!</em>
+Also notice, the <em>end</em> method must be called after adding all the path, value pairs.
+The implementation forgives if &quot;containers&quot; (arrays and objects) are omitted.</p>
+<pre class="prettyprint source lang-js"><code>let str = &quot;&quot;
+const jsonStreamer = new SequenceToStream({
+  onData: async (data) => {
+    str += data
+  },
+})
+jsonStreamer.add([&quot;hello&quot;], &quot;world&quot;)
+await jsonStreamer.end()
+str === '{&quot;hello&quot;:&quot;world&quot;}'
+</code></pre>
+<p>It also fills empty array positions with nulls:</p>
+<pre class="prettyprint source lang-js"><code>let str = &quot;&quot;
+const jsonStreamer = new SequenceToStream({
+  onData: async (data) => {
+    str += data
+  },
+})
+jsonStreamer.add([2], &quot;hello world&quot;)
+await jsonStreamer.end()
+str === '[null,null,&quot;hello world&quot;]'
+</code></pre>
+<p>Unless the options <code>compactArrays</code> is chosen:</p>
+<pre class="prettyprint source lang-js"><code>let str = &quot;&quot;
+const jsonStreamer = new SequenceToStream({
+  onData: async (data) => {
+    str += data
+  },
+  compactArrays: true,
+})
+jsonStreamer.add([2], &quot;hello world&quot;)
+await jsonStreamer.end()
+str === '[&quot;hello world&quot;]'
+</code></pre>
+<h2>Utilities</h2>
+<h3>parseIncludes</h3>
+<p>This utility converts a string in a data structure used to filter paths. This is used internally but is also exposed to be used for debugging, ensure that the include syntax is correct, and reformat the includes expression.</p>
+<pre class="prettyprint source lang-js"><code>import { parseIncludes } from &quot;json-key-value&quot;
+
+const matcher = parseIncludes(
+  `
+&quot;A&quot;(
+  &quot;B&quot;(
+    &quot;C&quot; # test comment 1
+    &quot;D&quot;
+  ) # test comment 2
+  &quot;E&quot; 
+)
+&quot;F&quot;
+`,
+) // this returns a matcher object
+
+matcher.maxLength() // this is the minimum length of the path to be matched. It cannot be greater than the maxDepth parameter (no matches are possible that way)
+matcher.doesMatch([&quot;A&quot;, &quot;B&quot;]) // this matches
+matcher.doesMatch([&quot;F&quot;, &quot;B&quot;]) // this matches
+matcher.doesMatch([&quot;X&quot;]) // this doesn't match
+matcher.isExhausted() // this is now false
+// As no match is possible since A and F have passed
+
+matcher.stringify() // this returns: &quot;'A'('B'('C' 'D') 'E') 'F'&quot;
+
+matcher.stringify(&quot;  &quot;) // this returns an nicely indented version (2 spaces indentation)
+</code></pre>
+<p>Note: The compact version of the expression (returned by stringify without arguments) has been designed to be passed as query parameter minimising the characters encoded (only the spaces), so that <code>'A'('B'('C' 'D') 'E') 'F'</code> becomes:
+<code>'A'('B'('C'%20'D')%20'E')%20'F'</code>.</p>
+<h3>pathConverter</h3>
+<p>PathConverter is a utility class that converts paths in strings (and vice versa).
+It is designed to emit strings that can be stored in a database and retrieved in lexicographic order.</p>
+<pre class="prettyprint source lang-js"><code>import { PathConverter } from &quot;json-key-value&quot;
+
+const separator = &quot;//&quot;
+const numberPrefix = &quot;@@&quot;
+const pathConverter = new PathConverter(separator, prefix)
+const path = [&quot;hello&quot;, &quot;world&quot;, 1]
+const pathString = pathConverter.pathToString(path) // &quot;hello//world//@@A1&quot;
+path === pathConverter.stringToPath(pathString)
+</code></pre>
+<h1>Work with the sequence</h1>
+<p>Both StreamToSequence.iter and ObjectToSequence.iter return an iterable of path/value pairs.
+These can be transformed using a for loop, and then converted to an object (SequenceToObject) or a JSON stream (SequenceToStream):</p>
+<pre class="prettyprint source lang-js"><code>import { SequenceToObject, ObjectToSequence } from &quot;json-key-value&quot;
+
+function getPricesWithVAT(obj) {
+  const builder = new SequenceToObject()
+  const parser = new ObjectToSequence()
+  for (const [path, value] of parser.iter(obj)) {
+    if (path[0] === &quot;prices&quot;) {
+      builder.add(path.slice(1), value * 0.2)
+    }
+  }
+  return builder.object
+}
+</code></pre>
+<p>This converts:</p>
+<pre class="prettyprint source lang-json"><code>{
+  &quot;other data&quot;: {},
+  &quot;prices&quot;: {
+    &quot;Subscription 1 month&quot;: 20,
+    &quot;Subscription 2 month&quot;: 35,
+    &quot;Subscription 6 month&quot;: 100,
+    &quot;Subscription 1 year&quot;: 180
+  }
+}
+</code></pre>
+<p>to:</p>
+<pre class="prettyprint source lang-json"><code>{
+  &quot;Subscription 1 month&quot;: 24,
+  &quot;Subscription 2 month&quot;: 42,
+  &quot;Subscription 6 month&quot;: 120,
+  &quot;Subscription 1 year&quot;: 216
+}
+</code></pre>
+<p>I suggest <a href="https://github.com/iter-tools/iter-tools">iter-tools</a> to work with iterables and async iterables.</p>
+<h2>Includes</h2>
+<p>The <em>includes</em> parameter can be used on StreamToSequence and ObjectToSequence and it allows to only emit pairs with a certain path.
+This is more limited than a simple filter, but it is able to figure out when matches are no longer possible so that it is not necessary to parse the rest of the JSON.
+If more complex filtering is required, is easy enough to filter the sequence once is emitted.
+This parameter uses a simple and compact expression to perform matches. Including:</p>
+<ul>
+<li>direct match of keys. Using a string enclosed in single or double quotes</li>
+<li>direct match of array indices. Using a number</li>
+<li>a way to match a slice of an array. Using 2 indices separated by 2 dots: 3..5 (matching index 3 and 4). If the first index is omitted is considered 0, if the last is omitted is considered Infinity</li>
+<li>a convenient * operator that matches any index or key as long as there is one</li>
+<li>'()' to recursively match on multiple levels</li>
+</ul>
+<p>It is easier to show. Here's the JSON example:</p>
+<pre class="prettyprint source lang-json"><code>{
+  &quot;products&quot;: {
+    &quot;123001&quot; : {&quot;productName&quot;: &quot;piano catapult&quot;, &quot;brand&quot;: &quot;ACME&quot;},
+    &quot;456001&quot; : {&quot;productName&quot;: &quot;fake tunnel&quot;, &quot;brand&quot;: &quot;ACME&quot;},
+    ...
+  },
+  &quot;invoices&quot;: [
+    {&quot;productCode&quot;: &quot;123001&quot;, &quot;itemsSold&quot;: 40, &quot;unitPrice&quot;: 120},
+    {&quot;productCode&quot;: &quot;456001&quot;, &quot;itemsSold&quot;: 12, &quot;unitPrice&quot;: 220},
+    ...
+  ]
+}
+</code></pre>
+<p>We can use this expression:</p>
+<pre class="prettyprint source lang-js"><code>const includes = `
+'invoices'(
+  0..2(
+    'itemsSold'
+    'unitPrice'
+  )
+)
+`
+</code></pre>
+<p>to get this sequence:</p>
+<pre class="prettyprint source"><code>['invoices', 0, 'itemsSold'] 40
+['invoices', 0, 'unitPrice'] 120
+['invoices', 1, 'itemsSold'] 12
+['invoices', 1, 'unitPrice'] 220
+</code></pre>
+<p>or</p>
+<pre class="prettyprint source lang-js"><code>const includes = `
+'products'(
+  *(
+    'productName'
+  )
+)
+`
+</code></pre>
+<p>to get this sequence:</p>
+<pre class="prettyprint source"><code>['products', '123001', 'productName'] piano catapult
+['products', '456001', 'productName'] fake tunnel
+</code></pre>
+<h1>Examples</h1>
+<h2>Filter a JSON stream</h2>
+<p>In this example shows how to filter a JSON using fetch without loading it into memory.</p>
+<pre class="prettyprint source lang-js"><code>import { StreamToSequence, SequenceToStream } from &quot;json-key-value&quot;
+
+async function filterJSONStream(readable, writable, includes, controller) {
+  const encoder = new TextEncoder()
+  const writer = writable.getWriter()
+
+  const parser = new StreamToSequence({ includes })
+  const builder = new SequenceToStream({
+    onData: async (data) => writer.write(data),
+  })
+
+  for await (const chunk of readable) {
+    if (parser.isExhausted()) break
+
+    for (const [path, value] of parser.iter(chunk)) {
+      builder.add(path, value)
+    }
+  }
+
+  controller.abort()
+  await builder.end()
+}
+
+// the following function uses fetch to get a JSON
+// it filters the sequence and abort the request after
+// retrieving the data needed by the pathExpression
+async function fetchAndFilter(url, pathExpression) {
+  const controller = new AbortController()
+  const signal = controller.signal
+
+  let response = await fetch(url, { signal })
+  let { readable, writable } = new TransformStream()
+  let newResponse = new Response(readable, response)
+  filterJSONStream(response.body, writable, pathExpression)
+  return newResponse
+}
+</code></pre>
+<h2>Filter a file using a node buffer</h2>
+<p>This function read part of a JSON from a file.</p>
+<pre class="prettyprint source lang-js"><code>import fs from &quot;fs&quot;
+import { StreamToSequence, SequenceToObject } from &quot;json-key-value&quot;
+
+async function filterFile(filename, includes) {
+  const readStream = fs.createReadStream(filename)
+  const parser = new StreamToSequence()
+  const builder = new SequenceToObject()
+
+  for await (const chunk of readStream) {
+    if (parser.isExhausted()) break
+
+    for (const [path, value] of parser.iter(chunk)) {
+      builder.add(path, value)
+    }
+  }
+  readStream.destroy()
+  return builder.object
+}
+</code></pre>
+<h2>Streaming and non streaming parser</h2>
+<p>The library provides 2 ways to get a sequence <code>ObjectToSequence</code> and <code>StreamToSequence</code>.
+You can use ObjectToSequence to return a sequence of path, value pairs from an object.</p>
+<pre class="prettyprint source lang-js"><code>import { ObjectToSequence } from &quot;json-key-value&quot;
+
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter(obj)) {
+  // ..
+}
+</code></pre>
+<p>Of course you can easily convert it from a string:</p>
+<pre class="prettyprint source lang-js"><code>import { ObjectToSequence } from &quot;json-key-value&quot;
+
+const parser = new ObjectToSequence()
+for (const [path, value] of parser.iter(JSON.parse(obj))) {
+  // ..
+}
+</code></pre>
+<p>How does this differ from StreamToSequence? When should we use one or the other?
+StreamToSequence is a streaming parser, so it doesn't require to load the entire string in memory to work.</p>
+<p>From the point of view of raw speed StreamToSequence can be slower <em>if used to transform the entire JSON</em> into a sequence especially <em>if the stream has low latency and high bandwidth</em>.</p>
+<p>However, using <strong>include</strong> and <strong>maxDepth</strong> to filter the JSON can be considerably faster and memory efficient.
+In doubt I suggest to benchmark specific cases.</p>
+<h1>Benchmarks</h1>
+<p>I have included benchmarks to show how this library can speed up extracting data from a JSON.
+In the examples I am extracting a single random record from a JSON with more than 16000 records (15MB).
+As a reference I am comparing to reading the entire file and parsing with JSON.parse:</p>
+<pre class="prettyprint source"><code>$ node benchmarks/standardFetch.mjs
+
+Timings
+=======
+Mean:   43.39 ms
+Median: 41.757 ms
+
+Heap
+====
+Mean:   65,447.201 KB
+Median: 65,295.816 KB
+</code></pre>
+<p>JSON.parse is really fast! But reading the entire file is really problematic from the point of view of memory management.</p>
+<p>Here's how it works using StreamToSequence streaming parser with maxDepth and includes:</p>
+<pre class="prettyprint source"><code>$ node benchmarks/efficientFetch.mjs
+
+Timings
+=======
+Mean:   29.934 ms
+Median: 28.89 ms
+
+Heap
+====
+Mean:   6,138.229 KB
+Median: 5,955.203 KB
+</code></pre>
+<p>It is a little bit faster (not having to read the entire file every time). But also much more memory efficient.</p>
+<p>I have created a version that creates an index of the JSON file. So that it can be stored and records can be accessed directly:</p>
+<pre class="prettyprint source"><code>$ node benchmarks/indexedFetch.mjs
+
+Timings
+=======
+Mean:   1.609 ms
+Median: 1.484 ms
+
+Heap
+====
+Mean:   8,400.1 KB
+Median: 8,351.094 KB
+</code></pre>
+<p>Which is 28 times faster than the out-of-the-box JSON.parse!</p>
+<h1>How StreamToSequence is optimized</h1>
+<p>StreamToSequence reaches very good performance thanks to 2 optimizations:</p>
+<ul>
+<li><strong>No need to read the entire stream</strong>: once the data specified by <strong>include</strong> are found, the stream can be aborted. The performance improvement increases with the latency of the stream.</li>
+<li><strong>Minimize encoding and parsing</strong>: Encoding the buffer from UTF8 to a JS strings and parsing JSON values can take a considerable amount of resources. StreamToSequence works with buffers, encoding and parsing only the path and values that needs to be yielded. <strong>maxDepth</strong> and <strong>include</strong> both helps minimizing those.</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="MatcherContainer.html">MatcherContainer</a></li><li><a href="ObjectToSequence.html">ObjectToSequence</a></li><li><a href="PathConverter.html">PathConverter</a></li><li><a href="SequenceToObject.html">SequenceToObject</a></li><li><a href="SequenceToStream.html">SequenceToStream</a></li><li><a href="StreamToSequence.html">StreamToSequence</a></li></ul><h3>Global</h3><ul><li><a href="global.html#parseIncludes">parseIncludes</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Sat Jan 11 2025 16:41:00 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

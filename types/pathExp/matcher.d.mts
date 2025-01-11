@@ -1,3 +1,6 @@
+/**
+ * This class is used as generic container of matchers
+ */
 export class MatcherContainer {
   /**
    * This class is used as generic container of matchers
@@ -28,6 +31,9 @@ export class MatcherContainer {
    */
   maxLength(): number
 }
+/**
+ * @private
+ */
 export class AnyMatcher extends BaseMatcher {
   /**
    * Check if this specific segment matches, without checking the children
@@ -40,18 +46,21 @@ export class AnyMatcher extends BaseMatcher {
     _parentLastPossibleMatch: boolean,
   ): boolean
 }
+/**
+ * @private
+ */
 export class SegmentMatcher extends BaseMatcher {
   /**
    * direct match of a number of a string
    * @param {Array<BaseMatcher>} [matchers]
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathType} segmentMatch
+   * @param {JSONSegmentPathType} segmentMatch
    */
   constructor(
-    segmentMatch: import("../../types/baseTypes.js").JSONSegmentPathType,
+    segmentMatch: JSONSegmentPathType,
     matchers?: BaseMatcher[] | undefined,
   )
   hasMatchedForLastTime: boolean
-  segmentMatch: import("../../types/baseTypes.js").JSONSegmentPathType
+  segmentMatch: import("../../types/baseTypes").JSONSegmentPathType
   segmentMatchEncoded: number | Uint8Array
   /**
    * Check if this specific segment matches, without checking the children
@@ -70,6 +79,9 @@ export class SegmentMatcher extends BaseMatcher {
     parentLastPossibleMatch: boolean,
   ): boolean
 }
+/**
+ * @private
+ */
 export class SliceMatcher extends BaseMatcher {
   /**
    * Check for a slice (numbers only)
@@ -97,6 +109,11 @@ export class SliceMatcher extends BaseMatcher {
     parentLastPossibleMatch: boolean,
   ): boolean
 }
+export type JSONSegmentPathType =
+  import("../../types/baseTypes").JSONSegmentPathType
+/**
+ * @private
+ */
 declare class BaseMatcher {
   /**
    * This class is used as:

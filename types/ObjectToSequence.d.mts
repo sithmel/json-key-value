@@ -1,29 +1,36 @@
-export default class ObjectToSequence {
+export default ObjectToSequence
+export type JSONValueType = import("../types/baseTypes").JSONValueType
+export type JSONPathType = import("../types/baseTypes").JSONPathType
+/**
+ * Convert a js value into a sequence of path/value pairs
+ */
+declare class ObjectToSequence {
   /**
-   * Convert a stream of characters (in chunks) to a sequence of path/value pairs
-   * @param {{ maxDepth?: number, includes?: string }} options
+   * Convert a js value into a sequence of path/value pairs
+   * @param {Object} [options]
+   * @param {number} [options.maxDepth=Infinity] - Max parsing depth
+   * @param {string} [options.includes=null] - Expression using the includes syntax
    */
-  constructor(options?: {
-    maxDepth?: number | undefined
-    includes?: string | undefined
-  })
+  constructor(
+    options?:
+      | {
+          maxDepth?: number | undefined
+          includes?: string | undefined
+        }
+      | undefined,
+  )
   maxDepth: number
   matcher: MatcherContainer
   /**
-   * parse a json or json fragment
-   * @param {any} obj
-   * @param {Path} [currentPath]
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   * yields path/value pairs from a given object
+   * @param {any} obj - Any JS value
+   * @param {Path} [currentPath] - Only for internal use
+   * @returns {Iterable<[JSONPathType, JSONValueType]>}
    */
   iter(
     obj: any,
     currentPath?: Path | undefined,
-  ): Iterable<
-    [
-      import("../types/baseTypes").JSONPathType,
-      import("../types/baseTypes").JSONValueType,
-    ]
-  >
+  ): Iterable<[import("../types/baseTypes").JSONPathType, JSONValueType]>
 }
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 import { Path } from "./pathExp/path.mjs"

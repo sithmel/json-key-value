@@ -18,11 +18,11 @@ const STATE = {
 }
 
 /**
- * direct match of a number of a string
- * @param {string} str
+ * parse and include expression and return a Matcher
+ * @param {string} str - the include expression
  * @return {MatcherContainer}
  */
-export default function pathExpParse(str) {
+function parseIncludes(str) {
   str += " " // this simplifies parsing of numbers (the extra space act as a delimiter)
   const matcherStack = [new MatcherContainer()]
   const getLastMatcherChildren = () =>
@@ -114,3 +114,5 @@ export default function pathExpParse(str) {
   }
   return matcherStack[0]
 }
+
+export default parseIncludes
