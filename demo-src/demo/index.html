@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Download part of a file</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         font-family: Arial, sans-serif;
         margin: 20px;
@@ -47,7 +50,7 @@
     </style>
   </head>
   <body>
-    <h2 style="text-align: center">Form Page</h2>
+    <h2 style="text-align: center">Test range request</h2>
     <form action="/submit" method="post">
       <label for="filename">Filename:</label>
       <input
@@ -72,12 +75,18 @@
       <textarea
         id="query"
         name="query"
-        placeholder="Enter the query"
+        rows="4"
+        placeholder="Enter the query. Example: 'from_user' 'text'"
       ></textarea>
 
       <button type="submit">Submit</button>
 
-      <textarea id="data" name="data" disabled></textarea>
+      <textarea
+        id="data"
+        name="data"
+        rows="15"
+        disabled>
+      </textarea>
 
       <script src="bundle.js"></script>
     </form>
