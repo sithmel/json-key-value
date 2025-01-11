@@ -1,14 +1,20 @@
+/**
+ * @private
+ */
 export class CachedStringBuffer {
   /** @param {Uint8Array} data */
   constructor(data: Uint8Array)
   data: Uint8Array
   /** @type {?string} */
   cache: string | null
-  /** @return {import("../../types/baseTypes").JSONSegmentPathType} */
-  toDecoded(): import("../../types/baseTypes").JSONSegmentPathType
+  /** @return {JSONSegmentPathType} */
+  toDecoded(): JSONSegmentPathType
   /** @return {Uint8Array} */
   get(): Uint8Array
 }
+/**
+ * @private
+ */
 export class Path {
   /**
    * @param {Array<CachedStringBuffer|number|string>} [array]
@@ -40,7 +46,10 @@ export class Path {
    * @return {Path}
    * */
   rest(): Path
-  /** @return {import("../../types/baseTypes").JSONPathType} */
+  /** @return {JSONPathType} */
   toDecoded(): import("../../types/baseTypes").JSONPathType
 }
+export type JSONSegmentPathType =
+  import("../../types/baseTypes").JSONSegmentPathType
+export type JSONPathType = import("../../types/baseTypes").JSONPathType
 //# sourceMappingURL=path.d.mts.map

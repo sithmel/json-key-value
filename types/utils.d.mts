@@ -1,6 +1,7 @@
 /**
  * Check if there is a white space
  * @package
+ * @private
  * @param {string} c
  * @returns {boolean}
  */
@@ -8,6 +9,7 @@ export function isWhitespace(c: string): boolean
 /**
  * Return true if value is an array or object
  * @package
+ * @private
  * @param {any} value
  * @returns {boolean}
  */
@@ -15,8 +17,9 @@ export function isArrayOrObject(value: any): boolean
 /**
  * Return oldPath and newPath excluding the common part
  * @package
- * @param {import("../types/baseTypes").JSONPathType} oldPath
- * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @private
+ * @param {JSONPathType} oldPath
+ * @param {JSONPathType} newPath
  * @returns {number}
  */
 export function getCommonPathIndex(
@@ -26,8 +29,9 @@ export function getCommonPathIndex(
 /**
  * Check if oldPath is contained in the new path
  * @package
- * @param {import("../types/baseTypes").JSONPathType} oldPath
- * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @private
+ * @param {JSONPathType} oldPath
+ * @param {JSONPathType} newPath
  * @returns {boolean}
  */
 export function isPreviousPathInNewPath(
@@ -37,15 +41,15 @@ export function isPreviousPathInNewPath(
 /**
  * Transform a value in JSON
  * @package
- * @param {import("../types/baseTypes").JSONValueType} value
+ * @private
+ * @param {JSONValueType} value
  * @returns {string}
  */
-export function valueToString(
-  value: import("../types/baseTypes").JSONValueType,
-): string
+export function valueToString(value: JSONValueType): string
 /**
  * Yields item arrays from end back to index, yield true on last
  * @package
+ * @private
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -58,6 +62,7 @@ export function fromEndToIndex<T>(
 /**
  * Yields item arrays from index to end, yield true on first
  * @package
+ * @private
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -70,30 +75,44 @@ export function fromIndexToEnd<T>(
 /**
  * "}" or "]"
  * @package
- * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
+ * @private
+ * @param {JSONSegmentPathType} pathSegment
  * @returns {string}
  */
-export function pathSegmentTerminator(
-  pathSegment: import("../types/baseTypes").JSONSegmentPathType,
-): string
+export function pathSegmentTerminator(pathSegment: JSONSegmentPathType): string
 /**
  * @package
+ * @private
  * @param {Uint8Array} buffer
  * @returns {any}
  */
 export function decodeAndParse(buffer: Uint8Array): any
 /**
  * @package
+ * @private
  * @param {any} value
  * @returns {Uint8Array}
  */
 export function stringifyAndEncode(value: any): Uint8Array
+/**
+ * @typedef {import("../types/baseTypes").JSONValueType} JSONValueType
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ * @typedef {import("../types/baseTypes").JSONSegmentPathType} JSONSegmentPathType
+ */
+/**
+ * @private
+ */
 export class ParsingError extends Error {
   /**
+   * @package
    * @param {string} message
    * @param {number} charNumber
    */
   constructor(message: string, charNumber: number)
   charNumber: number
 }
+export type JSONValueType = import("../types/baseTypes").JSONValueType
+export type JSONPathType = import("../types/baseTypes").JSONPathType
+export type JSONSegmentPathType =
+  import("../types/baseTypes").JSONSegmentPathType
 //# sourceMappingURL=utils.d.mts.map

@@ -8,7 +8,9 @@
   "scripts": {
     "test": "zUnit",
     "types": "tsc",
-    "format": "prettier --ignore-unknown --write ."
+    "format": "prettier --ignore-unknown --write .",
+    "build-doc": "jsdoc -c jsdoc.json",
+    "prepare": "npm run types && npm run format && npm run build-doc"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@types/node": "^20.9.0",
     "@types/web": "^0.0.119",
+    "jsdoc": "^4.0.4",
     "prettier": "^3.0.3",
     "typescript": "^5.2.2",
     "zunit": "^4.0.2"

@@ -1,6 +1,7 @@
 ![JSON key value logo](./logo/logo.png)
 
 # json-key-value
+
 json-key-value is a toolkit to work with JSON and JS object as they are converted to a sequence to path value pairs (using iterables).
 It enables using filter, map reduce techniques in a way that is readable, simpler and efficient.
 

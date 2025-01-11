@@ -1,11 +1,18 @@
 //@ts-check
+/**
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ */
 
-export default class PathConverter {
+/**
+ * Transform a path in a string and vice versa
+ *
+ */
+class PathConverter {
   /**
    * Transform a path in a string and vice versa
    *
-   * @param {string} separator?
-   * @param {string} numberPrefix?
+   * @param {string} [separator] - Character sequence to use as a separator between path segments
+   * @param {string} [numberPrefix] - prefix to put in front of numeric path segments
    */
   constructor(separator = "//", numberPrefix = "@@") {
     this.separator = separator
@@ -15,6 +22,7 @@ export default class PathConverter {
    * Transform an array index in a string that
    * can be sorted in lexicographic order
    * @package
+   * @private
    * @param {number} index
    * @returns {string}
    */
@@ -29,6 +37,7 @@ export default class PathConverter {
   /**
    * Transform a string in an array index
    * @package
+   * @private
    * @param {string} str
    * @returns {number}
    */
@@ -37,7 +46,7 @@ export default class PathConverter {
   }
   /**
    * Convert a path from array to string
-   * @param {import("../types/baseTypes").JSONPathType} path
+   * @param {JSONPathType} path - an array of path segments to convert into string
    * @returns {string}
    */
   pathToString(path) {
@@ -51,8 +60,8 @@ export default class PathConverter {
   }
   /**
    * Convert a path from string to a array
-   * @param {string} str
-   * @returns {import("../types/baseTypes").JSONPathType}
+   * @param {string} str - a string to convert into an array of path segments
+   * @returns {JSONPathType}
    */
   stringToPath(str) {
     if (str.length === 0) return []
@@ -63,3 +72,5 @@ export default class PathConverter {
       )
   }
 }
+
+export default PathConverter

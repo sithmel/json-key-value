@@ -1,7 +1,16 @@
 //@ts-check
+/**
+ * @typedef {import("../types/baseTypes").JSONValueType} JSONValueType
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ * @typedef {import("../types/baseTypes").JSONSegmentPathType} JSONSegmentPathType
+ */
 
+/**
+ * @private
+ */
 export class ParsingError extends Error {
   /**
+   * @package
    * @param {string} message
    * @param {number} charNumber
    */
@@ -21,6 +30,7 @@ export class ParsingError extends Error {
 /**
  * Check if there is a white space
  * @package
+ * @private
  * @param {string} c
  * @returns {boolean}
  */
@@ -31,6 +41,7 @@ export function isWhitespace(c) {
 /**
  * Return true if value is an array or object
  * @package
+ * @private
  * @param {any} value
  * @returns {boolean}
  */
@@ -41,8 +52,9 @@ export function isArrayOrObject(value) {
 /**
  * Return oldPath and newPath excluding the common part
  * @package
- * @param {import("../types/baseTypes").JSONPathType} oldPath
- * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @private
+ * @param {JSONPathType} oldPath
+ * @param {JSONPathType} newPath
  * @returns {number}
  */
 export function getCommonPathIndex(oldPath, newPath) {
@@ -58,8 +70,9 @@ export function getCommonPathIndex(oldPath, newPath) {
 /**
  * Check if oldPath is contained in the new path
  * @package
- * @param {import("../types/baseTypes").JSONPathType} oldPath
- * @param {import("../types/baseTypes").JSONPathType} newPath
+ * @private
+ * @param {JSONPathType} oldPath
+ * @param {JSONPathType} newPath
  * @returns {boolean}
  */
 export function isPreviousPathInNewPath(oldPath, newPath) {
@@ -76,7 +89,8 @@ export function isPreviousPathInNewPath(oldPath, newPath) {
 /**
  * Transform a value in JSON
  * @package
- * @param {import("../types/baseTypes").JSONValueType} value
+ * @private
+ * @param {JSONValueType} value
  * @returns {string}
  */
 export function valueToString(value) {
@@ -96,6 +110,7 @@ export function valueToString(value) {
 /**
  * Yields item arrays from end back to index, yield true on last
  * @package
+ * @private
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -110,6 +125,7 @@ export function* fromEndToIndex(array, index) {
 /**
  * Yields item arrays from index to end, yield true on first
  * @package
+ * @private
  * @template T
  * @param {Array<T>} array
  * @param {number} index
@@ -124,7 +140,8 @@ export function* fromIndexToEnd(array, index) {
 /**
  * "}" or "]"
  * @package
- * @param {import("../types/baseTypes").JSONSegmentPathType} pathSegment
+ * @private
+ * @param {JSONSegmentPathType} pathSegment
  * @returns {string}
  */
 export function pathSegmentTerminator(pathSegment) {
@@ -134,6 +151,7 @@ export function pathSegmentTerminator(pathSegment) {
 const decoder = new TextDecoder("utf8", { fatal: true, ignoreBOM: true })
 /**
  * @package
+ * @private
  * @param {Uint8Array} buffer
  * @returns {any}
  */
@@ -144,6 +162,7 @@ export function decodeAndParse(buffer) {
 const encoder = new TextEncoder()
 /**
  * @package
+ * @private
  * @param {any} value
  * @returns {Uint8Array}
  */

@@ -1,9 +1,13 @@
 //@ts-check
+/**
+ * @typedef {import("../../types/baseTypes").JSONSegmentPathType} JSONSegmentPathType
+ */
 
 import { Path, CachedStringBuffer } from "./path.mjs"
 
 /**
  * create spaces for indentation
+ * @private
  * @param {string} spacer
  * @param {number} level
  * @return string
@@ -11,6 +15,10 @@ import { Path, CachedStringBuffer } from "./path.mjs"
 function indentation(spacer, level) {
   return "\n" + spacer.repeat(level)
 }
+
+/**
+ * This class is used as generic container of matchers
+ */
 export class MatcherContainer {
   /**
    * This class is used as generic container of matchers
@@ -67,6 +75,9 @@ export class MatcherContainer {
   }
 }
 
+/**
+ * @private
+ */
 class BaseMatcher {
   /**
    * This class is used as:
@@ -156,6 +167,9 @@ class BaseMatcher {
   }
 }
 
+/**
+ * @private
+ */
 export class AnyMatcher extends BaseMatcher {
   /**
    * Check if this specific segment matches, without checking the children
@@ -178,11 +192,14 @@ export class AnyMatcher extends BaseMatcher {
   }
 }
 
+/**
+ * @private
+ */
 export class SegmentMatcher extends BaseMatcher {
   /**
    * direct match of a number of a string
    * @param {Array<BaseMatcher>} [matchers]
-   * @param {import("../../types/baseTypes.js").JSONSegmentPathType} segmentMatch
+   * @param {JSONSegmentPathType} segmentMatch
    */
   constructor(segmentMatch, matchers) {
     super(matchers)
@@ -265,6 +282,9 @@ export class SegmentMatcher extends BaseMatcher {
   }
 }
 
+/**
+ * @private
+ */
 export class SliceMatcher extends BaseMatcher {
   /**
    * Check for a slice (numbers only)

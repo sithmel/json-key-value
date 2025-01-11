@@ -1,13 +1,24 @@
 //@ts-check
+
+/**
+ * @typedef {import("../types/baseTypes").JSONValueType} JSONValueType
+ * @typedef {import("../types/baseTypes").JSONPathType} JSONPathType
+ */
+
 import { isArrayOrObject } from "./utils.mjs"
 import parser from "./pathExp/parser.mjs"
 import { MatcherContainer } from "./pathExp/matcher.mjs"
 import { Path } from "./pathExp/path.mjs"
 
-export default class ObjectToSequence {
+/**
+ * Convert a js value into a sequence of path/value pairs
+ */
+class ObjectToSequence {
   /**
-   * Convert a stream of characters (in chunks) to a sequence of path/value pairs
-   * @param {{ maxDepth?: number, includes?: string }} options
+   * Convert a js value into a sequence of path/value pairs
+   * @param {Object} [options]
+   * @param {number} [options.maxDepth=Infinity] - Max parsing depth
+   * @param {string} [options.includes=null] - Expression using the includes syntax
    */
   constructor(options = {}) {
     const { maxDepth = Infinity } = options
@@ -18,10 +29,10 @@ export default class ObjectToSequence {
   }
 
   /**
-   * parse a json or json fragment
-   * @param {any} obj
-   * @param {Path} [currentPath]
-   * @returns {Iterable<[import("../types/baseTypes").JSONPathType, import("../types/baseTypes").JSONValueType]>}
+   * yields path/value pairs from a given object
+   * @param {any} obj - Any JS value
+   * @param {Path} [currentPath] - Only for internal use
+   * @returns {Iterable<[JSONPathType, JSONValueType]>}
    */
   *iter(obj, currentPath = new Path()) {
     if (this.matcher.isExhausted()) {
@@ -52,3 +63,4 @@ export default class ObjectToSequence {
     }
   }
 }
+export default ObjectToSequence

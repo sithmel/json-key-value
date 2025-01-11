@@ -1,6 +1,14 @@
 //@ts-check
+/**
+ * @typedef {import("../../types/baseTypes").JSONSegmentPathType} JSONSegmentPathType
+ * @typedef {import("../../types/baseTypes").JSONPathType} JSONPathType
+ */
+
 import { decodeAndParse } from "../utils.mjs"
 
+/**
+ * @private
+ */
 export class CachedStringBuffer {
   /** @param {Uint8Array} data */
   constructor(data) {
@@ -8,7 +16,7 @@ export class CachedStringBuffer {
     /** @type {?string} */
     this.cache = null
   }
-  /** @return {import("../../types/baseTypes").JSONSegmentPathType} */
+  /** @return {JSONSegmentPathType} */
   toDecoded() {
     if (this.cache != null) {
       return this.cache
@@ -23,6 +31,9 @@ export class CachedStringBuffer {
   }
 }
 
+/**
+ * @private
+ */
 export class Path {
   /**
    * @param {Array<CachedStringBuffer|number|string>} [array]
@@ -80,7 +91,7 @@ export class Path {
     return new Path(this.array, this.offset + 1)
   }
 
-  /** @return {import("../../types/baseTypes").JSONPathType} */
+  /** @return {JSONPathType} */
   toDecoded() {
     return this.map((segment) => {
       return segment instanceof CachedStringBuffer
