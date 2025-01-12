@@ -71,7 +71,6 @@ export const TOKEN = {
 let state_enum = 0
 /**
  * Enum for parser state
- * @package
  * @private
  * @readonly
  * @enum {number}
@@ -94,7 +93,6 @@ const STATE = {
 }
 
 /**
- * @package
  * @private
  */
 class StreamJSONTokenizer {

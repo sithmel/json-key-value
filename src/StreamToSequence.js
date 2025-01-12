@@ -1,9 +1,4 @@
 //@ts-check
-/**
- * @typedef {import("./baseTypes").JSONValueType} JSONValueType
- * @typedef {import("./baseTypes").JSONPathType} JSONPathType
- */
-
 import { ParsingError, decodeAndParse } from "./utils.js"
 import StreamJSONTokenizer, { TOKEN } from "./StreamJSONTokenizer.js"
 import parser from "./pathExp/parser.js"
@@ -12,7 +7,6 @@ import { Path, CachedStringBuffer } from "./pathExp/path.js"
 
 /**
  * Enum for parser state
- * @package
  * @private
  * @readonly
  * @enum {string}
@@ -36,7 +30,7 @@ class StreamToSequence {
    * @param {Object} [options]
    * @param {number} [options.maxDepth=Infinity] - Max parsing depth
    * @param {string} [options.includes=null] - Expression using the includes syntax
-   * @param {JSONPathType} [options.startingPath] - The parser will consider this path as it is initial (useful to resume)
+   * @param {import("./baseTypes").JSONPathType} [options.startingPath] - The parser will consider this path as it is initial (useful to resume)
    */
   constructor(options = {}) {
     const { maxDepth = Infinity } = options
@@ -63,9 +57,8 @@ class StreamToSequence {
 
   /**
    * Generate currentPath from a path
-   * @package
    * @private
-   * @param {JSONPathType} path
+   * @param {import("./baseTypes").JSONPathType} path
    * @returns {Path}
    */
   _initCurrentPath(path) {
@@ -83,9 +76,8 @@ class StreamToSequence {
 
   /**
    * generate statestack from a path
-   * @package
    * @private
-   * @param {JSONPathType} path
+   * @param {import("./baseTypes").JSONPathType} path
    * @returns {Array<STATE>}
    */
   _initStateStack(path) {
@@ -100,7 +92,6 @@ class StreamToSequence {
 
   /**
    * add another segment to the path
-   * @package
    * @private
    * @param {STATE} state
    */
@@ -110,7 +101,6 @@ class StreamToSequence {
 
   /**
    * pops the parser state
-   * @package
    * @private
    * @returns {string}
    */
@@ -143,7 +133,7 @@ class StreamToSequence {
    * and yields a sequence of path/value pairs
    * It also yields the starting and ending byte of each value
    * @param {Uint8Array} chunk - an arraybuffer that is a chunk of a stream
-   * @returns {Iterable<[JSONPathType, JSONValueType, number, number]>} - path, value, byte start, and byte end when the value is in the buffer
+   * @returns {Iterable<[import("./baseTypes").JSONPathType, import("./baseTypes").JSONValueType, number, number]>} - path, value, byte start, and byte end when the value is in the buffer
    */
   *iter(chunk) {
     if (this.matcher.isExhausted()) {

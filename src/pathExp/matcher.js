@@ -1,7 +1,4 @@
 //@ts-check
-/**
- * @typedef {import("../baseTypes").JSONSegmentPathType} JSONSegmentPathType
- */
 
 import { Path, CachedStringBuffer } from "./path.js"
 
@@ -76,9 +73,9 @@ export class MatcherContainer {
 }
 
 /**
- * @package
+ * Matcher base implementation
  */
-class BaseMatcher {
+export class BaseMatcher {
   /**
    * This class is used as:
    * - generic container of matchers
@@ -199,7 +196,7 @@ export class SegmentMatcher extends BaseMatcher {
   /**
    * direct match of a number of a string
    * @param {Array<BaseMatcher>} [matchers]
-   * @param {JSONSegmentPathType} segmentMatch
+   * @param {import("../baseTypes").JSONSegmentPathType} segmentMatch
    */
   constructor(segmentMatch, matchers) {
     super(matchers)

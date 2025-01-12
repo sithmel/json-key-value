@@ -1,9 +1,4 @@
 //@ts-check
-/**
- * @typedef {import("./baseTypes").JSONValueType} JSONValueType
- * @typedef {import("./baseTypes").JSONPathType} JSONPathType
- */
-
 import {
   getCommonPathIndex,
   valueToString,
@@ -15,7 +10,6 @@ import {
 
 /**
  * Enum for CONTEXT
- * @package
  * @private
  * @readonly
  * @enum {string}
@@ -37,7 +31,7 @@ class SequenceToStream {
    * @param {(arg0: Uint8Array) => Promise<void>} options.onData - function called when a new sequence of bytes is returned
    */
   constructor({ onData, compactArrays = false }) {
-    /** @type {JSONPathType} */
+    /** @type {import("./baseTypes").JSONPathType} */
     this.currentPath = []
     this.onData = onData
     /** @type CONTEXT */
@@ -48,7 +42,6 @@ class SequenceToStream {
   }
 
   /**
-   * @package
    * @private
    * @param {string} str
    */
@@ -58,8 +51,8 @@ class SequenceToStream {
   }
   /**
    * add a new path value pair
-   * @param {JSONPathType} path - an array of path segments
-   * @param {JSONValueType} value - the value at the corresponding path
+   * @param {import("./baseTypes").JSONPathType} path - an array of path segments
+   * @param {import("./baseTypes").JSONValueType} value - the value at the corresponding path
    * @returns {void}
    */
   add(path, value) {

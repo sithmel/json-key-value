@@ -1,7 +1,4 @@
 //@ts-check
-/**
- * @typedef {import("./baseTypes").JSONPathType} JSONPathType
- */
 
 /**
  * Transform a path in a string and vice versa
@@ -21,7 +18,6 @@ class PathConverter {
   /**
    * Transform an array index in a string that
    * can be sorted in lexicographic order
-   * @package
    * @private
    * @param {number} index
    * @returns {string}
@@ -36,7 +32,6 @@ class PathConverter {
   }
   /**
    * Transform a string in an array index
-   * @package
    * @private
    * @param {string} str
    * @returns {number}
@@ -46,7 +41,7 @@ class PathConverter {
   }
   /**
    * Convert a path from array to string
-   * @param {JSONPathType} path - an array of path segments to convert into string
+   * @param {import("./baseTypes").JSONPathType} path - an array of path segments to convert into string
    * @returns {string}
    */
   pathToString(path) {
@@ -61,7 +56,7 @@ class PathConverter {
   /**
    * Convert a path from string to a array
    * @param {string} str - a string to convert into an array of path segments
-   * @returns {JSONPathType}
+   * @returns {import("./baseTypes").JSONPathType}
    */
   stringToPath(str) {
     if (str.length === 0) return []

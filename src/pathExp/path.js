@@ -1,9 +1,4 @@
 //@ts-check
-/**
- * @typedef {import("../baseTypes").JSONSegmentPathType} JSONSegmentPathType
- * @typedef {import("../baseTypes").JSONPathType} JSONPathType
- */
-
 import { decodeAndParse } from "../utils.js"
 
 /**
@@ -16,7 +11,7 @@ export class CachedStringBuffer {
     /** @type {?string} */
     this.cache = null
   }
-  /** @return {JSONSegmentPathType} */
+  /** @return {import("../baseTypes").JSONSegmentPathType} */
   toDecoded() {
     if (this.cache != null) {
       return this.cache
@@ -91,7 +86,7 @@ export class Path {
     return new Path(this.array, this.offset + 1)
   }
 
-  /** @return {JSONPathType} */
+  /** @return {import("../baseTypes").JSONPathType} */
   toDecoded() {
     return this.map((segment) => {
       return segment instanceof CachedStringBuffer

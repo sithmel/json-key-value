@@ -1,10 +1,4 @@
 //@ts-check
-
-/**
- * @typedef {import("./baseTypes").JSONValueType} JSONValueType
- * @typedef {import("./baseTypes").JSONPathType} JSONPathType
- */
-
 import { isArrayOrObject } from "./utils.js"
 import parser from "./pathExp/parser.js"
 import { MatcherContainer } from "./pathExp/matcher.js"
@@ -32,7 +26,7 @@ class ObjectToSequence {
    * yields path/value pairs from a given object
    * @param {any} obj - Any JS value
    * @param {Path} [currentPath] - Only for internal use
-   * @returns {Iterable<[JSONPathType, JSONValueType]>}
+   * @returns {Iterable<[import("./baseTypes").JSONPathType, import("./baseTypes").JSONValueType]>}
    */
   *iter(obj, currentPath = new Path()) {
     if (this.matcher.isExhausted()) {

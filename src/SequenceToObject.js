@@ -1,15 +1,7 @@
 //@ts-check
-
 /**
- * @typedef {module:baseTypes.JSONSegmentPathType} JSONSegmentPathType
- * @typedef {import("./baseTypes").JSONValueType} JSONValueType
- * @typedef {import("./baseTypes").JSONPathType} JSONPathType
- */
-
-/**
- * @package
  * @private
- * @param {JSONSegmentPathType} pathSegment
+ * @param {import("./baseTypes").JSONSegmentPathType} pathSegment
  * @returns {{}|[]}
  */
 function initObject(pathSegment) {
@@ -35,11 +27,10 @@ class SequenceToObject {
   }
 
   /**
-   * @package
    * @private
-   * @param {JSONSegmentPathType} pathSegment
-   * @param {JSONValueType} currentObject
-   * @returns {JSONSegmentPathType}
+   * @param {import("./baseTypes").JSONSegmentPathType} pathSegment
+   * @param {import("./baseTypes").JSONValueType} currentObject
+   * @returns {import("./baseTypes").JSONSegmentPathType}
    */
   _calculateRealIndex(pathSegment, currentObject) {
     if (typeof pathSegment === "string" || !this.compactArrays) {
@@ -71,8 +62,8 @@ class SequenceToObject {
 
   /**
    * Update the object with a new path value pairs
-   * @param {JSONPathType} path - an array of path segments
-   * @param {JSONValueType} value - the value corresponding to the path
+   * @param {import("./baseTypes").JSONPathType} path - an array of path segments
+   * @param {import("./baseTypes").JSONValueType} value - the value corresponding to the path
    * @returns {void}
    */
   add(path, value) {
