@@ -1,0 +1,1 @@
+{"version":3,"file":"baseTypes.d.ts","sourceRoot":"","sources":["../src/baseTypes.js"],"names":[],"mappings":"kCAEa,MAAM,GAAG,MAAM;2BAIf,KAAK,CAAC,mBAAmB,CAAC;wCAI1B,UAAU,GAAG,MAAM;iCAInB,KAAK,CAAC,yBAAyB,CAAC;yDAIhC,mBAAmB,GAAE,yBAAyB;2CAI9C,YAAY,GAAG,kBAAkB;4BAIjC,MAAM,GAAG,MAAM,GAAG,OAAO,GAAG,IAAI,GAAG,EAAE,GAAG,EAAE;gCAI1C,CAAC,YAAY,EAAE,aAAa,CAAC"}

@@ -1,4 +1,4 @@
-import { StreamToSequence, SequenceToObject } from "../src/index.mjs"
+import { StreamToSequence, SequenceToObject } from "../src/index.js"
 
 const formElement = document.querySelector("form")
 const dataElement = document.querySelector("#data")

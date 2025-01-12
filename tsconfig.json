@@ -1,9 +1,7 @@
 {
   // Change this to match your project
   "include": [
-    "./src/*.mjs",
-    "src/pathExp/matcher.mjs",
-    "src/pathExp/parser.mjs"
+    "./src/**/*.js"
   ],
   "compilerOptions": {
     "outDir": "types",
@@ -11,6 +9,7 @@
     // Tells TypeScript to read JS files, as
     // normally they are ignored as source files
     "allowJs": true,
+    "checkJs": true,
     // Generate d.ts files
     "declaration": true,
     // This compiler run should
