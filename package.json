@@ -9,7 +9,7 @@
     "test": "zUnit",
     "types": "tsc",
     "format": "prettier --ignore-unknown --write .",
-    "build-doc": "jsdoc -c jsdoc.json",
+    "build-doc": "typedoc src/*.js src/**/*.js",
     "build-demo": "npx rollup demo-src/index.js --file demo-src/demo/bundle.js --format iife && cp -r demo-src/demo docs",
     "serve-doc": "npx http-server docs"
   },
@@ -29,9 +29,9 @@
   "homepage": "https://github.com/sithmel/json-key-value#readme",
   "devDependencies": {
     "@types/node": "^22.10.5",
-    "@types/web": "^0.0.192",
-    "jsdoc": "^4.0.4",
+    "@types/web": "^0.0.193",
     "prettier": "^3.4.2",
+    "typedoc": "^0.27.6",
     "typescript": "^5.7.3",
     "zunit": "^4.0.2"
   },

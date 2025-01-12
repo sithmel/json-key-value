@@ -552,6 +552,29 @@ async function fetchAndFilter(url, pathExpression) {
 }
 ```
 
+## Use a range request to load a JSON fragment
+Here is an [example](https://sithmel.github.io/json-key-value/demo) on how to use an HTTP range request to load a fragment of a JSON. In this example once picked a number, a JSON containing the index will be parsed. The index is generated like this (on the server side):
+```js
+async function createIndex(JSONPath, indexPath) {
+  const readStream = fs.createReadStream(JSONPath)
+  const parser = new StreamToSequence({
+    maxDepth: 1,
+  })
+  const builder = new SequenceToObject({ compactArrays: true })
+
+  for await (const chunk of readStream) {
+    for (const [path, value, start, end] of parser.iter(chunk)) {
+      if (path.length === 1) {
+        builder.add(path, [start, end])
+      }
+    }
+  }
+  readStream.destroy()
+  fs.writeFileSync(indexPath, JSON.stringify(builder.object))
+}
+```
+The client side code is in the folder ```demo-src```.
+
 ## Filter a file using a node buffer
 
 This function read part of a JSON from a file.
