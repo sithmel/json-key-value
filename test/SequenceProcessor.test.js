@@ -3,6 +3,8 @@ import assert from "assert"
 import { describe, it } from "node:test"
 
 import testOp from "../src/SequenceProcessor/test.js"
+import addOp from "../src/SequenceProcessor/add.js"
+import replaceOp from "../src/SequenceProcessor/replace.js"
 import { toPathObject, Path } from "../src/lib/path.js"
 import { toValueObject, Value } from "../src/lib/value.js"
 
@@ -29,6 +31,12 @@ function singleBatch(items) {
   return (async function* () {
     yield /** @type {Iterable<[Path, Value]>} */ (items)
   })()
+}
+
+function decode(resultBatches) {
+  return resultBatches.map((batch) =>
+    batch.map(([p, v]) => [p.decoded, v.decoded])
+  )
 }
 
 describe("SequenceProcessor test op", () => {
@@ -60,3 +68,103 @@ describe("SequenceProcessor test op", () => {
     )
   })
 })
+
+describe("SequenceProcessor add op", () => {
+  it("inserts into object subtree in pre-order (between siblings)", async () => {
+    // Base sequence represents: { a: 1, b: { x: true }, c: 3 }
+    /** @type {Array<[Path, Value]>} */
+    const seq = [
+      [toPathObject(["a"]), toValueObject(1)],
+      [toPathObject(["b", "x"]), toValueObject(true)],
+      [toPathObject(["c"]), toValueObject(3)],
+    ]
+
+    // Insert { b: { y: 2 } } so order becomes: [a], [b,x], [b,y], [c]
+    const insertedPath = toPathObject(["b", "y"]) ; const insertedValue = toValueObject(2)
+
+    const result = await collect(addOp(singleBatch(seq), insertedPath, insertedValue))
+    assert.deepEqual(decode(result)[0], [
+      [["a"], 1],
+      [["b", "x"], true],
+      [["b", "y"], 2],
+      [["c"], 3],
+    ])
+  })
+
+  it("appends at the end of an array subtree by index order", async () => {
+    // Base sequence represents: { a: [1, 2] }
+    /** @type {Array<[Path, Value]>} */
+    const seq = [
+      [toPathObject(["a", 0]), toValueObject(1)],
+      [toPathObject(["a", 1]), toValueObject(2)],
+    ]
+
+    // Insert index 2 -> should come after index 1
+    const insertedPath = toPathObject(["a", 2]) ; const insertedValue = toValueObject(3)
+
+    const result = await collect(addOp(singleBatch(seq), insertedPath, insertedValue))
+    assert.deepEqual(decode(result)[0], [
+      [["a", 0], 1],
+      [["a", 1], 2],
+      [["a", 2], 3],
+    ])
+  })
+
+  it("inserts as first child within a subtree when appropriate", async () => {
+    // Base sequence represents: { a: { z: true }, b: 1 }
+    /** @type {Array<[Path, Value]>} */
+    const seq = [
+      [toPathObject(["a", "z"]), toValueObject(true)],
+      [toPathObject(["b"]), toValueObject(1)],
+    ]
+
+    // Insert a.a -> expected before a.z
+    const insertedPath = toPathObject(["a", "a"]) ; const insertedValue = toValueObject(0)
+
+    const result = await collect(addOp(singleBatch(seq), insertedPath, insertedValue))
+    assert.deepEqual(decode(result)[0], [
+      [["a", "a"], 0],
+      [["a", "z"], true],
+      [["b"], 1],
+    ])
+  })
+})
+
+describe("SequenceProcessor replace op", () => {
+  it("replaces a leaf value in-place (same path)", async () => {
+    /** @type {Array<[Path, Value]>} */
+    const seq = [
+      [toPathObject(["a"]), toValueObject(1)],
+      [toPathObject(["b", "x"]), toValueObject(true)],
+      [toPathObject(["c"]), toValueObject(3)],
+    ]
+
+    const result = await collect(
+      replaceOp(singleBatch(seq), toPathObject(["b", "x"]), toValueObject(false))
+    )
+
+    assert.deepEqual(decode(result)[0], [
+      [["a"], 1],
+      [["b", "x"], false],
+      [["c"], 3],
+    ])
+  })
+
+  it("replaces an element under an array, keeping order", async () => {
+    /** @type {Array<[Path, Value]>} */
+    const seq = [
+      [toPathObject(["a", 0]), toValueObject(1)],
+      [toPathObject(["a", 1]), toValueObject(2)],
+    ]
+
+    const result = await collect(
+      replaceOp(singleBatch(seq), toPathObject(["a", 0]), toValueObject(9))
+    )
+
+    assert.deepEqual(decode(result)[0], [
+      [["a", 0], 9],
+      [["a", 1], 2],
+    ])
+  })
+})
+
