@@ -12,10 +12,9 @@ import test from "./test.js"
 import { MatcherContainer } from "../lib/pathMatcher.js"
 
 /**
- * @template {[Path, Value] | [Path, Value, number, number]} T
- * @extends {GenericBatchIterable<T>}
+ * @extends {GenericBatchIterable<[Path, Value, number?, number?]>}
  */
-export class GenericSequenceProcessor extends GenericBatchIterable {
+export class SequenceProcessor extends GenericBatchIterable {
   /**
    * It filters the sequence based on the given expression
    * @param {string|MatcherContainer} [expression]
@@ -93,13 +92,3 @@ export class GenericSequenceProcessor extends GenericBatchIterable {
     return new BatchIterable(toIterableBuffer(this.iterable))
   }
 }
-
-/**
- * @extends {GenericSequenceProcessor<[Path, Value, number, number]>}
- */
-export class StreamSequenceProcessor extends GenericSequenceProcessor {}
-
-/**
- * @extends {GenericSequenceProcessor<[Path, Value]>}
- */
-export class ObjectSequenceProcessor extends GenericSequenceProcessor {}

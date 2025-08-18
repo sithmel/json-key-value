@@ -4,7 +4,7 @@ import { Value } from "../lib/value.js"
 
 /**
  * remove a value to the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.2
- * @template {[Path, Value] | [Path, Value, number, number]} T
+ * @template {[Path, Value, number?, number?]} T
  * @param {AsyncIterable<Iterable<T>>} asyncIterable
  * @param {Path} pathToRemove
  * @returns {AsyncIterable<Iterable<T>>}

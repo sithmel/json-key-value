@@ -5,14 +5,15 @@ import { Value } from "../lib/value.js"
 
 /**
  * Build an stream back from the sequence
- * @param {AsyncIterable<Iterable<[Path, Value]|[Path, Value, number, number]>>} asyncIterable
+ * @template {[Path, Value, number?, number?]} T
+ * @param {AsyncIterable<Iterable<T>>} asyncIterable
  * @returns {AsyncIterable<Iterable<Uint8Array>>}
  */
 export async function* toIterableBuffer(asyncIterable) {
   const builder = new SequenceToStream()
   /**
    *
-   * @param {Iterable<[Path, Value]|[Path, Value, number, number]>} iterable
+   * @param {Iterable<T>} iterable
    */
   function* iterableToStream(iterable) {
     for (const [path, value] of iterable) {

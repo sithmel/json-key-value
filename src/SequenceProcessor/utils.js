@@ -6,33 +6,32 @@ import ObjectToSequence from "../ObjectToSequence.js"
 /**
  * Build the list of new items to insert/tests. If `value` is a subobject, expand it using
  * ObjectToSequence and concatenate the base path; otherwise return the single pair.
- * @template {[Path, Value]} T
  * @param {Path} basePath
- * @param {Iterable<T>} iterable
- * @returns {Iterable<T>}
- */
-function* concatenatePathToIterable(basePath, iterable) {
-  for (const [subPath, subVal, ...rest] of iterable) {
-    const fullPath = new Path([...basePath.array, ...subPath.array])
-    yield /** @type {T} */ ([fullPath, subVal, ...rest])
-  }
-}
-
-/**
- * Build the list of new items to insert/tests. If `value` is a subobject, expand it using
- * ObjectToSequence and concatenate the base path; otherwise return the single pair.
- * @template {[Path, Value]} T
- * @param {Path} basePath
- * @param {Value|Iterable<T>} value
+ * @param {Value|Iterable<[Path, Value]>} value
  * @returns {Iterable<[Path, Value]>}
  */
 export function * getSequenceFromValue(basePath, value) {
+
+  /**
+   * Build the list of new items to insert/tests. If `value` is a subobject, expand it using
+   * ObjectToSequence and concatenate the base path; otherwise return the single pair.
+   * @param {Iterable<[Path, Value]>} iterable
+   * @returns {Iterable<[Path, Value]>}
+   */
+  function* concatenatePathToIterable(iterable) {
+    for (const [subPath, subVal] of iterable) {
+      const fullPath = new Path([...basePath.array, ...subPath.array])
+      yield [fullPath, subVal]
+    }
+  }
+
+
   // check if value is iterable
   if (!(value instanceof Value)) {
-    yield* concatenatePathToIterable(basePath, value)
+    yield* concatenatePathToIterable(value)
   } else if (value instanceof CachedSubObject) {
     const o2s = new ObjectToSequence()
-    yield* concatenatePathToIterable(basePath, o2s.iter(value.decoded))
+    yield* concatenatePathToIterable(o2s.iter(value.decoded))
   } else {
     yield [basePath, value]
   }

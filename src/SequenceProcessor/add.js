@@ -9,18 +9,18 @@ import { getSequenceFromValue } from "./utils.js"
  * order (object keys lexicographically, array indices numerically).
  * Note: For multi-batch inputs, insertion is executed within the first batch where
  * the correct position is found; if not found, it appends to the end of that batch.
- * @param {AsyncIterable<Iterable<[Path, Value] | [Path, Value, number, number]>>} asyncIterable
+ * @param {AsyncIterable<Iterable<[Path, Value, number?, number?]>>} asyncIterable
  * @param {Path} path
  * @param {Value} value
- * @returns {AsyncIterable<Iterable<[Path, Value] | [Path, Value, number, number]>>}
+ * @returns {AsyncIterable<Iterable<[Path, Value, number?, number?]>>}
  */
 export default async function* add(asyncIterable, path, value) {
   let inserted = false
   let commonPathIndex = 0 // when this decreases, then we need to insert the new value
   /**
    * Filters a single iterable based on the matcher.
-   * @param {Iterable<[Path, Value] | [Path, Value, number, number]>} iterable
-   * @returns {Iterable<[Path, Value] | [Path, Value, number, number]>}
+   * @param {Iterable<[Path, Value, number?, number?]>} iterable
+   * @returns {Iterable<[Path, Value, number?, number?]>}
    */
   function* iter(iterable) {
     for (const item of iterable) {

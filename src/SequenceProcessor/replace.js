@@ -8,11 +8,10 @@ import add from "./add.js"
  * replace a value in the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.3
  * Implemented by removing the target path (and subtree) and adding the new value
  * at the correct position to preserve traversal order.
- * @template {[Path, Value] | [Path, Value, number, number]} T
- * @param {AsyncIterable<Iterable<T>>} asyncIterable
+ * @param {AsyncIterable<Iterable<[Path, Value, number?, number?]>>} asyncIterable
  * @param {Path} path
  * @param {Value} value
- * @returns {AsyncIterable<Iterable<T>>}
+ * @returns {AsyncIterable<Iterable<[Path, Value, number?, number?]>>}
  */
 export default async function* replace(asyncIterable, path, value) {
   yield* add(remove(asyncIterable, path), path, value)

@@ -8,7 +8,7 @@ import { getSequenceFromValue } from "./utils.js"
  * Pass-through: yields the original sequence unchanged but asserts that the expected
  * path/value is present. If `value.decoded` is an object/array, expand it via ObjectToSequence
  * and assert that all concatenated sub path/values are present.
- * @template {[Path, Value] | [Path, Value, number, number]} T
+ * @template {[Path, Value, number?, number?]} T
  * @param {AsyncIterable<Iterable<T>>} asyncIterable
  * @param {Path} path
  * @param {Value|Iterable<[Path, Value]>} value

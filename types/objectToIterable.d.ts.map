@@ -1,1 +1,1 @@
-{"version":3,"file":"objectToIterable.d.ts","sourceRoot":"","sources":["../src/objectToIterable.js"],"names":[],"mappings":"AAcA;;;;;;;GAOG;AACH,sCANW,GAAG,YAEX;IAAyB,QAAQ;IACS,iBAAiB,WAA5C,IAAI,KAAK,OAAO;CAC/B,GAAU,uBAAuB,CAMnC;qBAvBoB,eAAe;wCAFI,8BAA8B"}
+{"version":3,"file":"objectToIterable.d.ts","sourceRoot":"","sources":["../src/objectToIterable.js"],"names":[],"mappings":"AAcA;;;;;;;GAOG;AACH,sCANW,GAAG,YAEX;IAAyB,QAAQ;IACS,iBAAiB,WAA5C,IAAI,KAAK,OAAO;CAC/B,GAAU,iBAAiB,CAM7B;qBAvBoB,eAAe;kCAFF,8BAA8B"}
