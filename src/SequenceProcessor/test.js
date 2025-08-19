@@ -17,7 +17,6 @@ import { getSequenceFromValue } from "./utils.js"
 export default async function* test(asyncIterable, path, value) {
   /** @type {Array<[Path, Value]>} */
   const required = Array.from(getSequenceFromValue(path, value))
-  
   const found = new Array(required.length).fill(false)
   let remaining = required.length
 
