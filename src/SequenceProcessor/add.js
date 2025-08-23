@@ -1,15 +1,8 @@
 // @ts-check
+import { assert } from "console"
 import { Path } from "../lib/path.js"
 import { Value } from "../lib/value.js"
 import { getSequenceFromValue } from "./utils.js"
-
-/**
- * @enum {number}
- */
-const INSERT_TYPE = {
-  OBJECT: 0,
-  ARRAY: 1,
-}
 
 /**
  * @enum {number}
@@ -33,8 +26,7 @@ const INSERT_STATUS = {
  */
 export default async function* add(asyncIterable, searchPath, value) {
   let insertStatus = INSERT_STATUS.WAIT
-  const insertType = typeof searchPath.get(searchPath.length - 1) === 'number' ?  INSERT_TYPE.ARRAY : INSERT_TYPE.OBJECT
-  let arrayIndex = 0 // for array insertion, tracks the index where to insert
+  const pathToAddLastSegment = searchPath.get(searchPath.length - 1)
 
   let commonPathIndex = 0 // when this decreases, then we need to insert the new value
   /**
@@ -46,26 +38,23 @@ export default async function* add(asyncIterable, searchPath, value) {
     for (const item of iterable) {
       const [currentPath] = item
       const newCommonPathIndex = currentPath.getCommonPathIndex(searchPath)
-      if (insertType === INSERT_TYPE.OBJECT) {
+      if (typeof pathToAddLastSegment !== 'number') {
         if (newCommonPathIndex === searchPath.length) {
-          // ************** Case 1
-          // currentPath includes searchPath (newCommonPathIndex === searchPath.length)
-          // if the last segment of searchPath is an object then I have to insert the object
-          // and remove all current items with the searchPath path
-          // so the first time I insert the sequence and remove the items. The other times, I remove the items
+          // ************** Case 1 - object key replacement
+          // - yield the new sequence, the first time
+          // - do not yield the original sequence
           if (insertStatus !== INSERT_STATUS.INSERTED) {
             yield * getSequenceFromValue(searchPath, value)
             insertStatus = INSERT_STATUS.INSERTED
           }
         } else if (newCommonPathIndex === searchPath.length - 1) {
-          // ************** Case 2
-          // searchPath matches currentPath except for the last segment and the last segment is a key
+          // ************** Case 2 - object key append
           // in this case, I have to insert the sequence as soon as searchPath stops matching
           insertStatus = INSERT_STATUS.INSERTED_WHEN_FINISHED
           yield item // yield the current item unchanged
         } else {
           if (newCommonPathIndex < commonPathIndex) {
-            // If the new common path index is less than the previous one, we need to insert
+            // If the new common path index is less than the previous one, we need to append
             if (insertStatus === INSERT_STATUS.INSERTED_WHEN_FINISHED) {
               yield * getSequenceFromValue(searchPath, value)
               insertStatus = INSERT_STATUS.INSERTED
@@ -73,29 +62,36 @@ export default async function* add(asyncIterable, searchPath, value) {
           }
           yield item // yield the current item unchanged
         }
-      } else if (insertType === INSERT_TYPE.ARRAY) {
-        if (newCommonPathIndex === searchPath.length - 1) {
-          // ************** Case 3
-          // searchPath matches currentPath except for the last segment and the last segment is an index
-          // I count the items that are showing up and I add the sequence at the right moment or I add it when it stops matching
+      } else if (typeof pathToAddLastSegment === 'number') {
+        if (newCommonPathIndex === searchPath.length || newCommonPathIndex === searchPath.length - 1) {
           insertStatus = INSERT_STATUS.INSERTED_WHEN_FINISHED
-
-          const insertIndex = searchPath.get(searchPath.length - 1)
-          if (insertIndex === arrayIndex) {
-            if (insertStatus === INSERT_STATUS.INSERTED_WHEN_FINISHED) {
+          // ************** Case 3 - array index insertion
+          // searchPath ["a", "b", 2] - currentPath ["a", "b", 2, "d"]
+          // or
+          // searchPath ["a", "b", 2] - currentPath ["a", "b", 3, "c"]
+          const currentPathLastSegment = currentPath.get(searchPath.length - 1)
+          if (typeof currentPathLastSegment !== 'number') { // this should always be true
+            throw new Error(`Path segment mismatch: expected array index at segment in path ${currentPath}, at index ${currentPath.length - 1}`)
+          }
+          if (currentPathLastSegment >= pathToAddLastSegment ) {
+            if (insertStatus !== INSERT_STATUS.INSERTED) {
               yield * getSequenceFromValue(searchPath, value)
               insertStatus = INSERT_STATUS.INSERTED
             }
-            arrayIndex++
+            // shift all other items
+            currentPath.array[searchPath.length - 1] = currentPathLastSegment + 1
+            yield item
+          } else {
+            yield item
           }
         } else {
           if (insertStatus === INSERT_STATUS.INSERTED_WHEN_FINISHED) {
             yield * getSequenceFromValue(searchPath, value)
             insertStatus = INSERT_STATUS.INSERTED
           }
+          yield item // yield the current item unchanged
         }
-        yield item // yield the current item unchanged
-      }
+      }    
       commonPathIndex = newCommonPathIndex
     }
   }
@@ -106,5 +102,9 @@ export default async function* add(asyncIterable, searchPath, value) {
   if (insertStatus === INSERT_STATUS.INSERTED_WHEN_FINISHED) {
     // If not inserted, append at the end of the last batch
     yield getSequenceFromValue(searchPath, value)
+    insertStatus = INSERT_STATUS.INSERTED
+  }
+  if (insertStatus !== INSERT_STATUS.INSERTED) {
+    throw new Error("Add operation failed: expected path/value not inserted");
   }
 }
