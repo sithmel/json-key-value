@@ -1,6 +1,65 @@
 // @ts-check
 import { Path } from "../lib/path.js"
-import { Value } from "../lib/value.js"
+import { Value, emptyArrayValue, emptyObjValue } from "../lib/value.js"
+import { StateMachine, arePathSegmentEqual } from "./utils.js"
+/**
+ * @enum {string}
+ */
+const STATES = {
+  SEARCHING: "SEARCHING",
+  CONTAINER_FOUND: "CONTAINER_FOUND",
+  PATH_FOUND_INSIDE_CONTAINER: "PATH_FOUND_INSIDE_CONTAINER",
+  PATH_FOUND_OUTSIDE_CONTAINER: "PATH_FOUND_OUTSIDE_CONTAINER",
+  COMPACT_ARRAY: "COMPACT_ARRAY",
+  ADD_EMPTY_CONTAINER: "ADD_EMPTY_CONTAINER",
+  DONE: "DONE",
+  NOT_FOUND: "NOT_FOUND",
+}
+const TRANSITIONS = {
+  MATCH_CONTAINER: "MATCH_CONTAINER",
+  NO_MATCH: "NO_MATCH",
+  MATCH_PATH: "MATCH_PATH",
+  FINISHED: "FINISHED"
+}
+const STATE_MAP = {
+  // searching for container or path to remove
+  [STATES.SEARCHING]: {
+    [TRANSITIONS.MATCH_CONTAINER]: STATES.CONTAINER_FOUND,
+    [TRANSITIONS.NO_MATCH]: STATES.SEARCHING,
+    [TRANSITIONS.MATCH_PATH]: STATES.PATH_FOUND_OUTSIDE_CONTAINER,
+  },
+  // I have found the container but it does not match yet
+  [STATES.CONTAINER_FOUND]: {
+    [TRANSITIONS.MATCH_CONTAINER]: STATES.CONTAINER_FOUND,
+    [TRANSITIONS.MATCH_PATH]: STATES.PATH_FOUND_INSIDE_CONTAINER,
+    [TRANSITIONS.NO_MATCH]: STATES.NOT_FOUND,
+  },
+  // path found. I have been in the container so I know this path has siblings
+  // I can go directly to DONE because I don't need to add an empty container
+  [STATES.PATH_FOUND_INSIDE_CONTAINER]: {
+    [TRANSITIONS.MATCH_CONTAINER]: STATES.COMPACT_ARRAY,
+    [TRANSITIONS.NO_MATCH]: STATES.DONE,
+    [TRANSITIONS.MATCH_PATH]: STATES.PATH_FOUND_INSIDE_CONTAINER,
+  },
+  // path found I have not been in the container
+  // up until now I have not found siblings,
+  // unless I match the container
+  [STATES.PATH_FOUND_OUTSIDE_CONTAINER]: {
+    [TRANSITIONS.MATCH_CONTAINER]: STATES.COMPACT_ARRAY,
+    [TRANSITIONS.NO_MATCH]: STATES.ADD_EMPTY_CONTAINER,
+    [TRANSITIONS.MATCH_PATH]: STATES.PATH_FOUND_OUTSIDE_CONTAINER,
+  },
+  // compacting array
+  [STATES.COMPACT_ARRAY]: {
+    [TRANSITIONS.MATCH_CONTAINER]: STATES.COMPACT_ARRAY,
+    [TRANSITIONS.NO_MATCH]: STATES.DONE,
+  },
+  // adding empty obj/array
+  [STATES.ADD_EMPTY_CONTAINER]: {
+    [TRANSITIONS.FINISHED]: STATES.DONE
+  },
+  [STATES.DONE]: {},
+}
 
 /**
  * remove a value to the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.2
@@ -10,47 +69,91 @@ import { Value } from "../lib/value.js"
  * @returns {AsyncIterable<Iterable<T>>}
  */
 export default async function* remove(asyncIterable, pathToRemove) {
-  let hasBeenRemoved = false
-  const pathToRemoveLastSegment = pathToRemove.get(pathToRemove.length - 1)
+  const stateMachine = new StateMachine(STATE_MAP, STATES.SEARCHING)
+  const pathToRemoveLastSegment = pathToRemove.array[pathToRemove.length - 1]
 
   /**
    * @param {Iterable<T>} iterable
    * @returns {Iterable<T>}
    */
   function* inner(iterable) {
-    for (const iter of iterable) {
-      const path = iter[0]
-      if (typeof pathToRemoveLastSegment === 'number') {
-        if (pathToRemove.getCommonPathIndex(path) === pathToRemove.length) {
-          hasBeenRemoved = true
-          continue // do not return the item
-        } else if (pathToRemove.getCommonPathIndex(path) === pathToRemove.length - 1) {
-          const currentLastSegment = path.get(pathToRemove.length - 1)
-          if (typeof currentLastSegment !== 'number') {
-            throw new Error(`Path segment mismatch: expected array index at segment in path ${path}, at index ${pathToRemove.length - 1}`)            
-          }
-          if (currentLastSegment < pathToRemoveLastSegment) {
-            yield iter
-          } else { // (currentLastSegment > pathToRemoveLastSegment)
-            path.array[pathToRemove.length - 1] = currentLastSegment - 1
-            yield iter
-          }
-        }
-        yield iter
+    for (const item of iterable) {
+      if (stateMachine.is(STATES.DONE)) {
+        yield item
+        continue
+      }
+      const [currentPath] = item
+      const newCommonPathIndex = currentPath.getCommonPathIndex(pathToRemove)
+
+      if (newCommonPathIndex === pathToRemove.length) {
+        stateMachine.transition(TRANSITIONS.MATCH_PATH)
+      } else if (newCommonPathIndex === pathToRemove.length - 1) {
+        stateMachine.transition(TRANSITIONS.MATCH_CONTAINER)
       } else {
-        if (pathToRemove.getCommonPathIndex(path) !== pathToRemove.length) {
-          yield iter
-        } else {
-          hasBeenRemoved = true
+        stateMachine.transition(TRANSITIONS.NO_MATCH)
+      }
+
+      if (stateMachine.is(STATES.NOT_FOUND)) {
+        throw new Error(`The path ${pathToRemove.decoded} was not found. Removal not possible`)        
+      }
+
+      if (stateMachine.is(STATES.SEARCHING, STATES.CONTAINER_FOUND)) {
+        // nothing to do here, keep yielding
+        yield item
+        continue
+      }
+      if (stateMachine.is(STATES.PATH_FOUND_INSIDE_CONTAINER, STATES.PATH_FOUND_OUTSIDE_CONTAINER)) {
+        // removing
+        continue
+      }
+      
+      if (stateMachine.is(STATES.COMPACT_ARRAY)) {
+        // I am unable to match but I am still inside the container
+        // if this is an array I need to fix the indexes
+        const currentPathFirstDifferentSegment = currentPath.array[newCommonPathIndex]
+        if (typeof currentPathFirstDifferentSegment === 'number') {
+          currentPath.array[newCommonPathIndex] = currentPathFirstDifferentSegment - 1
         }
+        // I don't need to compact items if they are not array items
+        yield item
+        continue
+      }
+
+      if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
+        // if I am here, I am no longer matching path to remove and I have not seen any siblings of that path
+        // I will insert an empty object/array
+        const emptyValue = typeof pathToRemoveLastSegment === 'number' ? emptyArrayValue : emptyObjValue
+        const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
+        yield /** @type {T} */ (/** @type {unknown} */ ([pathToRemoveContainer, emptyValue]))
+
+        yield item
+        stateMachine.transition(TRANSITIONS.FINISHED)
+        continue
       }
     }
   }
 
-  for await (const batch of asyncIterable) {
-    yield inner(batch)
+  for await (const iterable of asyncIterable) {
+    if (stateMachine.is(STATES.DONE)) {
+      yield iterable
+      continue
+    }
+    yield inner(iterable)
   }
-  if (!hasBeenRemoved) {
-    throw new Error(`The path ${pathToRemove} was not found. Removal not possible`)
+
+  if (stateMachine.is(STATES.DONE)) return
+
+  stateMachine.transition(TRANSITIONS.NO_MATCH)
+
+  if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
+    // case 4: handle empty object/array at end of sequence
+    // when this is the last item in the sequence
+    const emptyValue = typeof pathToRemoveLastSegment === 'number' ? emptyArrayValue : emptyObjValue
+    yield /** @type {Iterable<T>} */ (/** @type {unknown} */ ([[pathToRemove, emptyValue]]))
+    stateMachine.transition(TRANSITIONS.FINISHED)
+  }
+
+  if (!stateMachine.is(STATES.DONE)) {
+    throw new Error(`The path ${pathToRemove.decoded} was not found. Removal not possible`)
   }
 }

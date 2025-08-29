@@ -160,7 +160,69 @@ describe("SequenceProcessor test op", () => {
   })
 })
 
-describe.only("SequenceProcessor add op", () => {
+describe("SequenceProcessor remove op", () => {
+  it("removes a leaf value only", async () => {
+    const seq = singleBatchSequence([
+      [["a"], 1],
+      [["b", "x"], true],
+      [["c"], 3],
+    ])
+
+    const result = await collectAndDecode(
+      removeOp(seq, toPathObject(["b", "x"])),
+    )
+
+    assert.deepEqual(result, [
+      [["a"], 1],
+      [["b"], {}],
+      [["c"], 3],
+    ])
+  })
+
+  it("removes an entire subtree (object prefix)", async () => {
+    const seq = singleBatchSequence([
+      [["a"], 1],
+      [["b", "x"], true],
+      [["b", "y"], 2],
+      [["c"], 3],
+    ])
+
+    const result = await collectAndDecode(
+      removeOp(seq, toPathObject(["b"])),
+    )
+
+    assert.deepEqual(result, [
+      [["a"], 1],
+      [["c"], 3],
+    ])
+  })
+
+  it("removes a single array element (index prefix)", async () => {
+    const seq = singleBatchSequence([
+      [["a", 0], 1],
+      [["a", 1], 2],
+    ])
+
+    const result = await collectAndDecode(
+      removeOp(seq, toPathObject(["a", 0])),
+    )
+
+    assert.deepEqual(result, [[["a", 0], 2]])
+  })
+
+  it("throws an error when path not found", async () => {
+    const seq = singleBatchSequence([
+      [["a"], 1]
+    ])
+
+    await assert.rejects(() =>
+      collectAndDecode(removeOp(seq, toPathObject(["x"])))
+    )
+  })
+
+})
+
+describe("SequenceProcessor add op", () => {
   it("inserts into object subtree in pre-order (between siblings)", async () => {
     // Base sequence represents: { a: 1, b: { x: true }, c: 3 }
     const seq = singleBatchSequence([
@@ -206,15 +268,15 @@ describe.only("SequenceProcessor add op", () => {
     ])
   })
 
-  it.only("prepend at the beginning of an array", async () => {
-    // Base sequence represents: { a: [1, 2] }
+  it("prepends at the beginning of an array", async () => {
+    // Base sequence represents: { a: [1, undefined, ] }
     const seq = singleBatchSequence([
       [["a", 0], 1],
       [["a", 3], 2],
     ])
 
     // Insert index 2 -> should come after index 1
-    const insertedPath = toPathObject(["a", 2])
+    const insertedPath = toPathObject(["a", 0])
     const insertedValue = toValueObject(3)
 
     const result = await collectAndDecode(
@@ -222,9 +284,9 @@ describe.only("SequenceProcessor add op", () => {
     )
 
     assert.deepEqual(result, [
-      [["a", 0], 1],
-      [["a", 2], 3],
-      [["a", 3], 2],
+      [["a", 0], 3], // prepended
+      [["a", 1], 1], // shifted
+      [["a", 4], 2], // shifted
     ])
   })
 
@@ -246,7 +308,7 @@ describe.only("SequenceProcessor add op", () => {
     assert.deepEqual(result, [
       [["a", 0], 1],
       [["a", 2], 3],
-      [["a", 3], 2],
+      [["a", 4], 2],
     ])
   })
 
@@ -312,64 +374,3 @@ describe("SequenceProcessor replace op", () => {
   })
 })
 
-describe("SequenceProcessor remove op", () => {
-  it("removes a leaf value only", async () => {
-    const seq = singleBatchSequence([
-      [["a"], 1],
-      [["b", "x"], true],
-      [["c"], 3],
-    ])
-
-    const result = await collectAndDecode(
-      removeOp(seq, toPathObject(["b", "x"])),
-    )
-
-    assert.deepEqual(result, [
-      [["a"], 1],
-      [["c"], 3],
-    ])
-  })
-
-  it("removes an entire subtree (object prefix)", async () => {
-    const seq = singleBatchSequence([
-      [["a"], 1],
-      [["b", "x"], true],
-      [["b", "y"], 2],
-      [["c"], 3],
-    ])
-
-    const result = await collectAndDecode(
-      removeOp(seq, toPathObject(["b"])),
-    )
-
-    assert.deepEqual(result, [
-      [["a"], 1],
-      [["c"], 3],
-    ])
-  })
-
-  it("removes a single array element (index prefix)", async () => {
-    const seq = singleBatchSequence([
-      [["a", 0], 1],
-      [["a", 1], 2],
-    ])
-
-    const result = await collectAndDecode(
-      removeOp(seq, toPathObject(["a", 0])),
-    )
-
-    assert.deepEqual(result, [[["a", 1], 2]])
-  })
-
-  it("does nothing when path not found", async () => {
-    const seq = singleBatchSequence([
-      [["a"], 1]
-    ])
-
-    const result = await collectAndDecode(
-      removeOp(seq, toPathObject(["x"])),
-    )
-
-    assert.deepEqual(result, [[["a"], 1]])
-  })
-})

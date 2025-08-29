@@ -36,3 +36,62 @@ export function * getSequenceFromValue(basePath, value) {
     yield [basePath, value]
   }
 }
+
+ /**
+ * @template {string} S - state
+ * @template {string} T - transition
+ */
+export class StateMachine {
+  /**
+   * @param {Record<S, Record<T,S>>} stateMap
+   * @param {S} initialState
+   */
+  constructor(stateMap, initialState) {
+    this.stateMap = stateMap
+    this.status = initialState
+  }
+  /**
+   * @param {T} transitionName
+   */
+  transition(transitionName) {
+    const nextState = this.stateMap[this.status][transitionName]
+    if (nextState == null) {
+      throw new Error(
+        `Invalid transition ${transitionName} from state ${this.status}`,
+      )
+    }
+    this.status = nextState
+  }
+
+  /**
+   * Check if the current state matches the given state.
+   * @param {...S} state
+   * @returns
+   */
+  is(...state) {
+    return state.some(s => s === this.status)
+  }
+}
+
+/**
+ * Check if two path segments are equal.
+ * @param {import("../lib/path.js").JSONSegmentPathEncodedType | null} a
+ * @param {import("../lib/path.js").JSONSegmentPathEncodedType | null} b
+ * @returns {boolean}
+ */
+export function arePathSegmentEqual(a, b) {
+  if (a === null || b === null) {
+    throw new Error("Path segments should not be undefined")
+  }
+  if (typeof a === typeof b) {
+    if (typeof a === 'number') {
+      return a === b
+    } else {
+      if (typeof b !== 'number') {
+        return a.isEqual(b)
+      }
+      return false // no match
+    }
+  }
+  return false
+}
