@@ -1,7 +1,7 @@
 // @ts-check
 import { Path } from "../lib/path.js"
 import { Value, emptyArrayValue, emptyObjValue } from "../lib/value.js"
-import { StateMachine, arePathSegmentEqual } from "./utils.js"
+import { StateMachine } from "./utils.js"
 /**
  * @enum {string}
  */

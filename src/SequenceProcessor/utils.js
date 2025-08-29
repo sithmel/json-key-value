@@ -72,26 +72,3 @@ export class StateMachine {
     return state.some(s => s === this.status)
   }
 }
-
-/**
- * Check if two path segments are equal.
- * @param {import("../lib/path.js").JSONSegmentPathEncodedType | null} a
- * @param {import("../lib/path.js").JSONSegmentPathEncodedType | null} b
- * @returns {boolean}
- */
-export function arePathSegmentEqual(a, b) {
-  if (a === null || b === null) {
-    throw new Error("Path segments should not be undefined")
-  }
-  if (typeof a === typeof b) {
-    if (typeof a === 'number') {
-      return a === b
-    } else {
-      if (typeof b !== 'number') {
-        return a.isEqual(b)
-      }
-      return false // no match
-    }
-  }
-  return false
-}

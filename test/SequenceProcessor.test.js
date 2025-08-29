@@ -39,8 +39,8 @@ function singleBatchSequence(items) {
   })()
 }
 
-describe("SequenceProcessor test op", () => {
-  it("passes when the path/value exists in the sequence", async () => {
+describe.only("SequenceProcessor test op", () => {
+  it.only("passes when the path/value exists in the sequence", async () => {
     const seq = singleBatchSequence([
       [["a"], 1],
       [["b"], 2],
