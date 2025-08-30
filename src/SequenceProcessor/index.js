@@ -73,13 +73,14 @@ export class SequenceProcessor extends GenericBatchIterable {
   /**
    * Build an object back from the sequence
    * @param {any} [obj] - Options for the sequence to object conversion
-   * @returns {Promise<any>}
+   * @param {boolean} [sparse=false] - if true, creates sparse arrays respecting original indexes
+  * @returns {Promise<any>}
    */
-  async toObject(obj = undefined) {
+  async toObject(obj = undefined, sparse = false) {
     const builder = await this.reduce((builder, [path, value]) => {
       builder.add(path, value)
       return builder
-    }, new SequenceToObject(obj))
+    }, new SequenceToObject(obj, sparse))
 
     return builder.getObject()
   }

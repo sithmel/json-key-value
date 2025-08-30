@@ -5,11 +5,15 @@
  * and assert that all concatenated sub path/values are present.
  * @template {[Path, Value, number?, number?]} T
  * @param {AsyncIterable<Iterable<T>>} asyncIterable
- * @param {Path} path
- * @param {Value|Iterable<[Path, Value]>} value
+ * @param {Path} pathToTest
+ * @param {Value} valueToTest
  * @returns {AsyncIterable<Iterable<T>>}
  */
-export default function test<T extends [Path, Value, number?, number?]>(asyncIterable: AsyncIterable<Iterable<T>>, path: Path, value: Value | Iterable<[Path, Value]>): AsyncIterable<Iterable<T>>;
-import { Path } from "../lib/path.js";
-import { Value } from "../lib/value.js";
+export default function test<T extends [Path, Value, number?, number?]>(
+  asyncIterable: AsyncIterable<Iterable<T>>,
+  pathToTest: Path,
+  valueToTest: Value,
+): AsyncIterable<Iterable<T>>
+import { Path } from "../lib/path.js"
+import { Value } from "../lib/value.js"
 //# sourceMappingURL=test.d.ts.map

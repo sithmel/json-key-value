@@ -11,7 +11,7 @@ const STATES = {
   CONTAINER_FOUND: "CONTAINER_FOUND",
   PATH_FOUND: "PATH_FOUND",
   TO_APPEND: "TO_APPEND",
-  INSERTED: "OUT_OBJECT_AND_INSERTED",
+  INSERTED: "INSERTED",
   DONE: "DONE",
 }
 const TRANSITIONS = {
@@ -106,6 +106,8 @@ export default async function* add(asyncIterable, pathToAdd, value) {
         if (typeof pathToAddLastSegment !== "number") {
           if (newCommonPathIndex === pathToAdd.length) {
             // removes matching
+          } else {
+            yield item
           }
         } else {
           const currentPathFirstDifferentSegment =
@@ -147,7 +149,6 @@ export default async function* add(asyncIterable, pathToAdd, value) {
           // proceed to replace
           yield* getSequenceFromValue(pathToAdd, value)
           stateMachine.transition(TRANSITIONS.FINISHED)
-
         } else if (typeof pathToAddLastSegment === "number") {
           // case 5: array insertion
           // this handles the insertions, which can only happen in an array

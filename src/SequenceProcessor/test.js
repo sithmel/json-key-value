@@ -1,9 +1,9 @@
 // @ts-check
 import { Path } from "../lib/path.js"
 import { Value } from "../lib/value.js"
-import SequenceToObject from '../SequenceToObject.js'
+import SequenceToObject from "../SequenceToObject.js"
 import { StateMachine } from "./utils.js"
-import { areDeeplyEqual } from '../lib/utils.js'
+import { areDeeplyEqual } from "../lib/utils.js"
 
 /**
  * @enum {string}
@@ -17,7 +17,7 @@ const STATES = {
 const TRANSITIONS = {
   NO_MATCH: "NO_MATCH",
   MATCH_PATH: "MATCH_PATH",
-  FINISHED: "FINISHED"
+  FINISHED: "FINISHED",
 }
 const STATE_MAP = {
   [STATES.SEARCHING]: {
@@ -46,7 +46,7 @@ const STATE_MAP = {
  * @returns {AsyncIterable<Iterable<T>>}
  */
 export default async function* test(asyncIterable, pathToTest, valueToTest) {
-  const sequenceToObject = new SequenceToObject()
+  const sequenceToObject = new SequenceToObject(undefined, true)
   const stateMachine = new StateMachine(STATE_MAP, STATES.SEARCHING)
 
   /**
@@ -56,13 +56,12 @@ export default async function* test(asyncIterable, pathToTest, valueToTest) {
    */
   function* scan(iterable) {
     for (const item of iterable) {
-
       const [currentPath, currentValue] = item
       const newCommonPathIndex = currentPath.getCommonPathIndex(pathToTest)
 
       if (newCommonPathIndex === pathToTest.length) {
         stateMachine.transition(TRANSITIONS.MATCH_PATH)
-      }  else {
+      } else {
         stateMachine.transition(TRANSITIONS.NO_MATCH)
       }
       if (stateMachine.is(STATES.PATH_FOUND)) {
@@ -70,8 +69,12 @@ export default async function* test(asyncIterable, pathToTest, valueToTest) {
         sequenceToObject.add(objectPath, currentValue)
       }
       if (stateMachine.is(STATES.CHECKING)) {
-        if (!areDeeplyEqual(sequenceToObject.getObject(), valueToTest.decoded)) {
-          throw new Error(`The path ${pathToTest.decoded} was found but the value does not match. Found: ${JSON.stringify(sequenceToObject.getObject())}, expected: ${JSON.stringify(valueToTest.decoded)}`)
+        if (
+          !areDeeplyEqual(sequenceToObject.getObject(), valueToTest.decoded)
+        ) {
+          throw new Error(
+            `The path ${pathToTest.decoded} was found but the value does not match. Found: ${JSON.stringify(sequenceToObject.getObject())}, expected: ${JSON.stringify(valueToTest.decoded)}`,
+          )
         }
         stateMachine.transition(TRANSITIONS.FINISHED)
       }
@@ -89,9 +92,13 @@ export default async function* test(asyncIterable, pathToTest, valueToTest) {
 
   if (stateMachine.is(STATES.CHECKING)) {
     if (!areDeeplyEqual(sequenceToObject.getObject(), valueToTest.decoded)) {
-      throw new Error(`The path ${pathToTest.decoded} was found but the value does not match. Found: ${JSON.stringify(sequenceToObject.getObject())}, expected: ${JSON.stringify(valueToTest.decoded)}`)
+      throw new Error(
+        `The path ${pathToTest.decoded} was found but the value does not match. Found: ${JSON.stringify(sequenceToObject.getObject())}, expected: ${JSON.stringify(valueToTest.decoded)}`,
+      )
     }
     return
   }
-  throw new Error(`The path ${pathToTest.decoded} was not found. Test not successful`)
+  throw new Error(
+    `The path ${pathToTest.decoded} was not found. Test not successful`,
+  )
 }

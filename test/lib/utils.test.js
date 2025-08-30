@@ -8,7 +8,7 @@ import {
   stringifyAndEncode,
   areDeeplyEqual,
   mergeBuffers,
-  ParsingError
+  ParsingError,
 } from "../../src/lib/utils.js"
 
 describe("isArrayOrObject", () => {
@@ -85,7 +85,10 @@ describe("areDeeplyEqual", () => {
   })
   it("returns true for objects with different key order", () => {
     assert.equal(
-      areDeeplyEqual({ a: 1, b: 2, c: { x: 3, y: [4, 5] } }, { c: { y: [4, 5], x: 3 }, b: 2, a: 1 }),
+      areDeeplyEqual(
+        { a: 1, b: 2, c: { x: 3, y: [4, 5] } },
+        { c: { y: [4, 5], x: 3 }, b: 2, a: 1 },
+      ),
       true,
     )
   })
@@ -95,7 +98,10 @@ describe("areDeeplyEqual", () => {
   })
 
   it("returns false when nested value differs", () => {
-    assert.equal(areDeeplyEqual({ a: { b: [1, 2, 3] } }, { a: { b: [1, 2, 4] } }), false)
+    assert.equal(
+      areDeeplyEqual({ a: { b: [1, 2, 3] } }, { a: { b: [1, 2, 4] } }),
+      false,
+    )
   })
 })
 
@@ -104,7 +110,10 @@ describe("mergeBuffers", () => {
     const a = new Uint8Array([1, 2, 3])
     const b = new Uint8Array([4, 5])
     const c = new Uint8Array([6])
-    assert.deepEqual(mergeBuffers([a, b, c]), new Uint8Array([1, 2, 3, 4, 5, 6]))
+    assert.deepEqual(
+      mergeBuffers([a, b, c]),
+      new Uint8Array([1, 2, 3, 4, 5, 6]),
+    )
   })
 
   it("returns empty buffer for empty input", () => {

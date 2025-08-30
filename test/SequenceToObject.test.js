@@ -76,6 +76,47 @@ describe("SequenceToObject", () => {
       collection: [{}],
     })
   })
+
+  describe("sparse arrays", () => {
+    it("creates sparse arrays when sparse=true", () => {
+      const builder = new SequenceToObject(undefined, true)
+      builder.add(toPathObject(["a", 3]), toValueObject(3))
+      assert.deepEqual(builder.object, { a: [, , , 3] })
+      assert.equal(builder.object.a.length, 4)
+      assert.equal(builder.object.a[0], undefined)
+      assert.equal(builder.object.a[1], undefined)
+      assert.equal(builder.object.a[2], undefined)
+      assert.equal(builder.object.a[3], 3)
+    })
+
+    it("creates sparse arrays with multiple elements", () => {
+      const builder = new SequenceToObject(undefined, true)
+      builder.add(toPathObject(["collection", 2]), toValueObject({}))
+      builder.add(
+        toPathObject(["collection", 5, "brand"]),
+        toValueObject("Rolls Royce"),
+      )
+      builder.add(toPathObject(["collection", 5, "number"]), toValueObject(8))
+
+      assert.equal(builder.object.collection.length, 6)
+      assert.deepEqual(builder.object.collection[2], {})
+      assert.deepEqual(builder.object.collection[5], {
+        brand: "Rolls Royce",
+        number: 8,
+      })
+      assert.equal(builder.object.collection[0], undefined)
+      assert.equal(builder.object.collection[1], undefined)
+      assert.equal(builder.object.collection[3], undefined)
+      assert.equal(builder.object.collection[4], undefined)
+    })
+
+    it("still compacts arrays when sparse=false (default behavior)", () => {
+      const builder = new SequenceToObject()
+      builder.add(toPathObject(["a", 3]), toValueObject(3))
+      assert.deepEqual(builder.object, { a: [3] })
+    })
+  })
+
   describe("chunks", () => {
     it("works with object nested into object (1)", () => {
       const builder = new SequenceToObject()

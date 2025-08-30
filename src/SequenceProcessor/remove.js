@@ -19,7 +19,7 @@ const TRANSITIONS = {
   MATCH_CONTAINER: "MATCH_CONTAINER",
   NO_MATCH: "NO_MATCH",
   MATCH_PATH: "MATCH_PATH",
-  FINISHED: "FINISHED"
+  FINISHED: "FINISHED",
 }
 const STATE_MAP = {
   // searching for container or path to remove
@@ -56,7 +56,7 @@ const STATE_MAP = {
   },
   // adding empty obj/array
   [STATES.ADD_EMPTY_CONTAINER]: {
-    [TRANSITIONS.FINISHED]: STATES.DONE
+    [TRANSITIONS.FINISHED]: STATES.DONE,
   },
   [STATES.DONE]: {},
 }
@@ -94,42 +94,42 @@ export default async function* remove(asyncIterable, pathToRemove) {
       }
 
       if (stateMachine.is(STATES.NOT_FOUND)) {
-        throw new Error(`The path ${pathToRemove.decoded} was not found. Removal not possible`)        
-      }
-
-      if (stateMachine.is(STATES.SEARCHING, STATES.CONTAINER_FOUND)) {
-        // nothing to do here, keep yielding
-        yield item
-        continue
-      }
-      if (stateMachine.is(STATES.PATH_FOUND_INSIDE_CONTAINER, STATES.PATH_FOUND_OUTSIDE_CONTAINER)) {
+        throw new Error(
+          `The path ${pathToRemove.decoded} was not found. Removal not possible`,
+        )
+      } else if (
+        stateMachine.is(
+          STATES.PATH_FOUND_INSIDE_CONTAINER,
+          STATES.PATH_FOUND_OUTSIDE_CONTAINER,
+        )
+      ) {
         // removing
         continue
-      }
-      
-      if (stateMachine.is(STATES.COMPACT_ARRAY)) {
+      } else if (stateMachine.is(STATES.COMPACT_ARRAY)) {
         // I am unable to match but I am still inside the container
         // if this is an array I need to fix the indexes
-        const currentPathFirstDifferentSegment = currentPath.array[newCommonPathIndex]
-        if (typeof currentPathFirstDifferentSegment === 'number') {
-          currentPath.array[newCommonPathIndex] = currentPathFirstDifferentSegment - 1
+        const currentPathFirstDifferentSegment =
+          currentPath.array[newCommonPathIndex]
+        if (typeof currentPathFirstDifferentSegment === "number") {
+          currentPath.array[newCommonPathIndex] =
+            currentPathFirstDifferentSegment - 1
         }
         // I don't need to compact items if they are not array items
-        yield item
-        continue
-      }
-
-      if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
+      } else if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
         // if I am here, I am no longer matching path to remove and I have not seen any siblings of that path
         // I will insert an empty object/array
-        const emptyValue = typeof pathToRemoveLastSegment === 'number' ? emptyArrayValue : emptyObjValue
+        const emptyValue =
+          typeof pathToRemoveLastSegment === "number"
+            ? emptyArrayValue
+            : emptyObjValue
         const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
-        yield /** @type {T} */ (/** @type {unknown} */ ([pathToRemoveContainer, emptyValue]))
+        yield /** @type {T} */ (
+          /** @type {unknown} */ ([pathToRemoveContainer, emptyValue])
+        )
 
-        yield item
         stateMachine.transition(TRANSITIONS.FINISHED)
-        continue
       }
+      yield item
     }
   }
 
@@ -148,12 +148,21 @@ export default async function* remove(asyncIterable, pathToRemove) {
   if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
     // case 4: handle empty object/array at end of sequence
     // when this is the last item in the sequence
-    const emptyValue = typeof pathToRemoveLastSegment === 'number' ? emptyArrayValue : emptyObjValue
-    yield /** @type {Iterable<T>} */ (/** @type {unknown} */ ([[pathToRemove, emptyValue]]))
+    const emptyValue =
+      typeof pathToRemoveLastSegment === "number"
+        ? emptyArrayValue
+        : emptyObjValue
+
+    const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
+    yield /** @type {Iterable<T>} */ (
+      /** @type {unknown} */ ([[pathToRemoveContainer, emptyValue]])
+    )
     stateMachine.transition(TRANSITIONS.FINISHED)
   }
 
   if (!stateMachine.is(STATES.DONE)) {
-    throw new Error(`The path ${pathToRemove.decoded} was not found. Removal not possible`)
+    throw new Error(
+      `The path ${pathToRemove.decoded} was not found. Removal not possible`,
+    )
   }
 }

@@ -1,7 +1,12 @@
 //@ts-check
 import assert from "assert"
 import { describe, it, beforeEach } from "node:test"
-import { Path, areSegmentsEqual, toEncodedSegment, toPathObject  } from "../../src/lib/path.js"
+import {
+  Path,
+  areSegmentsEqual,
+  toEncodedSegment,
+  toPathObject,
+} from "../../src/lib/path.js"
 import { CachedString } from "../../src/lib/value.js"
 import { stringifyAndEncode } from "../../src/lib/utils.js"
 /**
@@ -195,11 +200,19 @@ describe("Path - offset and mutations", () => {
     const a = new Path([1, 2, 3], 1) // view is [2,3]
     const b = a.withSegmentAdded(4)
     assert.equal(a.offset, 1)
-    assert.equal(b.offset, 0, "Decide if this should preserve offset; add expectation accordingly")
+    assert.equal(
+      b.offset,
+      0,
+      "Decide if this should preserve offset; add expectation accordingly",
+    )
     // adjust expectation once behavior is defined; this test is meant to catch unintended reset
     const c = a.withSegmentRemoved()
     assert.equal(a.offset, 1)
-    assert.equal(c.offset, 0, "Decide if this should preserve offset; add expectation accordingly")
+    assert.equal(
+      c.offset,
+      0,
+      "Decide if this should preserve offset; add expectation accordingly",
+    )
     assert.deepEqual(a.decoded, [2, 3])
   })
 
@@ -224,12 +237,24 @@ describe("Path - offset and mutations", () => {
 describe("Path - iterators", () => {
   it("fromIndexToEnd yields correct pairs", () => {
     const p = new Path([1, 2, 3], 0)
-    assert.deepEqual([...p.fromIndexToEnd(1)], [[1, 2], [2, 3]])
+    assert.deepEqual(
+      [...p.fromIndexToEnd(1)],
+      [
+        [1, 2],
+        [2, 3],
+      ],
+    )
     assert.deepEqual([...p.fromIndexToEnd(3)], [])
   })
   it("fromEndToIndex yields correct pairs", () => {
     const p = new Path([1, 2, 3], 0)
-    assert.deepEqual([...p.fromEndToIndex(1)], [[2, 3], [1, 2]])
+    assert.deepEqual(
+      [...p.fromEndToIndex(1)],
+      [
+        [2, 3],
+        [1, 2],
+      ],
+    )
     assert.deepEqual([...p.fromEndToIndex(3)], [])
   })
   it("iterators throw on negative index", () => {

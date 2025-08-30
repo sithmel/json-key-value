@@ -3,7 +3,6 @@ import { Path } from "../lib/path.js"
 import { Value } from "../lib/value.js"
 import { StateMachine, getSequenceFromValue } from "./utils.js"
 
-
 /**
  * @enum {string}
  */
@@ -16,7 +15,6 @@ const STATES = {
 const TRANSITIONS = {
   NO_MATCH: "NO_MATCH",
   MATCH_PATH: "MATCH_PATH",
-  FINISHED: "FINISHED",
   REPLACE: "REPLACE",
 }
 const STATE_MAP = {
@@ -33,7 +31,6 @@ const STATE_MAP = {
   },
   [STATES.DONE]: {},
 }
-
 
 /**
  * replace a value in the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.3
@@ -70,7 +67,7 @@ export default async function* replace(asyncIterable, pathToReplace, value) {
       if (stateMachine.is(STATES.SEARCHING, STATES.DONE)) {
         // remove all a others (already replaced)
         yield item
-      }      
+      }
 
       if (stateMachine.is(STATES.PATH_FOUND)) {
         yield* getSequenceFromValue(pathToReplace, value)
@@ -82,8 +79,7 @@ export default async function* replace(asyncIterable, pathToReplace, value) {
       if (stateMachine.is(STATES.REPLACED)) {
         // remove all a others (already replaced)
         continue
-      }      
-
+      }
     }
   }
 
@@ -95,7 +91,12 @@ export default async function* replace(asyncIterable, pathToReplace, value) {
     yield inner(iterable)
   }
 
+  if (stateMachine.is(STATES.DONE)) return
+
+  stateMachine.transition(TRANSITIONS.NO_MATCH)
   if (!stateMachine.is(STATES.DONE)) {
-    throw new Error(`The path ${pathToReplace.decoded} was not found. Replacement not possible`)
+    throw new Error(
+      `The path ${pathToReplace.decoded} was not found. Replacement not possible`,
+    )
   }
 }

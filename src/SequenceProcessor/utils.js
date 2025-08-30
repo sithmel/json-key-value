@@ -10,8 +10,7 @@ import ObjectToSequence from "../ObjectToSequence.js"
  * @param {Value|Iterable<[Path, Value]>} value
  * @returns {Iterable<[Path, Value]>}
  */
-export function * getSequenceFromValue(basePath, value) {
-
+export function* getSequenceFromValue(basePath, value) {
   /**
    * Build the list of new items to insert/tests. If `value` is a subobject, expand it using
    * ObjectToSequence and concatenate the base path; otherwise return the single pair.
@@ -25,7 +24,6 @@ export function * getSequenceFromValue(basePath, value) {
     }
   }
 
-
   // check if value is iterable
   if (!(value instanceof Value)) {
     yield* concatenatePathToIterable(value)
@@ -37,7 +35,7 @@ export function * getSequenceFromValue(basePath, value) {
   }
 }
 
- /**
+/**
  * @template {string} S - state
  * @template {string} T - transition
  */
@@ -69,6 +67,6 @@ export class StateMachine {
    * @returns
    */
   is(...state) {
-    return state.some(s => s === this.status)
+    return state.some((s) => s === this.status)
   }
 }
