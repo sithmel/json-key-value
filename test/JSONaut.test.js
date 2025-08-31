@@ -91,9 +91,9 @@ describe("streamToIterable", () => {
     const streamLike = arrayOfStringsToStream(['{"a":1,"b":2,"c":3}'])
     const result = await streamToIterable(streamLike)
       .patch([
-        { op: "remove", path: ["b"] },
-        { op: "add", path: ["d"], value: 4 },
-        { op: "replace", path: ["c"], value: 99 }
+        { op: "remove", path: "/b" },
+        { op: "add", path: "/d", value: 4 },
+        { op: "replace", path: "/c", value: 99 }
       ])
       .toObject()
 
@@ -104,8 +104,8 @@ describe("streamToIterable", () => {
     const streamLike = arrayOfStringsToStream(['{"a":1,"b":2,"c":3}'])
     const result = await streamToIterable(streamLike)
       .patch([
-        { op: "test", path: ["b"], value: 2 }, // Validate b equals 2
-        { op: "replace", path: ["b"], value: 99 }
+        { op: "test", path: "/b", value: 2 }, // Validate b equals 2
+        { op: "replace", path: "/b", value: 99 }
       ])
       .toObject()
 
@@ -172,9 +172,9 @@ describe("objectToIterable", () => {
   it("patch operation with multiple operations", async () => {
     const result = await objectToIterable({ a: 1, b: 2, c: 3 })
       .patch([
-        { op: "remove", path: ["b"] },
-        { op: "add", path: ["d"], value: 4 },
-        { op: "replace", path: ["c"], value: 99 }
+        { op: "remove", path: "/b" },
+        { op: "add", path: "/d", value: 4 },
+        { op: "replace", path: "/c", value: 99 }
       ])
       .toObject()
 
@@ -184,8 +184,8 @@ describe("objectToIterable", () => {
   it("patch operation with test", async () => {
     const result = await objectToIterable({ a: 1, b: 2, c: 3 })
       .patch([
-        { op: "test", path: ["b"], value: 2 }, // Validate b equals 2
-        { op: "replace", path: ["b"], value: 99 }
+        { op: "test", path: "/b", value: 2 }, // Validate b equals 2
+        { op: "replace", path: "/b", value: 99 }
       ])
       .toObject()
 

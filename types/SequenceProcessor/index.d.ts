@@ -37,6 +37,12 @@ export class SequenceProcessor extends GenericBatchIterable<[Path, Value, (numbe
      */
     test(path: import("../lib/path.js").JSONPathType, value: any): this;
     /**
+     * Apply JSON Patch operations to the sequence https://datatracker.ietf.org/doc/html/rfc6902
+     * @param {Array<import("./JSONPointer.js").Operation>} patchArray
+     * @returns {this}
+     */
+    patch(patchArray: Array<import("./JSONPointer.js").Operation>): this;
+    /**
      * Build an object back from the sequence
      * @param {any} [obj] - Options for the sequence to object conversion
      * @param {boolean} [sparse=false] - if true, creates sparse arrays respecting original indexes

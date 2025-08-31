@@ -8,6 +8,7 @@ import replaceOp from "../src/SequenceProcessor/replace.js"
 import removeOp from "../src/SequenceProcessor/remove.js"
 import { toPathObject, Path } from "../src/lib/path.js"
 import { toValueObject, Value } from "../src/lib/value.js"
+import { transformPointerToJSONPath } from "../src/SequenceProcessor/JSONPointer.js"
 
 /**
  * Collects an AsyncIterable<Iterable<T>> into Array<T>
@@ -1650,3 +1651,26 @@ describe("SequenceProcessor replace op", () => {
     )
   })
 })
+
+describe("JSONPointer", () => {
+  const testCases = [
+    { pointer: "/a/b/c", expected: ["a", "b", "c"] },
+    { pointer: "/a/9", expected: ["a", 9] },
+    { pointer: "", expected: [] },
+    { pointer: "/", expected: [''] },
+    { pointer: "/a~1b", expected: ['a/b'] },
+    { pointer: "/c%d", expected: ['c%d'] },
+    { pointer: "/i\\j", expected: ['i\\j'] },
+    { pointer: "/m~0n", expected: ['m~n'] },
+    { pointer: "/ ", expected: [' '] },
+    { pointer: "#/%20", expected: [' '] },
+    { pointer: "#/c%25d", expected: ['c%d'] },
+  ];
+
+  testCases.forEach(({ pointer, expected }) => {
+    it(`should transform JSONPointer "${pointer}" into JSONPath`, () => {
+      const result = transformPointerToJSONPath(pointer);
+      assert.deepEqual(result, expected);
+    });
+  });
+});

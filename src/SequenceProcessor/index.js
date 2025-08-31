@@ -10,6 +10,7 @@ import remove from "./remove.js"
 import replace from "./replace.js"
 import test from "./test.js"
 import { MatcherContainer } from "../lib/pathMatcher.js"
+import {transformPointerToJSONPath} from "./JSONPointer.js"
 
 /**
  * @extends {GenericBatchIterable<[Path, Value, number?, number?]>}
@@ -72,24 +73,28 @@ export class SequenceProcessor extends GenericBatchIterable {
 
   /**
    * Apply JSON Patch operations to the sequence https://datatracker.ietf.org/doc/html/rfc6902
-   * @param {Array<{op: "add", path: import("../lib/path.js").JSONPathType, value: any} | {op: "remove", path: import("../lib/path.js").JSONPathType} | {op: "replace", path: import("../lib/path.js").JSONPathType, value: any} | {op: "test", path: import("../lib/path.js").JSONPathType, value: any}>} patchArray
+   * @param {Array<import("./JSONPointer.js").Operation>} patchArray
    * @returns {this}
    */
   patch(patchArray) {
     for (const operation of patchArray) {
       switch (operation.op) {
         case "add":
-          this.add(operation.path, operation.value)
+          this.add(transformPointerToJSONPath(operation.path), operation.value)
           break
         case "remove":
-          this.remove(operation.path)
+          this.remove(transformPointerToJSONPath(operation.path))
           break
         case "replace":
-          this.replace(operation.path, operation.value)
+          this.replace(transformPointerToJSONPath(operation.path), operation.value)
           break
         case "test":
-          this.test(operation.path, operation.value)
+          this.test(transformPointerToJSONPath(operation.path), operation.value)
           break
+        case "_get":
+        case "copy":
+        case "move":
+          throw new Error(`${operation.op} operation is not supported`)
       }
     }
     return this

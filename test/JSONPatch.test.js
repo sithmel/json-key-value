@@ -15,37 +15,6 @@ function arrayOfStringsToStream(array) {
   return array.map((text) => encoder.encode(text))
 }
 
-/**
- * Convert fast-json-patch operations to our library format
- * @param {Array<any>} fastJsonPatchOps
- * @returns {Array<{op: "add", path: Array<string|number>, value: any} | {op: "remove", path: Array<string|number>} | {op: "replace", path: Array<string|number>, value: any} | {op: "test", path: Array<string|number>, value: any}>}
- */
-function convertPatchOperations(fastJsonPatchOps) {
-  return fastJsonPatchOps.map(op => {
-    // Convert JSON Pointer path to array format
-    const pathArray = op.path === "" ? [] : op.path.split("/").slice(1).map(segment => {
-      // Convert numeric strings to numbers for array indices
-      const num = parseInt(segment, 10)
-      return isNaN(num) ? segment : num
-    })
-    
-    if (op.op === "add" || op.op === "replace" || op.op === "test") {
-      return {
-        op: op.op,
-        path: pathArray,
-        value: op.value
-      }
-    } else if (op.op === "remove") {
-      return {
-        op: op.op,
-        path: pathArray
-      }
-    } else {
-      throw new Error(`Unsupported operation: ${op.op}`)
-    }
-  })
-}
-
 describe("JSONPatch integration with fast-json-patch", () => {
   describe("objectToIterable patch operations", () => {
     it("should apply add operations correctly", async () => {
@@ -54,11 +23,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       
       // Generate patch using fast-json-patch
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       // Apply patch using our library
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       // Verify result matches target
@@ -74,10 +42,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, c: 3 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -91,10 +58,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, b: 99, c: 3 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -137,10 +103,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -161,10 +126,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -180,11 +144,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, b: 2, c: 3 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -198,11 +161,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, c: 3 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -216,11 +178,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, b: 99, c: 3 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -263,11 +224,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -281,12 +241,11 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, b: 99, c: 3, d: 4 }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       // Test with chunked streaming
       const streamLike = arrayOfStringsToStream(['{"a":1,', '"b":2,"c":', '3}'])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -307,11 +266,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const result = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -327,13 +285,12 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const target = { a: 1, b: 2 } // no changes
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       // Should be empty patch
-      assert.deepEqual(convertedPatch, [])
+      assert.deepEqual(fastPatch, [])
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, original)
@@ -343,10 +300,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
       const original = { a: 1, b: 2, c: 3 }
       
       // Create a patch with test operations
-      /** @type {Array<{op: "test", path: Array<string>, value: any} | {op: "replace", path: Array<string>, value: any}>} */
+      /** @type {Array<{op: "test", path: string, value: any} | {op: "replace", path: string, value: any}>} */
       const patch = [
-        { op: "test", path: ["b"], value: 2 },
-        { op: "replace", path: ["b"], value: 99 }
+        { op: "test", path: "/b", value: 2 },
+        { op: "replace", path: "/b", value: 99 }
       ]
       
       const result = await objectToIterable(original)
@@ -359,10 +316,10 @@ describe("JSONPatch integration with fast-json-patch", () => {
     it("should handle test operations that fail", async () => {
       const original = { a: 1, b: 2, c: 3 }
       
-      /** @type {Array<{op: "test", path: Array<string>, value: any} | {op: "replace", path: Array<string>, value: any}>} */
+      /** @type {Array<{op: "test", path: string, value: any} | {op: "replace", path: string, value: any}>} */
       const patch = [
-        { op: "test", path: ["b"], value: 99 }, // This should fail
-        { op: "replace", path: ["b"], value: 77 }
+        { op: "test", path: "/b", value: 99 }, // This should fail
+        { op: "replace", path: "/b", value: 77 }
       ]
       
       await assert.rejects(async () => {
@@ -388,10 +345,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -421,10 +377,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       const result = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       assert.deepEqual(result, target)
@@ -446,17 +401,16 @@ describe("JSONPatch integration with fast-json-patch", () => {
       }
       
       const fastPatch = compare(original, target)
-      const convertedPatch = convertPatchOperations(fastPatch)
       
       // Test with objectToIterable
       const objectResult = await objectToIterable(original)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       // Test with streamToIterable
       const streamLike = arrayOfStringsToStream([JSON.stringify(original)])
       const streamResult = await streamToIterable(streamLike)
-        .patch(convertedPatch)
+        .patch(fastPatch)
         .toObject()
       
       // Both should produce the same result
@@ -476,10 +430,9 @@ describe("JSONPatch integration with fast-json-patch", () => {
       
       for (const target of changes) {
         const fastPatch = compare(current, target)
-        const convertedPatch = convertPatchOperations(fastPatch)
         
         const result = await objectToIterable(current)
-          .patch(convertedPatch)
+          .patch(fastPatch)
           .toObject()
         
         assert.deepEqual(result, target)
