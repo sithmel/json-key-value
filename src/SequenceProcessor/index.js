@@ -1,6 +1,6 @@
 //@ts-check
-import { Path } from "../lib/path.js"
-import { Value } from "../lib/value.js"
+import { Path, toPathObject } from "../lib/path.js"
+import { Value, toValueObject } from "../lib/value.js"
 import { GenericBatchIterable, BatchIterable } from "batch-iterable"
 import includes from "./includes.js"
 import SequenceToObject from "../SequenceToObject.js"
@@ -29,46 +29,72 @@ export class SequenceProcessor extends GenericBatchIterable {
 
   /**
    * add a value to the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.1
-   * @param {Path} path
-   * @param {Value} value
+   * @param {import("../lib/path.js").JSONPathType} path
+   * @param {any} value
    * @returns {this}
    */
   add(path, value) {
-    this.iterable = add(this.iterable, path, value)
+    this.iterable = add(this.iterable, toPathObject(path), toValueObject(value))
     return this
   }
 
   /**
    * remove a value to the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.2
-   * @param {Path} path
+   * @param {import("../lib/path.js").JSONPathType} path
    * @returns {this}
    */
   remove(path) {
-    this.iterable = remove(this.iterable, path)
+    this.iterable = remove(this.iterable, toPathObject(path))
     return this
   }
 
   /**
    * replace a value in the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.3
-   * @param {Path} path
-   * @param {Value} value
+   * @param {import("../lib/path.js").JSONPathType} path
+   * @param {any} value
    * @returns {this}
    */
   replace(path, value) {
-    this.iterable = replace(this.iterable, path, value)
+    this.iterable = replace(this.iterable, toPathObject(path), toValueObject(value))
     return this
   }
 
   /**
    * test if a value is in the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.6
-   * @param {Path} path
-   * @param {Value} value
+   * @param {import("../lib/path.js").JSONPathType} path
+   * @param {any} value
    * @returns {this}
    */
   test(path, value) {
-    this.iterable = test(this.iterable, path, value)
+    this.iterable = test(this.iterable, toPathObject(path), toValueObject(value))
     return this
   }
+
+  /**
+   * Apply JSON Patch operations to the sequence https://datatracker.ietf.org/doc/html/rfc6902
+   * @param {Array<{op: "add", path: import("../lib/path.js").JSONPathType, value: any} | {op: "remove", path: import("../lib/path.js").JSONPathType} | {op: "replace", path: import("../lib/path.js").JSONPathType, value: any} | {op: "test", path: import("../lib/path.js").JSONPathType, value: any}>} patchArray
+   * @returns {this}
+   */
+  patch(patchArray) {
+    for (const operation of patchArray) {
+      switch (operation.op) {
+        case "add":
+          this.add(operation.path, operation.value)
+          break
+        case "remove":
+          this.remove(operation.path)
+          break
+        case "replace":
+          this.replace(operation.path, operation.value)
+          break
+        case "test":
+          this.test(operation.path, operation.value)
+          break
+      }
+    }
+    return this
+  }
+
 
   /**
    * Build an object back from the sequence

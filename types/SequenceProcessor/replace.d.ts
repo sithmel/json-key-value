@@ -7,11 +7,7 @@
  * @param {Value} value
  * @returns {AsyncIterable<Iterable<[Path, Value, number?, number?]>>}
  */
-export default function replace(
-  asyncIterable: AsyncIterable<Iterable<[Path, Value, number?, number?]>>,
-  pathToReplace: Path,
-  value: Value,
-): AsyncIterable<Iterable<[Path, Value, number?, number?]>>
-import { Path } from "../lib/path.js"
-import { Value } from "../lib/value.js"
+export default function replace(asyncIterable: AsyncIterable<Iterable<[Path, Value, number?, number?]>>, pathToReplace: Path, value: Value): AsyncIterable<Iterable<[Path, Value, number?, number?]>>;
+import { Path } from "../lib/path.js";
+import { Value } from "../lib/value.js";
 //# sourceMappingURL=replace.d.ts.map

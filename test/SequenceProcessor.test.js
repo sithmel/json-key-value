@@ -314,7 +314,7 @@ describe("SequenceProcessor test op", () => {
     )
   })
 
-  it.only("handles sparse arrays correctly", async () => {
+  it("handles sparse arrays correctly", async () => {
     const seq = singleBatchSequence([
       [["sparse", 0], "first"],
       [["sparse", 5], "sixth"],
