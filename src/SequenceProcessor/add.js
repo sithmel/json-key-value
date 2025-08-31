@@ -116,9 +116,9 @@ export default async function* add(asyncIterable, pathToAdd, value) {
           const currentPathFirstDifferentSegment =
             currentPath.array[pathToAdd.length - 1]
           if (typeof currentPathFirstDifferentSegment === "number") {
-
             const newPathArray = [...currentPath.array]
-            newPathArray[pathToAdd.length - 1] = currentPathFirstDifferentSegment + 1
+            newPathArray[pathToAdd.length - 1] =
+              currentPathFirstDifferentSegment + 1
             yield [new Path(newPathArray), currentValue]
           } else {
             throw new Error("This should not be happening")
@@ -164,7 +164,8 @@ export default async function* add(asyncIterable, pathToAdd, value) {
               yield* getSequenceFromValue(pathToAdd, value)
               // shift current item
               const newPathArray = [...currentPath.array]
-              newPathArray[pathToAdd.length - 1] = currentPathFirstDifferentSegment + 1
+              newPathArray[pathToAdd.length - 1] =
+                currentPathFirstDifferentSegment + 1
               yield [new Path(newPathArray), currentValue]
 
               stateMachine.transition(TRANSITIONS.INSERT)

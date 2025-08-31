@@ -109,10 +109,11 @@ export default async function* remove(asyncIterable, pathToRemove) {
         // if this is an array I need to fix the indexes
         const currentPathFirstDifferentSegment =
           currentPath.array[newCommonPathIndex]
-        
+
         if (typeof currentPathFirstDifferentSegment === "number") {
           const newPathArray = [...currentPath.array]
-          newPathArray[newCommonPathIndex] = currentPathFirstDifferentSegment - 1
+          newPathArray[newCommonPathIndex] =
+            currentPathFirstDifferentSegment - 1
           yield [new Path(newPathArray), value]
           continue
         }
@@ -155,7 +156,7 @@ export default async function* remove(asyncIterable, pathToRemove) {
 
     const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
     yield [[pathToRemoveContainer, emptyValue]]
-    
+
     stateMachine.transition(TRANSITIONS.FINISHED)
   }
 

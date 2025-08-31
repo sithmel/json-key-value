@@ -38,34 +38,28 @@ describe("streamToIterable", () => {
 
   it("add operation", async () => {
     const streamLike = arrayOfStringsToStream(['{"a":1,"c":3}'])
-    const result = await streamToIterable(streamLike)
-      .add(["b"], 2)
-      .toObject()
+    const result = await streamToIterable(streamLike).add(["b"], 2).toObject()
 
     assert.deepEqual(result, { a: 1, c: 3, b: 2 })
   })
 
   it("remove operation", async () => {
     const streamLike = arrayOfStringsToStream(['{"a":1,"b":2,"c":3}'])
-    const result = await streamToIterable(streamLike)
-      .remove(["b"])
-      .toObject()
+    const result = await streamToIterable(streamLike).remove(["b"]).toObject()
 
     assert.deepEqual(result, { a: 1, c: 3 })
   })
 
   it("test operation", async () => {
     const streamLike = arrayOfStringsToStream(['{"a":1,"b":2,"c":3}'])
-    const array = await streamToIterable(streamLike)
-      .test(["b"], 2)
-      .toArray()
+    const array = await streamToIterable(streamLike).test(["b"], 2).toArray()
     const seq = array.map(decodePathAndValue)
 
     // test operation is pass-through: yields all items unchanged if test passes
     // We only check path and value, not character positions which can vary
     assert.equal(seq.length, 3)
     assert.deepEqual(seq[0].slice(0, 2), [["a"], 1])
-    assert.deepEqual(seq[1].slice(0, 2), [["b"], 2]) 
+    assert.deepEqual(seq[1].slice(0, 2), [["b"], 2])
     assert.deepEqual(seq[2].slice(0, 2), [["c"], 3])
   })
 
@@ -93,7 +87,7 @@ describe("streamToIterable", () => {
       .patch([
         { op: "remove", path: "/b" },
         { op: "add", path: "/d", value: 4 },
-        { op: "replace", path: "/c", value: 99 }
+        { op: "replace", path: "/c", value: 99 },
       ])
       .toObject()
 
@@ -105,7 +99,7 @@ describe("streamToIterable", () => {
     const result = await streamToIterable(streamLike)
       .patch([
         { op: "test", path: "/b", value: 2 }, // Validate b equals 2
-        { op: "replace", path: "/b", value: 99 }
+        { op: "replace", path: "/b", value: 99 },
       ])
       .toObject()
 
@@ -148,8 +142,8 @@ describe("objectToIterable", () => {
     // test operation is pass-through: yields all items unchanged if test passes
     assert.deepEqual(seq, [
       [["a"], 1, null, null],
-      [["b"], 2, null, null], 
-      [["c"], 3, null, null]
+      [["b"], 2, null, null],
+      [["c"], 3, null, null],
     ])
   })
 
@@ -174,7 +168,7 @@ describe("objectToIterable", () => {
       .patch([
         { op: "remove", path: "/b" },
         { op: "add", path: "/d", value: 4 },
-        { op: "replace", path: "/c", value: 99 }
+        { op: "replace", path: "/c", value: 99 },
       ])
       .toObject()
 
@@ -185,7 +179,7 @@ describe("objectToIterable", () => {
     const result = await objectToIterable({ a: 1, b: 2, c: 3 })
       .patch([
         { op: "test", path: "/b", value: 2 }, // Validate b equals 2
-        { op: "replace", path: "/b", value: 99 }
+        { op: "replace", path: "/b", value: 99 },
       ])
       .toObject()
 

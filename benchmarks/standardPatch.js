@@ -35,7 +35,7 @@ const patch = [
       to_user_name: null,
     },
   },
-  { op: "remove", path: "/2000" }
+  { op: "remove", path: "/2000" },
 ]
 
 async function patchJSONFile(JSONPath, patch) {
@@ -52,9 +52,6 @@ async function patchJSONFile(JSONPath, patch) {
 
 const JSON_PATH = path.join("test", "samples", "twitter.json")
 
-perform(
-  "Patching a big file with fast-json-patch",
-  async () => {
-    const obj = await patchJSONFile(JSON_PATH, patch)
-  },
-)
+perform("Patching a big file with fast-json-patch", async () => {
+  const obj = await patchJSONFile(JSON_PATH, patch)
+})

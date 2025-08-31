@@ -726,9 +726,7 @@ describe("SequenceProcessor remove op", () => {
       [[2], "third"],
     ])
 
-    const result = await collectAndDecode(
-      removeOp(seq, toPathObject([1])),
-    )
+    const result = await collectAndDecode(removeOp(seq, toPathObject([1])))
 
     // Should add empty container since no siblings were found
     assert.deepEqual(result, [
@@ -736,7 +734,6 @@ describe("SequenceProcessor remove op", () => {
       [[1], "third"],
     ])
   })
-
 })
 
 describe("SequenceProcessor add op", () => {
@@ -1676,20 +1673,20 @@ describe("JSONPointer", () => {
     { pointer: "/a/b/c", expected: ["a", "b", "c"] },
     { pointer: "/a/9", expected: ["a", 9] },
     { pointer: "", expected: [] },
-    { pointer: "/", expected: [''] },
-    { pointer: "/a~1b", expected: ['a/b'] },
-    { pointer: "/c%d", expected: ['c%d'] },
-    { pointer: "/i\\j", expected: ['i\\j'] },
-    { pointer: "/m~0n", expected: ['m~n'] },
-    { pointer: "/ ", expected: [' '] },
-    { pointer: "#/%20", expected: [' '] },
-    { pointer: "#/c%25d", expected: ['c%d'] },
-  ];
+    { pointer: "/", expected: [""] },
+    { pointer: "/a~1b", expected: ["a/b"] },
+    { pointer: "/c%d", expected: ["c%d"] },
+    { pointer: "/i\\j", expected: ["i\\j"] },
+    { pointer: "/m~0n", expected: ["m~n"] },
+    { pointer: "/ ", expected: [" "] },
+    { pointer: "#/%20", expected: [" "] },
+    { pointer: "#/c%25d", expected: ["c%d"] },
+  ]
 
   testCases.forEach(({ pointer, expected }) => {
     it(`should transform JSONPointer "${pointer}" into JSONPath`, () => {
-      const result = transformPointerToJSONPath(pointer);
-      assert.deepEqual(result, expected);
-    });
-  });
-});
+      const result = transformPointerToJSONPath(pointer)
+      assert.deepEqual(result, expected)
+    })
+  })
+})

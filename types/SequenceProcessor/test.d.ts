@@ -9,7 +9,11 @@
  * @param {Value} valueToTest
  * @returns {AsyncIterable<Iterable<T>>}
  */
-export default function test<T extends [Path, Value, number?, number?]>(asyncIterable: AsyncIterable<Iterable<T>>, pathToTest: Path, valueToTest: Value): AsyncIterable<Iterable<T>>;
-import { Path } from "../lib/path.js";
-import { Value } from "../lib/value.js";
+export default function test<T extends [Path, Value, number?, number?]>(
+  asyncIterable: AsyncIterable<Iterable<T>>,
+  pathToTest: Path,
+  valueToTest: Value,
+): AsyncIterable<Iterable<T>>
+import { Path } from "../lib/path.js"
+import { Value } from "../lib/value.js"
 //# sourceMappingURL=test.d.ts.map

@@ -264,7 +264,9 @@ async function filterFile(JSONURL, indexURL, lineNumber) {
 ```
 
 ### Patch an object on the fly
+
 You can a [rfc6902 patch](https://datatracker.ietf.org/doc/html/rfc6902) to modify a JSON on the fly without ever loading it in memory.
+
 ```js
 import fs from "fs"
 import { streamToIterable } from "jsonaut"
@@ -566,10 +568,11 @@ This will print:
 More about [includes](#includes) syntax below!
 
 ### Modify the sequence
+
 The sequence can be modified using add, remove, replace methods. They are implemented following [rfc6902](https://datatracker.ietf.org/doc/html/rfc6902).
 
 - **add**: add a value to a specific path. It throws an error ff the container is not found. If the container is an array, it inserts the value and shifts the other items
-- **remove**: remove a path. It throws an error if the container of the item to remove is not found. If the item is inside an array, it compacts the array 
+- **remove**: remove a path. It throws an error if the container of the item to remove is not found. If the item is inside an array, it compacts the array
 - **replace**: it removes a value on a certain path with another
 - **test**: it returns the sequence but it throws an error if the path and values in the sequence are not found
 - **patch**: it allows to use a [rfc6902](https://datatracker.ietf.org/doc/html/rfc6902) compatible object to implement the changes. It has some limitation (no move or copy operations are allowed) but It is cross compatible with the output of the "compare" function in [json-fast-patch](https://www.npmjs.com/package/fast-json-patch).
@@ -583,7 +586,9 @@ await streamToIterable(readStream)
   .replace(["invoices", "10", "itemSold"], 12)
   .remove(["invoices", "20"])
 ```
+
 Which is equivalent to:
+
 ```js
 await streamToIterable(readStream)
   .patch([

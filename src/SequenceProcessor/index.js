@@ -10,7 +10,7 @@ import remove from "./remove.js"
 import replace from "./replace.js"
 import test from "./test.js"
 import { MatcherContainer } from "../lib/pathMatcher.js"
-import {transformPointerToJSONPath} from "./JSONPointer.js"
+import { transformPointerToJSONPath } from "./JSONPointer.js"
 
 /**
  * @extends {GenericBatchIterable<[Path, Value, number?, number?]>}
@@ -56,7 +56,11 @@ export class SequenceProcessor extends GenericBatchIterable {
    * @returns {this}
    */
   replace(path, value) {
-    this.iterable = replace(this.iterable, toPathObject(path), toValueObject(value))
+    this.iterable = replace(
+      this.iterable,
+      toPathObject(path),
+      toValueObject(value),
+    )
     return this
   }
 
@@ -67,7 +71,11 @@ export class SequenceProcessor extends GenericBatchIterable {
    * @returns {this}
    */
   test(path, value) {
-    this.iterable = test(this.iterable, toPathObject(path), toValueObject(value))
+    this.iterable = test(
+      this.iterable,
+      toPathObject(path),
+      toValueObject(value),
+    )
     return this
   }
 
@@ -86,7 +94,10 @@ export class SequenceProcessor extends GenericBatchIterable {
           this.remove(transformPointerToJSONPath(operation.path))
           break
         case "replace":
-          this.replace(transformPointerToJSONPath(operation.path), operation.value)
+          this.replace(
+            transformPointerToJSONPath(operation.path),
+            operation.value,
+          )
           break
         case "test":
           this.test(transformPointerToJSONPath(operation.path), operation.value)
@@ -100,18 +111,20 @@ export class SequenceProcessor extends GenericBatchIterable {
     return this
   }
 
-
   /**
    * Build an object back from the sequence
    * @param {any} [obj] - Options for the sequence to object conversion
    * @param {boolean} [sparse=false] - if true, creates sparse arrays respecting original indexes
-  * @returns {Promise<any>}
+   * @returns {Promise<any>}
    */
   async toObject(obj = undefined, sparse = false) {
-    const builder = await this.reduce((builder, [path, value]) => {
-      builder.add(path, value)
-      return builder
-    }, new SequenceToObject(obj, sparse))
+    const builder = await this.reduce(
+      (builder, [path, value]) => {
+        builder.add(path, value)
+        return builder
+      },
+      new SequenceToObject(obj, sparse),
+    )
 
     return builder.getObject()
   }

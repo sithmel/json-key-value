@@ -1,5 +1,3 @@
-
-
 //@ts-check
 
 /** @typedef {{op: "_get", path: string}} GetOperation */
@@ -27,27 +25,26 @@ export function transformPointerToJSONPath(pointer) {
 
   // Handle empty string - root reference
   if (pointer === "") return []
-  
-  
+
   // Must start with / for non-empty pointers
   if (!pointer.startsWith("/")) {
     throw new Error("Invalid JSON Pointer: must start with /")
   }
-  
+
   // Split by / and remove the first empty element (before the leading /)
   const tokens = pointer.split("/").slice(1)
-  
-  return tokens.map(token => {
+
+  return tokens.map((token) => {
     token = unescape ? decodeURIComponent(token) : token
     // Decode escape sequences according to RFC 6901
     // ~1 becomes / and ~0 becomes ~
     let decoded = token.replace(/~1/g, "/").replace(/~0/g, "~")
-    
+
     // Try to convert to number if it looks like an array index
     if (/^\d+$/.test(decoded)) {
       return parseInt(decoded, 10)
     }
-    
+
     return decoded
   })
 }
