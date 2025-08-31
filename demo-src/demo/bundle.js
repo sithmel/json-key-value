@@ -21,12 +21,73 @@
     }
   }
 
+  /**
+   *
+   * @param {any} value1
+   * @param {any} value2
+   * @returns {boolean}
+   */
+  function areDeeplyEqual(value1, value2) {
+    // works with strings, numbers, booleans, null, undefined
+    // works also with array and objects, if they are the same
+    if (value1 === value2) {
+      return true
+    }
+    // if either values are null or undefined, they are not equal
+    if (value1 == null || value2 == null) {
+      return false
+    }
+
+    // at this point we only have Object and Array left.
+    // they must be of the same type to be equal
+
+    // both arrays
+    if (Array.isArray(value1) && Array.isArray(value2)) {
+      if (value1.length !== value2.length) return false
+
+      return value1.every((elem, index) => {
+        return areDeeplyEqual(elem, value2[index])
+      })
+    }
+    if (Array.isArray(value1) || Array.isArray(value2)) {
+      // value1 is an array, value2 is an object
+      return false
+    }
+    if (isArrayOrObject(value1) && isArrayOrObject(value2)) {
+      // both objects
+      const keys1 = Object.keys(value1)
+      // different number of keys
+      if (keys1.length !== Object.keys(value2).length) return false
+
+      for (let key in value1) {
+        if (!(key in value2)) return false
+        const isEqual = areDeeplyEqual(value1[key], value2[key])
+        if (!isEqual) return false
+      }
+
+      return true
+    }
+    // neither is an array or object
+    return false
+  }
+
+  /**
+   * Return true if value is an array or object
+   * @private
+   * @param {any} value
+   * @returns {boolean}
+   */
+  function isArrayOrObject(value) {
+    return value != null && typeof value === "object"
+  }
+
   const decoder = new TextDecoder("utf8", { fatal: true, ignoreBOM: true })
   const encoder$1 = new TextEncoder()
   /**
+   * @template T
    * @private
    * @param {Uint8Array} buffer
-   * @returns {any}
+   * @returns {T}
    */
   function decodeAndParse(buffer) {
     return JSON.parse(decoder.decode(buffer))
@@ -119,20 +180,26 @@
     }
   }
 
+  /**
+   * @template T
+   */
   class CachedValue extends Value {
     /** @param {Uint8Array} data */
     constructor(data) {
       super()
       this.data = data
-      /** @type {?string} */
+      /** @type {?T} */
       this.cache = null
     }
-    /** @return {any} */
+    /** @return {T} */
     get decoded() {
       if (this.cache != null) {
         return this.cache
       }
       this.cache = decodeAndParse(this.data)
+      if (this.cache == null) {
+        throw new Error("Decoded value should not be null")
+      }
       return this.cache
     }
 
@@ -140,11 +207,19 @@
     get encoded() {
       return this.data
     }
+  }
 
+  /**
+   * @extends {CachedValue<string>}
+   */
+  class CachedString extends CachedValue {
     /**
      * @param {Value} otherValue
      * @return {boolean} */
     isEqual(otherValue) {
+      if (!(otherValue instanceof CachedString)) {
+        return false
+      }
       return (
         this.encoded.byteLength === otherValue.encoded.byteLength &&
         this.encoded.every(
@@ -154,9 +229,40 @@
     }
   }
 
-  class CachedString extends CachedValue {}
-  class CachedNumber extends CachedValue {}
-  class CachedSubObject extends CachedValue {}
+  /**
+   * @extends {CachedValue<number>}
+   */
+  class CachedNumber extends CachedValue {
+    /**
+     * @param {Value} otherValue
+     * @return {boolean} */
+    isEqual(otherValue) {
+      if (!(otherValue instanceof CachedNumber)) {
+        return false
+      }
+      return (
+        this.encoded.byteLength === otherValue.encoded.byteLength &&
+        this.encoded.every(
+          (value, index) => value === otherValue.encoded[index],
+        )
+      )
+    }
+  }
+
+  /**
+   * @extends {CachedValue<any>}
+   */
+  class CachedSubObject extends CachedValue {
+    /**
+     * @param {Value} otherValue
+     * @return {boolean} */
+    isEqual(otherValue) {
+      if (!(otherValue instanceof CachedSubObject)) {
+        return false
+      }
+      return areDeeplyEqual(this.decoded, otherValue.decoded)
+    }
+  }
 
   const falseValue = new False()
   const trueValue = new True()
@@ -1182,9 +1288,11 @@
     /**
      * Convert a sequence to a js object
      * @param {any} [obj]
+     * @param {boolean} [sparse=false] - if true, creates sparse arrays respecting original indexes
      */
-    constructor(obj = undefined) {
+    constructor(obj = undefined, sparse = false) {
       this.object = obj
+      this.sparse = sparse
       this.previousPath = new Path()
     }
 
@@ -1205,10 +1313,16 @@
       }
 
       if (Array.isArray(currentObject) && pathSegment != null) {
-        if (isPreviousCommonPathSegment) {
-          return currentObject.length - 1 // same element
+        if (this.sparse) {
+          // In sparse mode, use the original index directly
+          return pathSegment
         } else {
-          return currentObject.length // new element
+          // In compact mode, use length-based indexing
+          if (isPreviousCommonPathSegment) {
+            return currentObject.length - 1 // same element
+          } else {
+            return currentObject.length // new element
+          }
         }
       }
       throw new Error("Invalid path segment")

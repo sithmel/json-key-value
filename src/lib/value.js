@@ -1,5 +1,10 @@
 //@ts-check
-import { decodeAndParse, stringifyAndEncode, isArrayOrObject } from "./utils.js"
+import {
+  areDeeplyEqual,
+  decodeAndParse,
+  stringifyAndEncode,
+  isArrayOrObject,
+} from "./utils.js"
 
 const FALSE_BUFFER = stringifyAndEncode(false)
 const NULL_BUFFER = stringifyAndEncode(null)
@@ -77,20 +82,26 @@ export class Null extends Value {
   }
 }
 
+/**
+ * @template T
+ */
 export class CachedValue extends Value {
   /** @param {Uint8Array} data */
   constructor(data) {
     super()
     this.data = data
-    /** @type {?string} */
+    /** @type {?T} */
     this.cache = null
   }
-  /** @return {any} */
+  /** @return {T} */
   get decoded() {
     if (this.cache != null) {
       return this.cache
     }
     this.cache = decodeAndParse(this.data)
+    if (this.cache == null) {
+      throw new Error("Decoded value should not be null")
+    }
     return this.cache
   }
 
@@ -98,11 +109,19 @@ export class CachedValue extends Value {
   get encoded() {
     return this.data
   }
+}
 
+/**
+ * @extends {CachedValue<string>}
+ */
+export class CachedString extends CachedValue {
   /**
    * @param {Value} otherValue
    * @return {boolean} */
   isEqual(otherValue) {
+    if (!(otherValue instanceof CachedString)) {
+      return false
+    }
     return (
       this.encoded.byteLength === otherValue.encoded.byteLength &&
       this.encoded.every((value, index) => value === otherValue.encoded[index])
@@ -110,9 +129,38 @@ export class CachedValue extends Value {
   }
 }
 
-export class CachedString extends CachedValue {}
-export class CachedNumber extends CachedValue {}
-export class CachedSubObject extends CachedValue {}
+/**
+ * @extends {CachedValue<number>}
+ */
+export class CachedNumber extends CachedValue {
+  /**
+   * @param {Value} otherValue
+   * @return {boolean} */
+  isEqual(otherValue) {
+    if (!(otherValue instanceof CachedNumber)) {
+      return false
+    }
+    return (
+      this.encoded.byteLength === otherValue.encoded.byteLength &&
+      this.encoded.every((value, index) => value === otherValue.encoded[index])
+    )
+  }
+}
+
+/**
+ * @extends {CachedValue<any>}
+ */
+export class CachedSubObject extends CachedValue {
+  /**
+   * @param {Value} otherValue
+   * @return {boolean} */
+  isEqual(otherValue) {
+    if (!(otherValue instanceof CachedSubObject)) {
+      return false
+    }
+    return areDeeplyEqual(this.decoded, otherValue.decoded)
+  }
+}
 
 export const falseValue = new False()
 export const trueValue = new True()

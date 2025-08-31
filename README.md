@@ -25,7 +25,8 @@ import { streamToIterable } from "jsonaut"
 const readStream = fs.createReadStream("invoices.json")
 
 const obj = await streamToIterable(readStream)
-  .includes (`
+  .includes(
+    `
     'invoices' (
       0..2 (
         # only these fields from the first 2 invoices
@@ -172,7 +173,7 @@ Let's assume we have a JSON containing a list of objects:
 ]
 ```
 
-This function creates an JSON containing the indeces of the various objects:
+This function creates an JSON containing the indexes of the various objects:
 
 ```js
 import fs from "fs"
@@ -260,6 +261,29 @@ async function filterFile(JSONURL, indexURL, lineNumber) {
   const json = await responseJSON.json()
   return json
 }
+```
+
+### Patch an object on the fly
+You can a [rfc6902 patch](https://datatracker.ietf.org/doc/html/rfc6902) to modify a JSON on the fly without ever loading it in memory.
+```js
+import fs from "fs"
+import { streamToIterable } from "jsonaut"
+
+const readStream = fs.createReadStream(inputFilePath)
+const writeStream = fs.createWriteStream(outputFilePath)
+
+await streamToIterable(readStream)
+  .patch([
+    {op: 'add', '/invoices/0', value: { productName: "piano catapult", itemsSold: 40, unitPrice: 120}},
+    {op: 'remove', '/invoices/500'},
+  ])
+  .toIterableBuffer()
+  .forEach((data) => {
+    writeStream.write(data)
+  })
+
+writeStream.end()
+readStream.destroy()
 ```
 
 # Main concepts
@@ -540,6 +564,35 @@ This will print:
 ```
 
 More about [includes](#includes) syntax below!
+
+### Modify the sequence
+The sequence can be modified using add, remove, replace methods. They are implemented following [rfc6902](https://datatracker.ietf.org/doc/html/rfc6902).
+
+- **add**: add a value to a specific path. It throws an error ff the container is not found. If the container is an array, it inserts the value and shifts the other items
+- **remove**: remove a path. It throws an error if the container of the item to remove is not found. If the item is inside an array, it compacts the array 
+- **replace**: it removes a value on a certain path with another
+- **test**: it returns the sequence but it throws an error if the path and values in the sequence are not found
+- **patch**: it allows to use a [rfc6902](https://datatracker.ietf.org/doc/html/rfc6902) compatible object to implement the changes. It has some limitation (no move or copy operations are allowed) but It is cross compatible with the output of the "compare" function in [json-fast-patch](https://www.npmjs.com/package/fast-json-patch).
+
+Example:
+
+```js
+await streamToIterable(readStream)
+  .add(["invoices", "3"], {productName: 'piano catapult', itemSold: 3, })
+  .test([["invoices", "10", "productName"], 'Fake beard')
+  .replace(["invoices", "10", "itemSold"], 12)
+  .remove(["invoices", "20"])
+```
+Which is equivalent to:
+```js
+await streamToIterable(readStream)
+  .patch([
+    {op: 'add', path: "/invoices/3", value: {productName: 'piano catapult', itemSold: 3 }}
+    {op: 'test', path: "/invoices/10/productName", value: 'Fake beard'},
+    {op: 'replace', path: "/invoices/10/itemSold", value: 12},
+    {op: 'remove', path: '/invoices/20'}
+  ])
+```
 
 ### Buffer position
 

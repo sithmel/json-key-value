@@ -19,6 +19,17 @@ describe("ObjParser", () => {
       }
     }
   })
+  it("works with empty object", () => {
+    const obj = {}
+    parse(obj)
+    assert.deepEqual(builder.object, obj)
+  })
+  it("works with empty array", () => {
+    const obj = []
+    parse(obj)
+    assert.deepEqual(builder.object, obj)
+  })
+
   it("works parsing nested objects", () => {
     const obj = { a: 1, b: 2, obj: { nested: 1 } }
     parse(obj)

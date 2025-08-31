@@ -20,9 +20,11 @@ class SequenceToObject {
   /**
    * Convert a sequence to a js object
    * @param {any} [obj]
+   * @param {boolean} [sparse=false] - if true, creates sparse arrays respecting original indexes
    */
-  constructor(obj = undefined) {
+  constructor(obj = undefined, sparse = false) {
     this.object = obj
+    this.sparse = sparse
     this.previousPath = new Path()
   }
 
@@ -39,10 +41,16 @@ class SequenceToObject {
     }
 
     if (Array.isArray(currentObject) && pathSegment != null) {
-      if (isPreviousCommonPathSegment) {
-        return currentObject.length - 1 // same element
+      if (this.sparse) {
+        // In sparse mode, use the original index directly
+        return pathSegment
       } else {
-        return currentObject.length // new element
+        // In compact mode, use length-based indexing
+        if (isPreviousCommonPathSegment) {
+          return currentObject.length - 1 // same element
+        } else {
+          return currentObject.length // new element
+        }
       }
     }
     throw new Error("Invalid path segment")

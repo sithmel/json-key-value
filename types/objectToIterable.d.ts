@@ -4,15 +4,12 @@
  * @param {Object} [options]
  * @param {number} [options.maxDepth=Infinity] - Max parsing depth
  * @param {(arg0: Path) => boolean} [options.isMaxDepthReached=null] - Max parsing depth
- * @returns {ObjectSequenceProcessor}
+ * @returns {SequenceProcessor}
  */
-export function objectToIterable(
-  obj: any,
-  options?: {
-    maxDepth?: number | undefined
-    isMaxDepthReached?: ((arg0: Path) => boolean) | undefined
-  },
-): ObjectSequenceProcessor
-import { Path } from "./lib/path.js"
-import { ObjectSequenceProcessor } from "./SequenceProcessor/index.js"
+export function objectToIterable(obj: any, options?: {
+    maxDepth?: number | undefined;
+    isMaxDepthReached?: ((arg0: Path) => boolean) | undefined;
+}): SequenceProcessor;
+import { Path } from "./lib/path.js";
+import { SequenceProcessor } from "./SequenceProcessor/index.js";
 //# sourceMappingURL=objectToIterable.d.ts.map

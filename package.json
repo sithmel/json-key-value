@@ -29,8 +29,9 @@
   },
   "homepage": "https://github.com/sithmel/jsonaut#readme",
   "devDependencies": {
-    "@types/node": "^24.0.10",
-    "@types/web": "^0.0.245",
+    "@types/node": "^24.0.14",
+    "@types/web": "^0.0.250",
+    "fast-json-patch": "^3.1.1",
     "prettier": "^3.6.2",
     "typedoc": "^0.28.7",
     "typescript": "^5.8.3"

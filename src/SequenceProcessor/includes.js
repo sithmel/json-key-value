@@ -1,3 +1,4 @@
+// @ts-check
 import { Path } from "../lib/path.js"
 import { Value } from "../lib/value.js"
 import parseIncludes from "../lib/pathMatcherParser.js"
@@ -5,7 +6,7 @@ import { MatcherContainer } from "../lib/pathMatcher.js"
 
 /**
  * Filters an async iterable based on the `includes` expression.
- * @template {[Path, Value] | [Path, Value, number, number]} T
+ * @template {[Path, Value, number?, number?]} T
  * @param {AsyncIterable<Iterable<T>>} asyncIterable
  * @param {string|MatcherContainer} includes
  * @returns {AsyncIterable<Iterable<T>>}
