@@ -63,18 +63,17 @@ const STATE_MAP = {
 
 /**
  * remove a value to the sequence https://datatracker.ietf.org/doc/html/rfc6902#section-4.2
- * @template {[Path, Value, number?, number?]} T
- * @param {AsyncIterable<Iterable<T>>} asyncIterable
+ * @param {AsyncIterable<Iterable<[Path, Value, number?, number?]>>} asyncIterable
  * @param {Path} pathToRemove
- * @returns {AsyncIterable<Iterable<T>>}
+ * @returns {AsyncIterable<Iterable<[Path, Value, number?, number?]>>}
  */
 export default async function* remove(asyncIterable, pathToRemove) {
   const stateMachine = new StateMachine(STATE_MAP, STATES.SEARCHING)
   const pathToRemoveLastSegment = pathToRemove.array[pathToRemove.length - 1]
 
   /**
-   * @param {Iterable<T>} iterable
-   * @returns {Iterable<T>}
+   * @param {Iterable<[Path, Value, number?, number?]>} iterable
+   * @returns {Iterable<[Path, Value, number?, number?]>}
    */
   function* inner(iterable) {
     for (const item of iterable) {
@@ -82,7 +81,7 @@ export default async function* remove(asyncIterable, pathToRemove) {
         yield item
         continue
       }
-      const [currentPath] = item
+      const [currentPath, value] = item
       const newCommonPathIndex = currentPath.getCommonPathIndex(pathToRemove)
 
       if (newCommonPathIndex === pathToRemove.length) {
@@ -110,9 +109,12 @@ export default async function* remove(asyncIterable, pathToRemove) {
         // if this is an array I need to fix the indexes
         const currentPathFirstDifferentSegment =
           currentPath.array[newCommonPathIndex]
+        
         if (typeof currentPathFirstDifferentSegment === "number") {
-          currentPath.array[newCommonPathIndex] =
-            currentPathFirstDifferentSegment - 1
+          const newPathArray = [...currentPath.array]
+          newPathArray[newCommonPathIndex] = currentPathFirstDifferentSegment - 1
+          yield [new Path(newPathArray), value]
+          continue
         }
         // I don't need to compact items if they are not array items
       } else if (stateMachine.is(STATES.ADD_EMPTY_CONTAINER)) {
@@ -123,9 +125,7 @@ export default async function* remove(asyncIterable, pathToRemove) {
             ? emptyArrayValue
             : emptyObjValue
         const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
-        yield /** @type {T} */ (
-          /** @type {unknown} */ ([pathToRemoveContainer, emptyValue])
-        )
+        yield [pathToRemoveContainer, emptyValue]
 
         stateMachine.transition(TRANSITIONS.FINISHED)
       }
@@ -154,9 +154,8 @@ export default async function* remove(asyncIterable, pathToRemove) {
         : emptyObjValue
 
     const pathToRemoveContainer = new Path(pathToRemove.array.slice(0, -1))
-    yield /** @type {Iterable<T>} */ (
-      /** @type {unknown} */ ([[pathToRemoveContainer, emptyValue]])
-    )
+    yield [[pathToRemoveContainer, emptyValue]]
+    
     stateMachine.transition(TRANSITIONS.FINISHED)
   }
 

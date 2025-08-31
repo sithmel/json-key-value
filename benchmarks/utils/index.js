@@ -16,7 +16,7 @@ export function stats(results) {
 
 export default async function perform(title, func, options = {}) {
   const formatter = new Intl.NumberFormat()
-  const { times = 400 } = options
+  const { times = 100 } = options
   console.log(`\x1b[43m* ${title} \x1b[0m\n`)
   console.log(`The benchmarks will be executed ${times} times.`)
   const timings = []

@@ -718,6 +718,25 @@ describe("SequenceProcessor remove op", () => {
       [["other"], "unchanged"],
     ])
   })
+
+  it("removes index from array in root", async () => {
+    const seq = singleBatchSequence([
+      [[0], "first"],
+      [[1], "second"],
+      [[2], "third"],
+    ])
+
+    const result = await collectAndDecode(
+      removeOp(seq, toPathObject([1])),
+    )
+
+    // Should add empty container since no siblings were found
+    assert.deepEqual(result, [
+      [[0], "first"],
+      [[1], "third"],
+    ])
+  })
+
 })
 
 describe("SequenceProcessor add op", () => {

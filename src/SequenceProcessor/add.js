@@ -44,6 +44,7 @@ const STATE_MAP = {
   [STATES.INSERTED]: {
     [TRANSITIONS.NO_MATCH]: STATES.DONE,
     [TRANSITIONS.MATCH_CONTAINER]: STATES.INSERTED,
+    [TRANSITIONS.MATCH_PATH]: STATES.INSERTED,
   },
   [STATES.DONE]: {},
 }
@@ -90,8 +91,10 @@ export default async function* add(asyncIterable, pathToAdd, value) {
         if (typeof pathToAddLastSegment === "number") {
           // case 2: insertion if key is a number
           yield* getSequenceFromValue(pathToAdd, value)
-          currentPath.array[pathToAdd.length - 1] = pathToAddLastSegment + 1
-          yield item
+
+          const newPathArray = [...currentPath.array]
+          newPathArray[pathToAdd.length - 1] = pathToAddLastSegment + 1
+          yield [new Path(newPathArray), currentValue]
           stateMachine.transition(TRANSITIONS.INSERT)
         } else {
           // case 2: replacement if key is a string
@@ -113,12 +116,13 @@ export default async function* add(asyncIterable, pathToAdd, value) {
           const currentPathFirstDifferentSegment =
             currentPath.array[pathToAdd.length - 1]
           if (typeof currentPathFirstDifferentSegment === "number") {
-            currentPath.array[pathToAdd.length - 1] =
-              currentPathFirstDifferentSegment + 1
+
+            const newPathArray = [...currentPath.array]
+            newPathArray[pathToAdd.length - 1] = currentPathFirstDifferentSegment + 1
+            yield [new Path(newPathArray), currentValue]
           } else {
             throw new Error("This should not be happening")
           }
-          yield item
         }
         continue
       }
@@ -159,9 +163,10 @@ export default async function* add(asyncIterable, pathToAdd, value) {
               // insert before
               yield* getSequenceFromValue(pathToAdd, value)
               // shift current item
-              currentPath.array[pathToAdd.length - 1] =
-                currentPathFirstDifferentSegment + 1
-              yield item
+              const newPathArray = [...currentPath.array]
+              newPathArray[pathToAdd.length - 1] = currentPathFirstDifferentSegment + 1
+              yield [new Path(newPathArray), currentValue]
+
               stateMachine.transition(TRANSITIONS.INSERT)
             } else {
               yield item
